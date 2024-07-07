@@ -195,13 +195,13 @@ export default function Home() {
             <ol
               className={cn(
                 "border-l p-2 md:p-4 max-w-full overflow-scroll",
-                twoColumn && "grid md:grid-cols-2"
+                twoColumn && "grid grid-cols-2"
               )}
             >
               {questions?.map((q, index) => (
                 <label
                   key={index}
-                  className="cursor-pointer flex items-start hover:bg-slate-100 rounded md:p-2 "
+                  className="cursor-pointer flex items-start hover:bg-slate-100 rounded md:p-2 text-sm md:text-base [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full "
                 >
                   <Checkbox
                     className="mt-[14px] "
@@ -223,7 +223,7 @@ export default function Home() {
                   <span className="pt-[10px] px-2">{index + 1}. </span>
                   <div>
                     <MemoizedMathpixMarkdown text={q.text ?? ""} />
-                    <div className="flex gap-1 items-center px-[10px] ">
+                    <div className="flex gap-1 items-center ">
                       <strong>Ans:</strong>{" "}
                       <MemoizedMathpixMarkdown text={q.ans || ""} />
                     </div>
