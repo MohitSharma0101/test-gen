@@ -11,7 +11,7 @@ import { TQuestion } from "@/models/Question";
 import { memo, useEffect, useState } from "react";
 import { MathpixMarkdown } from "mathpix-markdown-it";
 import { Button } from "@/components/ui/button";
-import { Columns2Icon, MenuIcon } from "lucide-react";
+import { Columns2Icon, InboxIcon, MenuIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
@@ -103,6 +103,11 @@ export default function Home() {
                 <Skeleton className="h-[30px] mx-4 my-1" />
                 <Skeleton className="h-[30px] mx-4 my-1" />
               </>
+            ) : chapters?.length === 0 ? (
+              <div className="flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
+                <InboxIcon className="w-[100px] h-[100px]" strokeWidth={1.4} />
+                <p className="text-lg">No Chapter Found!</p>
+              </div>
             ) : (
               chapters?.map((q: TChapter, index: number) => (
                 <Button
@@ -139,6 +144,14 @@ export default function Home() {
                       <Skeleton className="h-[30px] mx-4 my-1" />
                       <Skeleton className="h-[30px] mx-4 my-1" />
                     </>
+                  ) : chapters?.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
+                      <InboxIcon
+                        className="w-[100px] h-[100px]"
+                        strokeWidth={1.4}
+                      />
+                      <p className="text-lg">No Chapter Found!</p>
+                    </div>
                   ) : (
                     chapters?.map((q: TChapter, index: number) => (
                       <Button
@@ -198,38 +211,48 @@ export default function Home() {
                 twoColumn && "grid grid-cols-2"
               )}
             >
-              {questions?.map((q, index) => (
-                <label
-                  key={index}
-                  className="cursor-pointer flex items-start hover:bg-slate-100 rounded md:p-2 text-sm md:text-base [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full "
-                >
-                  <Checkbox
-                    className="mt-[14px] "
-                    checked={
-                      !!selectedQuestions.find((item) => item._id === q._id)
-                    }
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedQuestions([q, ...selectedQuestions]);
-                      } else {
-                        let updatedList = selectedQuestions;
-                        updatedList = updatedList.filter(
-                          (ques) => ques._id != q._id
-                        );
-                        setSelectedQuestions(updatedList);
-                      }
-                    }}
+              {questions?.length == 0 ? (
+                <div className="flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
+                  <InboxIcon
+                    className="w-[100px] h-[100px]"
+                    strokeWidth={1.4}
                   />
-                  <span className="pt-[10px] px-2">{index + 1}. </span>
-                  <div>
-                    <MemoizedMathpixMarkdown text={q.text ?? ""} />
-                    <div className="flex gap-1 items-center ">
-                      <strong>Ans:</strong>{" "}
-                      <MemoizedMathpixMarkdown text={q.ans || ""} />
+                  <p className="text-lg">No Question Found!</p>
+                </div>
+              ) : (
+                questions?.map((q, index) => (
+                  <label
+                    key={index}
+                    className="cursor-pointer flex items-start hover:bg-slate-100 rounded md:p-2 text-sm md:text-base [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full "
+                  >
+                    <Checkbox
+                      className="mt-[14px] "
+                      checked={
+                        !!selectedQuestions.find((item) => item._id === q._id)
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedQuestions([q, ...selectedQuestions]);
+                        } else {
+                          let updatedList = selectedQuestions;
+                          updatedList = updatedList.filter(
+                            (ques) => ques._id != q._id
+                          );
+                          setSelectedQuestions(updatedList);
+                        }
+                      }}
+                    />
+                    <span className="pt-[10px] px-2">{index + 1}. </span>
+                    <div>
+                      <MemoizedMathpixMarkdown text={q.text ?? ""} />
+                      <div className="flex gap-1 items-center ">
+                        <strong>Ans:</strong>{" "}
+                        <MemoizedMathpixMarkdown text={q.ans || ""} />
+                      </div>
                     </div>
-                  </div>
-                </label>
-              ))}
+                  </label>
+                ))
+              )}
             </ol>
           )}
         </div>

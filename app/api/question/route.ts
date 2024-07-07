@@ -7,8 +7,10 @@ export const GET = async (request: NextRequest) => {
     const searchParams = request.nextUrl.searchParams;
     const chapter = searchParams.get("chapter");
 
-    const query: any = {};
-    if (chapter) query.chapter = chapter;
+    const query: any = {
+      chapter: chapter
+    };
+    // if (chapter) query.chapter = chapter;
     
     await dbConnect();
     const questions = await Question.find(query).populate("chapter", {
