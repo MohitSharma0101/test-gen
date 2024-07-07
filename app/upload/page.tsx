@@ -46,28 +46,24 @@ const DashboardPage = (props: Props) => {
     }
   };
 
-  function delay(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  const onUpload = async (chapter: string) => {
+  const onUpload = async (chapter: string, mark: string) => {
     try {
       if (questions.length > 0) {
         await uploadQuestionsInBatch(
           questions.map((q) => ({
             ...q,
             chapter: chapter,
+            mark: Number(mark),
           }))
         );
-        await delay(2000);
         toast({
           title: `🎉 Successfully Uploaded ${questions.length} questions.`,
-          variant: 'success'
+          variant: "success",
         });
-      }else {
+      } else {
         toast({
           title: `Please add questions!`,
-          variant: 'destructive'
+          variant: "destructive",
         });
       }
 

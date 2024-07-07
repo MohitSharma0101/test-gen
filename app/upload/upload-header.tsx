@@ -1,7 +1,7 @@
 "use client";
 
 import SelectCompact from "@/components/ui/select-compact";
-import { COURSES, SUBJECT } from "@/data/const";
+import { COURSES, MARKS, SUBJECT } from "@/data/const";
 import React, { useState } from "react";
 import useChapters from "@/hooks/useChapters";
 import { TChapter } from "@/models/Chapter";
@@ -11,7 +11,7 @@ import { Loader2Icon } from "lucide-react";
 
 type Props = {
   totalQuestion?: number;
-  onUpload?: (chapter: string) => Promise<void>;
+  onUpload?: (chapter: string, marks: string) => Promise<void>;
 };
 
 const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
@@ -19,6 +19,7 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
   const [subject, setSubject] = useState("");
   const { chapters } = useChapters(subject, course);
   const [chapter, setChapter] = useState("");
+  const [marks, setMarks] = useState("1");
   const [loading, setLoading] = useState(false);
   return (
     <div className="px-6 py-3 flex flex-col lg:flex-row gap-8 items-center">
@@ -58,6 +59,19 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
             })) ?? []
           }
         />
+        <SelectCompact
+          label="Marks"
+          placeholder="Select marks"
+          className="w-[140px]"
+          value={marks}
+          onChange={setMarks}
+          options={
+            MARKS?.map((mark) => ({
+              label: mark.toString(),
+              value: mark.toString(),
+            })) ?? []
+          }
+        />
       </div>
       <div className="flex gap-4 ml-auto items-center whitespace-nowrap">
         <p>
@@ -68,7 +82,7 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
           onClick={async () => {
             if (chapter) {
               setLoading(true);
-              await onUpload?.(chapter);
+              await onUpload?.(chapter, marks);
               setLoading(false);
             } else {
               toast({

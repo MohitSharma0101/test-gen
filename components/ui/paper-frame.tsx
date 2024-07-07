@@ -26,15 +26,16 @@ const PaperFrame = ({
         {...rest}
       >
         {questions?.map((q, index) => (
-          <label key={index} className="flex items-start  rounded p-2">
+          <label key={index} className="flex items-baseline  rounded p-2">
             <span className="pt-[10px] px-2">{index + 1}.</span>
             <MemoizedMathpixMarkdown text={q.text ?? ""} />
+            <span className="pt-[10px] px-2 font-medium ml-auto">
+              [{q.mark}]
+            </span>
           </label>
         ))}
       </ol>
-      <h1
-        className="font-medium w-full mt-8 pb-4 text-center break-before-page"
-      >
+      <h1 className="font-medium w-full mt-8 pb-4 text-center break-before-page">
         ANSWERS
       </h1>
       <ol

@@ -26,7 +26,8 @@ export default function Home() {
 
   const { chapters, loading: chaptersLoading } = useChapters(subject, course);
   const [selectedChapter, setSelectedChapter] = useState<TChapter | null>();
-  const { questions, loading, lastIndex, totalPages, totalQuestions } = useQuestions(selectedChapter?._id);
+  const { questions, loading, lastIndex, totalPages, totalQuestions } =
+    useQuestions(selectedChapter?._id);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>([]);
   const [twoColumn, setTwoColumn] = useState(false);
@@ -69,6 +70,14 @@ export default function Home() {
           <p>
             Selected Questions:{" "}
             <strong>{selectedQuestions?.length || 0}</strong>
+            <br />
+            Total Marks:{" "}
+            <strong>
+              {selectedQuestions.reduce(
+                (sum, item) => sum + (item.mark || 1),
+                0
+              )}
+            </strong>
           </p>
           <Sheet>
             <SheetTrigger asChild>
@@ -171,8 +180,8 @@ export default function Home() {
                 </ol>
               </SheetContent>
             </Sheet>
-            <p>QUESTIONS { totalQuestions ? `(${totalQuestions})` : ''}</p>
-            {totalPages !== 0 && <Pagination totalPages={totalPages} />}
+            <p>QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}</p>
+            {totalPages ? <Pagination totalPages={totalPages}  /> : null}
             {/* <Button
               size={"sm"}
               className="ml-auto"
@@ -254,6 +263,9 @@ export default function Home() {
                         <MemoizedMathpixMarkdown text={q.ans || ""} />
                       </div>
                     </div>
+                    <span className="pt-[10px] px-2 font-medium ml-auto">
+                      [{q.mark}]
+                    </span>
                   </label>
                 ))
               )}
