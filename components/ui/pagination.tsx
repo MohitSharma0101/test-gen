@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Button } from "./button";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -74,4 +74,12 @@ const Pagination = ({ totalPages }: Props) => {
   );
 };
 
-export default Pagination;
+const SPagination = (props: Props) => {
+  return (
+    <Suspense>
+      <Pagination {...props} />
+    </Suspense>
+  );
+};
+
+export default SPagination;
