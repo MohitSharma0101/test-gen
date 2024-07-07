@@ -11,7 +11,7 @@ export const GET = async (request: NextRequest) => {
     const query: any = {};
     if (course) query.course = course;
     if (subject) query.subject = subject;
-    
+
     await dbConnect();
     const chapters = await Chapter.find(query);
 
@@ -51,6 +51,33 @@ export const POST = async (request: NextRequest) => {
       { status: "success", chapter: newChapter },
       { status: 201 }
     );
+  } catch (err: any) {
+    return NextResponse.json(
+      { status: "error", error: err.message ?? "Something went wrong" },
+      { status: 500 }
+    );
+  }
+};
+
+export const DELETE = async (request: NextRequest) => {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const chapterId = searchParams.get("chapterId");
+
+    if (!chapterId) {
+      return NextResponse.json(
+        {
+          status: "error",
+          error: "chapterId is required.",
+        },
+        { status: 500 }
+      );
+    }
+
+    await dbConnect();
+    await Chapter.deleteOne({ _id: chapterId });
+
+    return NextResponse.json({ status: "success" }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json(
       { status: "error", error: err.message ?? "Something went wrong" },
