@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
 import PaperFrame from "@/components/ui/paper-frame";
+import Pagination from "@/components/ui/pagination";
 
 const MemoizedMathpixMarkdown = memo(MathpixMarkdown);
 
@@ -25,7 +26,7 @@ export default function Home() {
 
   const { chapters, loading: chaptersLoading } = useChapters(subject, course);
   const [selectedChapter, setSelectedChapter] = useState<TChapter | null>();
-  const { questions, loading } = useQuestions(selectedChapter?._id);
+  const { questions, loading, lastIndex, totalPages, totalQuestions } = useQuestions(selectedChapter?._id);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>([]);
   const [twoColumn, setTwoColumn] = useState(false);
@@ -90,7 +91,7 @@ export default function Home() {
       </div>
 
       <div className="h-fit flex border-t border-slate-200 ">
-        <div className="hidden md:block md:w-[300px] h-full sticky top-0">
+        <div className="hidden md:block md:w-[200px] lg:w-[300px] h-full sticky top-0">
           <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">
             CHAPTERS
           </div>
@@ -170,7 +171,8 @@ export default function Home() {
                 </ol>
               </SheetContent>
             </Sheet>
-            <p>QUESTIONS</p>
+            <p>QUESTIONS { totalQuestions ? `(${totalQuestions})` : ''}</p>
+            {totalPages !== 0 && <Pagination totalPages={totalPages} />}
             {/* <Button
               size={"sm"}
               className="ml-auto"
@@ -212,7 +214,7 @@ export default function Home() {
               )}
             >
               {questions?.length == 0 ? (
-                <div className="flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
+                <div className="col-span-2 flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
                   <InboxIcon
                     className="w-[100px] h-[100px]"
                     strokeWidth={1.4}
@@ -242,7 +244,9 @@ export default function Home() {
                         }
                       }}
                     />
-                    <span className="pt-[10px] px-2">{index + 1}. </span>
+                    <span className="pt-[10px] px-2">
+                      {lastIndex + index + 1}.{" "}
+                    </span>
                     <div>
                       <MemoizedMathpixMarkdown text={q.text ?? ""} />
                       <div className="flex gap-1 items-center ">

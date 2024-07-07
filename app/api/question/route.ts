@@ -6,21 +6,37 @@ export const GET = async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const chapter = searchParams.get("chapter");
+    const limit = Number(searchParams.get("limit") || 10);
+    const page = Number(searchParams.get("page") || 1);
 
     const query: any = {
-      chapter: chapter
+      chapter: chapter,
     };
     // if (chapter) query.chapter = chapter;
-    
+
     await dbConnect();
-    const questions = await Question.find(query).populate("chapter", {
-      subject: 1,
-      course: 1,
-      title: 1,
-    });
+
+    const questions = await Question.find(query)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .populate("chapter", {
+        subject: 1,
+        course: 1,
+        title: 1,
+      })
+      .exec();
+
+    const totalQuestions = await Question.countDocuments(query);
+    const totalPages = Math.ceil(totalQuestions / limit);
 
     return NextResponse.json(
-      { status: "success", questions: questions },
+      {
+        status: "success",
+        questions: questions,
+        totalPages,
+        totalQuestions,
+        currentPage: page,
+      },
       { status: 200 }
     );
   } catch (err: any) {
