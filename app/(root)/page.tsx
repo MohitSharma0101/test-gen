@@ -17,12 +17,13 @@ import {
   InboxIcon,
   MenuIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getRandomItems } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
 import PaperFrame from "@/components/ui/paper-frame";
 import Pagination from "@/components/ui/pagination";
 import TimesUsed from "@/components/ui/times-used";
+import RandomInput from "@/components/ui/random-input";
 
 const MemoizedMathpixMarkdown = memo(MathpixMarkdown);
 
@@ -172,7 +173,7 @@ export default function Home() {
           </ol>
         </div>
         <div className="flex-1 h-full">
-          <div className="w-full h-[52px] px-2 md:px-4 border border-slate-200 text-sm font-medium flex items-center gap-2 md:gap-4 sticky top-0 bg-slate-100 z-10">
+          <div className="w-full max-w-[100vw] overflow-scroll scrollbar-hide h-[52px] px-2 md:px-4 border border-slate-200 text-sm font-medium flex items-center gap-2 md:gap-4 sticky top-0 bg-slate-100 z-10">
             <Sheet>
               <SheetTrigger className="md:hidden">
                 <MenuIcon className="w-4 h-4" />
@@ -216,10 +217,11 @@ export default function Home() {
                 </ol>
               </SheetContent>
             </Sheet>
-            <p>QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}</p>
+            <p className="whitespace-nowrap">QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}</p>
             <Button
               size={"sm"}
               variant={allSelected ? "default" : "outline"}
+              className="border"
               onClick={() => {
                 if (allSelected) {
                   setSelectedQuestions([]);
@@ -231,16 +233,11 @@ export default function Home() {
               <CheckCheckIcon className="w-4 h-4" />
             </Button>
             {totalPages ? <Pagination totalPages={totalPages} /> : null}
-
-            {/* <Button
-              size={"sm"}
-              className="ml-auto"
-              onClick={() => {
-                setSelectedQuestions(getRandomItems(questions));
+            <RandomInput
+              onSubmit={(random) => {
+                setSelectedQuestions(getRandomItems(questions, random));
               }}
-            >
-              <ShuffleIcon className="w-4 h-4" />
-            </Button> */}
+            />
             <Button
               size={"sm"}
               variant={twoColumn ? "default" : "outline"}

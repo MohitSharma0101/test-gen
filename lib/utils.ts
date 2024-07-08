@@ -15,9 +15,9 @@ export const readFile = (file: File, onRead: (content: string) => void) => {
 };
 
 export function getRandomItems<T>(arr: T[], numItems?: number): T[] {
-  const length = numItems || arr.length;
+  let length = numItems || arr.length;
   if (length > arr.length) {
-    throw new Error("numItems is greater than the length of the array");
+    length = arr.length;
   }
 
   const shuffled = arr.slice();

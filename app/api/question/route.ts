@@ -19,6 +19,7 @@ export const GET = async (request: NextRequest) => {
     const questions = await Question.find(query)
       .limit(limit * 1)
       .skip((page - 1) * limit)
+      .sort({ timesUsed: 1 })
       .populate("chapter", {
         subject: 1,
         course: 1,

@@ -10,7 +10,7 @@ export const POST = async (request: NextRequest) => {
       return NextResponse.json(
         {
           status: "error",
-          error: "All fields are required.",
+          error: "Must have at least one question.",
         },
         { status: 500 }
       );
