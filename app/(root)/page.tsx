@@ -85,9 +85,15 @@ export default function Home() {
             </SheetTrigger>
             <SheetContent
               side={"bottom"}
-              className="max-h-[800px] overflow-scroll"
+              className="max-h-[80svh] m-auto rounded max-w-screen-lg overflow-scroll"
             >
+                        <Print>
+            <PrintTrigger className="px-6">Print</PrintTrigger>
+            <PrintContent className="block">
               <PaperFrame questions={selectedQuestions} twoColumn={twoColumn} />
+            </PrintContent>
+          </Print>
+              {/* <PaperFrame questions={selectedQuestions} twoColumn={twoColumn} /> */}
             </SheetContent>
           </Sheet>
           <Print>
@@ -236,8 +242,8 @@ export default function Home() {
                     key={index}
                     className="cursor-pointer flex items-start hover:bg-slate-100 rounded md:p-2 text-sm md:text-base [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full "
                   >
+                    <div className="mt-[14px] flex flex-col items-center justify-center gap-4">
                     <Checkbox
-                      className="mt-[14px] "
                       checked={
                         !!selectedQuestions.find((item) => item._id === q._id)
                       }
@@ -253,12 +259,13 @@ export default function Home() {
                         }
                       }}
                     />
+                    </div>
                     <span className="pt-[10px] px-2">
                       {lastIndex + index + 1}.{" "}
                     </span>
                     <div>
                       <MemoizedMathpixMarkdown text={q.text ?? ""} />
-                      <div className="flex gap-1 items-center ">
+                      <div className="flex gap-2 items-start [&_#preview]:!py-0">
                         <strong>Ans:</strong>{" "}
                         <MemoizedMathpixMarkdown text={q.ans || ""} />
                       </div>
