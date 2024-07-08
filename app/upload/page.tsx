@@ -79,7 +79,7 @@ const DashboardPage = (props: Props) => {
 
   return (
     <div className="h-screen text-primary">
-      <UploadHeader totalQuestion={questions.length} onUpload={onUpload} />
+      <UploadHeader totalQuestion={questions?.length} onUpload={onUpload} />
       <div className="mt-4 border border-slate-200 grid grid-cols-2 grid-rows-4 w-full h-full">
         <label
           htmlFor="question-input"

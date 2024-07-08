@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SelectCompact from "@/components/ui/select-compact";
 import { Skeleton } from "@/components/ui/skeleton";
-import { COURSES, SUBJECT } from "@/data/const";
+import { COURSES, SUBJECT_MAP } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import { TChapter } from "@/models/Chapter";
 import { InboxIcon, Trash2Icon } from "lucide-react";
@@ -14,7 +14,7 @@ type Props = {};
 
 const ChaptersPage = (props: Props) => {
   const [course, setCourse] = useState(COURSES[0]);
-  const [subject, setSubject] = useState(SUBJECT[0]);
+  const [subject, setSubject] = useState("");
   const {
     chapters,
     loading: chaptersLoading,
@@ -54,7 +54,7 @@ const ChaptersPage = (props: Props) => {
               className="w-full"
               value={subject}
               onChange={setSubject}
-              options={SUBJECT.map((c) => ({
+              options={SUBJECT_MAP[course].map((c) => ({
                 label: c,
                 value: c,
               }))}

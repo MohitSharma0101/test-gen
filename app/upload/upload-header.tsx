@@ -1,7 +1,7 @@
 "use client";
 
 import SelectCompact from "@/components/ui/select-compact";
-import { COURSES, MARKS, SUBJECT } from "@/data/const";
+import { COURSES, MARKS, SUBJECT_MAP } from "@/data/const";
 import React, { useState } from "react";
 import useChapters from "@/hooks/useChapters";
 import { TChapter } from "@/models/Chapter";
@@ -15,7 +15,7 @@ type Props = {
 };
 
 const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
-  const [course, setCourse] = useState("");
+  const [course, setCourse] = useState(COURSES[0]);
   const [subject, setSubject] = useState("");
   const { chapters } = useChapters(subject, course);
   const [chapter, setChapter] = useState("");
@@ -41,7 +41,7 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
           className="w-[300px]"
           value={subject}
           onChange={setSubject}
-          options={SUBJECT.map((c) => ({
+          options={SUBJECT_MAP[course].map((c) => ({
             label: c,
             value: c,
           }))}

@@ -31,12 +31,14 @@ const SelectCompact = ({
     <div className={className}>
       <label className="block font-medium ml-1 mb-1 text-sm">{label}</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger >
+        <SelectTrigger>
           <SelectValue placeholder={placeholder || "Select a value"} />
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

@@ -3,7 +3,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import SelectCompact from "@/components/ui/select-compact";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { COURSES, SUBJECT } from "@/data/const";
+import { COURSES, SUBJECT, SUBJECT_MAP } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import useQuestions from "@/hooks/useQuestions";
 import { TChapter } from "@/models/Chapter";
@@ -29,7 +29,7 @@ const MemoizedMathpixMarkdown = memo(MathpixMarkdown);
 
 export default function Home() {
   const [course, setCourse] = useState(COURSES[5]);
-  const [subject, setSubject] = useState(SUBJECT[0]);
+  const [subject, setSubject] = useState("");
 
   const { chapters, loading: chaptersLoading } = useChapters(subject, course);
   const [selectedChapter, setSelectedChapter] = useState<TChapter | null>();
@@ -73,7 +73,7 @@ export default function Home() {
             className="w-[300px]"
             value={subject}
             onChange={setSubject}
-            options={SUBJECT.map((c) => ({
+            options={SUBJECT_MAP[course].map((c) => ({
               label: c,
               value: c,
             }))}
@@ -104,7 +104,11 @@ export default function Home() {
               <Print>
                 <PrintTrigger
                   className="px-6"
-                  onClick={() => updateUsage(selectedQuestions)}
+                  onClick={() => {
+                    startTransition(() => {
+                      updateUsage(selectedQuestions);
+                    });
+                  }}
                 >
                   Print
                 </PrintTrigger>
@@ -115,7 +119,6 @@ export default function Home() {
                   />
                 </PrintContent>
               </Print>
-              {/* <PaperFrame questions={selectedQuestions} twoColumn={twoColumn} /> */}
             </SheetContent>
           </Sheet>
           <Print>
@@ -217,7 +220,9 @@ export default function Home() {
                 </ol>
               </SheetContent>
             </Sheet>
-            <p className="whitespace-nowrap">QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}</p>
+            <p className="whitespace-nowrap">
+              QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}
+            </p>
             <Button
               size={"sm"}
               variant={allSelected ? "default" : "outline"}
