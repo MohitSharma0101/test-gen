@@ -8,15 +8,21 @@ import useChapters from "@/hooks/useChapters";
 import useQuestions from "@/hooks/useQuestions";
 import { TChapter } from "@/models/Chapter";
 import { TQuestion } from "@/models/Question";
-import { memo, useEffect, useState } from "react";
+import { memo, startTransition, useEffect, useState } from "react";
 import { MathpixMarkdown } from "mathpix-markdown-it";
 import { Button } from "@/components/ui/button";
-import { Columns2Icon, InboxIcon, MenuIcon } from "lucide-react";
+import {
+  CheckCheckIcon,
+  Columns2Icon,
+  InboxIcon,
+  MenuIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
 import PaperFrame from "@/components/ui/paper-frame";
 import Pagination from "@/components/ui/pagination";
+import TimesUsed from "@/components/ui/times-used";
 
 const MemoizedMathpixMarkdown = memo(MathpixMarkdown);
 
@@ -26,11 +32,18 @@ export default function Home() {
 
   const { chapters, loading: chaptersLoading } = useChapters(subject, course);
   const [selectedChapter, setSelectedChapter] = useState<TChapter | null>();
-  const { questions, loading, lastIndex, totalPages, totalQuestions } =
-    useQuestions(selectedChapter?._id);
+  const {
+    questions,
+    loading,
+    lastIndex,
+    totalPages,
+    totalQuestions,
+    updateUsage,
+  } = useQuestions(selectedChapter?._id);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>([]);
   const [twoColumn, setTwoColumn] = useState(false);
+  const allSelected = selectedQuestions?.length === questions?.length;
 
   useEffect(() => {
     if (chapters) {
@@ -87,17 +100,34 @@ export default function Home() {
               side={"bottom"}
               className="max-h-[80svh] m-auto rounded max-w-screen-lg overflow-scroll"
             >
-                        <Print>
-            <PrintTrigger className="px-6">Print</PrintTrigger>
-            <PrintContent className="block">
-              <PaperFrame questions={selectedQuestions} twoColumn={twoColumn} />
-            </PrintContent>
-          </Print>
+              <Print>
+                <PrintTrigger
+                  className="px-6"
+                  onClick={() => updateUsage(selectedQuestions)}
+                >
+                  Print
+                </PrintTrigger>
+                <PrintContent className="block">
+                  <PaperFrame
+                    questions={selectedQuestions}
+                    twoColumn={twoColumn}
+                  />
+                </PrintContent>
+              </Print>
               {/* <PaperFrame questions={selectedQuestions} twoColumn={twoColumn} /> */}
             </SheetContent>
           </Sheet>
           <Print>
-            <PrintTrigger className="px-6">Print</PrintTrigger>
+            <PrintTrigger
+              className="px-6"
+              onClick={async () => {
+                startTransition(() => {
+                  updateUsage(selectedQuestions);
+                });
+              }}
+            >
+              Print
+            </PrintTrigger>
             <PrintContent>
               <PaperFrame questions={selectedQuestions} twoColumn={twoColumn} />
             </PrintContent>
@@ -142,7 +172,7 @@ export default function Home() {
           </ol>
         </div>
         <div className="flex-1 h-full">
-          <div className="w-full h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center gap-4 sticky top-0 bg-slate-100 z-10">
+          <div className="w-full h-[52px] px-2 md:px-4 border border-slate-200 text-sm font-medium flex items-center gap-2 md:gap-4 sticky top-0 bg-slate-100 z-10">
             <Sheet>
               <SheetTrigger className="md:hidden">
                 <MenuIcon className="w-4 h-4" />
@@ -187,7 +217,21 @@ export default function Home() {
               </SheetContent>
             </Sheet>
             <p>QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}</p>
-            {totalPages ? <Pagination totalPages={totalPages}  /> : null}
+            <Button
+              size={"sm"}
+              variant={allSelected ? "default" : "outline"}
+              onClick={() => {
+                if (allSelected) {
+                  setSelectedQuestions([]);
+                } else {
+                  setSelectedQuestions(questions);
+                }
+              }}
+            >
+              <CheckCheckIcon className="w-4 h-4" />
+            </Button>
+            {totalPages ? <Pagination totalPages={totalPages} /> : null}
+
             {/* <Button
               size={"sm"}
               className="ml-auto"
@@ -211,8 +255,8 @@ export default function Home() {
           {loading ? (
             <ol
               className={cn(
-                "border-l p-4 space-y-2",
-                twoColumn && "grid grid-cols-2"
+                "border-l p-4 grid gap-4",
+                twoColumn && "grid-cols-2"
               )}
             >
               <Skeleton className="w-full h-[300px]" />
@@ -243,22 +287,27 @@ export default function Home() {
                     className="cursor-pointer flex items-start hover:bg-slate-100 rounded md:p-2 text-sm md:text-base [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full "
                   >
                     <div className="mt-[14px] flex flex-col items-center justify-center gap-4">
-                    <Checkbox
-                      checked={
-                        !!selectedQuestions.find((item) => item._id === q._id)
-                      }
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedQuestions([q, ...selectedQuestions]);
-                        } else {
-                          let updatedList = selectedQuestions;
-                          updatedList = updatedList.filter(
-                            (ques) => ques._id != q._id
-                          );
-                          setSelectedQuestions(updatedList);
-                        }
-                      }}
-                    />
+                      <div className="flex flex-col gap-2">
+                        <Checkbox
+                          checked={
+                            !!selectedQuestions.find(
+                              (item) => item._id === q._id
+                            )
+                          }
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedQuestions([q, ...selectedQuestions]);
+                            } else {
+                              let updatedList = selectedQuestions;
+                              updatedList = updatedList.filter(
+                                (ques) => ques._id != q._id
+                              );
+                              setSelectedQuestions(updatedList);
+                            }
+                          }}
+                        />
+                        <TimesUsed count={q.timesUsed} />
+                      </div>
                     </div>
                     <span className="pt-[10px] px-2">
                       {lastIndex + index + 1}.{" "}

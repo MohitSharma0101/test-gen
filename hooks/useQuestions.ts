@@ -1,6 +1,6 @@
 "use client";
 
-import { ENDPOINT } from "@/lib/api";
+import { api, ENDPOINT } from "@/lib/api";
 import { TQuestion } from "@/models/Question";
 import { fetchQuestions } from "@/service/core.service";
 import { useSearchParams } from "next/navigation";
@@ -30,6 +30,17 @@ const useQuestions = (chapter?: string) => {
   const totalPages = data?.totalPages;
   const lastIndex = (page - 1) * limit;
 
+  const updateUsage = async (questions: TQuestion[]) => {
+    try {
+      await api.post(ENDPOINT.questionsUsed, {
+        questions,
+      });
+      refresh();
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return {
     questions,
     loading,
@@ -40,6 +51,7 @@ const useQuestions = (chapter?: string) => {
     totalQuestions,
     totalPages,
     refresh,
+    updateUsage,
   };
 };
 
