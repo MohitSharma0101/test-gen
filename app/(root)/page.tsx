@@ -3,7 +3,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import SelectCompact from "@/components/ui/select-compact";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { COURSES, SUBJECT, SUBJECT_MAP } from "@/data/const";
+import { COURSES, SUBJECT_MAP } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import useQuestions from "@/hooks/useQuestions";
 import { TChapter } from "@/models/Chapter";
@@ -116,6 +116,8 @@ export default function Home() {
                   <PaperFrame
                     questions={selectedQuestions}
                     twoColumn={twoColumn}
+                    course={course}
+                    subject={subject}
                   />
                 </PrintContent>
               </Print>
@@ -133,7 +135,12 @@ export default function Home() {
               Print
             </PrintTrigger>
             <PrintContent>
-              <PaperFrame questions={selectedQuestions} twoColumn={twoColumn} />
+              <PaperFrame 
+                questions={selectedQuestions} 
+                twoColumn={twoColumn}
+                course={course}
+                subject={subject}
+                />
             </PrintContent>
           </Print>
         </div>

@@ -4,10 +4,13 @@ import { cn } from "@/lib/utils";
 import { TQuestion } from "@/models/Question";
 import { MathpixMarkdown } from "mathpix-markdown-it";
 import React, { memo } from "react";
+import EducationPlusFrame from "../frames/education-plus-frame";
 
 type Props = JSX.IntrinsicElements["ol"] & {
   questions: TQuestion[];
   twoColumn?: boolean;
+  course?: string;
+  subject?: string;
 };
 
 const MemoizedMathpixMarkdown = memo(MathpixMarkdown);
@@ -16,49 +19,55 @@ const PaperFrame = ({
   questions = [],
   twoColumn = false,
   className,
+  course,
+  subject,
   ...rest
 }: Props) => {
   return (
-    <div>
-      <h1 className="font-medium w-full pb-4 text-center">QUESTIONS</h1>
-      <ol
-        className={cn("border p-4 mt-4", twoColumn && "columns-2", className)}
-        {...rest}
-      >
-        {questions?.map((q, index) => (
-          <label key={index} className="flex items-baseline  rounded p-2">
-            <span className="pt-[10px] px-2">{index + 1}.</span>
-            <MemoizedMathpixMarkdown text={q.text ?? ""} />
-            <span
-              className="pt-[10px] px-2 font-medium ml-auto focus-visible:outline-none"
-              contentEditable
+    <div className="pt-4 print:px-4">
+      <EducationPlusFrame course={course} subject={subject}>
+        <ol
+          className={cn("p-2", twoColumn && "columns-2", className)}
+          {...rest}
+        >
+          {questions?.map((q, index) => (
+            <label key={index} className="flex items-baseline rounded p-2">
+              <span className="pt-[10px] px-2">{index + 1}.</span>
+              <MemoizedMathpixMarkdown text={q.text ?? ""} />
+              <span
+                className="pt-[10px] px-2 font-medium ml-auto focus-visible:outline-none"
+                contentEditable
+              >
+                [{q.mark}]
+              </span>
+            </label>
+          ))}
+        </ol>
+      </EducationPlusFrame>
+      <div className="w-full h-5 break-before-page" />
+      <EducationPlusFrame course={course} subject={subject} className="mt-4 print:mt-0">
+        <h1 className="font-medium w-full mt-4 pb-4 text-center">
+          ANSWERS
+        </h1>
+        <ol
+          className={cn(
+            "border p-4 grid grid-cols-8 [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full md:[&_#preview]:!min-w-fit"
+          )}
+          {...rest}
+        >
+          {questions?.map((q, index) => (
+            <label
+              key={index}
+              className={`flex items-baseline rounded p-2 ${
+                q.ans && q.ans?.length > 30 ? "col-span-4" : ""
+              } `}
             >
-              [{q.mark}]
-            </span>
-          </label>
-        ))}
-      </ol>
-      <h1 className="font-medium w-full mt-8 pb-4 text-center break-before-page">
-        ANSWERS
-      </h1>
-      <ol
-        className={cn(
-          "border p-4 grid grid-cols-8 [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full md:[&_#preview]:!min-w-fit"
-        )}
-        {...rest}
-      >
-        {questions?.map((q, index) => (
-          <label
-            key={index}
-            className={`flex items-baseline rounded p-2 ${
-              q.ans && q.ans?.length > 30 ? "col-span-4" : ""
-            } `}
-          >
-            <span className="pt-[10px] px-2">{index + 1}.</span>
-            <MemoizedMathpixMarkdown text={q.ans ?? ""} />
-          </label>
-        ))}
-      </ol>
+              <span className="pt-[10px] px-2">{index + 1}.</span>
+              <MemoizedMathpixMarkdown text={q.ans ?? ""} />
+            </label>
+          ))}
+        </ol>
+      </EducationPlusFrame>
     </div>
   );
 };
