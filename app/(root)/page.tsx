@@ -8,8 +8,7 @@ import useChapters from "@/hooks/useChapters";
 import useQuestions from "@/hooks/useQuestions";
 import { TChapter } from "@/models/Chapter";
 import { TQuestion } from "@/models/Question";
-import { memo, startTransition, useEffect, useState } from "react";
-import { MathpixMarkdown } from "mathpix-markdown-it";
+import { startTransition, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   CheckCheckIcon,
@@ -24,8 +23,8 @@ import PaperFrame from "@/components/ui/paper-frame";
 import Pagination from "@/components/ui/pagination";
 import TimesUsed from "@/components/ui/times-used";
 import RandomInput from "@/components/ui/random-input";
-
-const MemoizedMathpixMarkdown = memo(MathpixMarkdown);
+import FilterSelect from "@/components/ui/filter-select";
+import Markdown from "@/components/ui/markdown";
 
 export default function Home() {
   const [course, setCourse] = useState(COURSES[5]);
@@ -106,7 +105,7 @@ export default function Home() {
                   className="px-6"
                   onClick={() => {
                     startTransition(() => {
-                      updateUsage(selectedQuestions);
+                      // updateUsage(selectedQuestions);
                     });
                   }}
                 >
@@ -135,12 +134,12 @@ export default function Home() {
               Print
             </PrintTrigger>
             <PrintContent>
-              <PaperFrame 
-                questions={selectedQuestions} 
+              <PaperFrame
+                questions={selectedQuestions}
                 twoColumn={twoColumn}
                 course={course}
                 subject={subject}
-                />
+              />
             </PrintContent>
           </Print>
         </div>
@@ -160,7 +159,7 @@ export default function Home() {
                 <Skeleton className="h-[30px] mx-4 my-1" />
                 <Skeleton className="h-[30px] mx-4 my-1" />
               </>
-            ) : chapters?.length === 0 ? (
+            ) : !chapters || chapters?.length === 0 ? (
               <div className="flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
                 <InboxIcon className="w-[100px] h-[100px]" strokeWidth={1.4} />
                 <p className="text-lg">No Chapter Found!</p>
@@ -261,6 +260,19 @@ export default function Home() {
               <Columns2Icon className="w-4 h-4" />
             </Button>
           </div>
+          <div className="py-1 px-4">
+            <FilterSelect
+              filterKey="marks"
+              className="w-fit"
+              placeholder="marks"
+              options={Array.from(
+                new Set(questions?.map((q) => q.mark) ?? [])
+              ).map((mark) => ({
+                label: mark + " mark",
+                value: (mark || 1).toString(),
+              }))}
+            />
+          </div>
           {loading ? (
             <ol
               className={cn(
@@ -281,7 +293,7 @@ export default function Home() {
                 twoColumn && "grid grid-cols-2"
               )}
             >
-              {questions?.length == 0 ? (
+              {!questions || questions?.length == 0 ? (
                 <div className="col-span-2 flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
                   <InboxIcon
                     className="w-[100px] h-[100px]"
@@ -322,10 +334,10 @@ export default function Home() {
                       {lastIndex + index + 1}.{" "}
                     </span>
                     <div>
-                      <MemoizedMathpixMarkdown text={q.text ?? ""} />
+                      <Markdown text={q.text ?? ""} />
                       <div className="flex gap-2 items-start [&_#preview]:!py-0">
                         <strong>Ans:</strong>{" "}
-                        <MemoizedMathpixMarkdown text={q.ans || ""} />
+                        <Markdown text={q.ans || ""} />
                       </div>
                     </div>
                     <span className="pt-[10px] px-2 font-medium ml-auto">

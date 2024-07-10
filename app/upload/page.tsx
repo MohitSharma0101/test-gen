@@ -6,9 +6,10 @@ import { TQuestion } from "@/models/Question";
 import { EyeIcon, FileCheckIcon, FileQuestion } from "lucide-react";
 import { readFile } from "@/lib/utils";
 import { extractItemsArray } from "@/lib/mdUtils";
-import { MathpixMarkdown, MathpixLoader } from "mathpix-markdown-it";
 import { uploadQuestionsInBatch } from "@/service/core.service";
 import { toast } from "@/components/ui/use-toast";
+import Markdown from "@/components/ui/markdown";
+
 
 type Props = {};
 
@@ -121,22 +122,20 @@ const DashboardPage = (props: Props) => {
               </p>
             </div>
           ) : (
-            <MathpixLoader>
               <ol
                 id="paper"
                 className="w-full pt-3 px-8 md:px-12 list-decimal text-black print:text-black"
               >
                 {questions.map((q, index) => (
                   <li key={index}>
-                    <MathpixMarkdown text={q.text || ""} />
+                    <Markdown text={q.text || ""} />
                     <div className="flex gap-1 items-center px-[10px]">
                       <strong>Ans:</strong>{" "}
-                      <MathpixMarkdown text={q.ans || ""} />
+                      <Markdown text={q.ans || ""} />
                     </div>
                   </li>
                 ))}
               </ol>
-            </MathpixLoader>
           )}
         </div>
       </div>

@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "./select";
 
-type Props = {
+export type TSelectCompactProps = {
   placeholder?: string;
   className?: string;
   options: {
@@ -26,7 +26,7 @@ const SelectCompact = ({
   value,
   label,
   onChange,
-}: Props) => {
+}: TSelectCompactProps) => {
   return (
     <div className={className}>
       <label className="block font-medium ml-1 mb-1 text-sm">{label}</label>

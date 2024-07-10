@@ -6,7 +6,7 @@ import { fetchChapters } from "@/service/core.service";
 import useSWR from "swr";
 
 const useChapters = (subject?: string, course?: string) => {
-  const cache = ENDPOINT.chapters + subject + course;
+  const cache = (!course || !subject) ? null : ENDPOINT.chapters + subject + course;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {

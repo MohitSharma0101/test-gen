@@ -2,9 +2,9 @@
 
 import { cn } from "@/lib/utils";
 import { TQuestion } from "@/models/Question";
-import { MathpixMarkdown } from "mathpix-markdown-it";
 import React, { memo } from "react";
 import EducationPlusFrame from "../frames/education-plus-frame";
+import Markdown from "./markdown";
 
 type Props = JSX.IntrinsicElements["ol"] & {
   questions: TQuestion[];
@@ -13,7 +13,7 @@ type Props = JSX.IntrinsicElements["ol"] & {
   subject?: string;
 };
 
-const MemoizedMathpixMarkdown = memo(MathpixMarkdown);
+const MemoizedMathpixMarkdown = memo(Markdown);
 
 const PaperFrame = ({
   questions = [],
@@ -27,11 +27,14 @@ const PaperFrame = ({
     <div className="pt-4 print:px-4">
       <EducationPlusFrame course={course} subject={subject}>
         <ol
-          className={cn("p-2", twoColumn && "columns-2", className)}
+          className={cn("px-2", twoColumn && "columns-2", className)}
           {...rest}
         >
           {questions?.map((q, index) => (
-            <label key={index} className="flex items-baseline rounded p-2">
+            <label
+              key={index}
+              className="flex items-baseline rounded p-2 break-inside-avoid "
+            >
               <span className="pt-[10px] px-2">{index + 1}.</span>
               <MemoizedMathpixMarkdown text={q.text ?? ""} />
               <span
@@ -45,10 +48,12 @@ const PaperFrame = ({
         </ol>
       </EducationPlusFrame>
       <div className="w-full h-5 break-before-page" />
-      <EducationPlusFrame course={course} subject={subject} className="mt-4 print:mt-0">
-        <h1 className="font-medium w-full mt-4 pb-4 text-center">
-          ANSWERS
-        </h1>
+      <EducationPlusFrame
+        course={course}
+        subject={subject}
+        className="mt-4 print:mt-0"
+      >
+        <h1 className="font-medium w-full mt-4 pb-4 text-center">ANSWERS</h1>
         <ol
           className={cn(
             "border p-4 grid grid-cols-8 [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full md:[&_#preview]:!min-w-fit"

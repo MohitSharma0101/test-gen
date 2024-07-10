@@ -28,3 +28,17 @@ export function getRandomItems<T>(arr: T[], numItems?: number): T[] {
 
   return shuffled.slice(0, length);
 }
+
+export function addQueryToUrl(url: string, key: string, value: string | number): string {
+  // Check if the URL already has a query string
+  const separator = url.includes('?') ? '&' : '?';
+  
+  // Encode the key and value
+  const encodedKey = encodeURIComponent(key);
+  const encodedValue = encodeURIComponent(value);
+  
+  // Construct the new URL with the added query parameter
+  const updatedUrl = `${url}${separator}${encodedKey}=${encodedValue}`;
+  
+  return updatedUrl;
+}

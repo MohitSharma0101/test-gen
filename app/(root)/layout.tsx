@@ -1,6 +1,12 @@
 import Header from "@/components/ui/header";
-import MathpixProvider from "@/provider/MathpixProvider";
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
+
+const DynamicMathpixProvider = dynamic(
+  () => import(
+   "@/provider/MathpixProvider"),
+  { ssr: false }
+);
 
 export default function RootLayout({
   children,
@@ -11,9 +17,7 @@ export default function RootLayout({
     <>
       <Header active="create" />
       <Suspense>{children}</Suspense>
-      <MathpixProvider>
-        <></>
-      </MathpixProvider>
+      <DynamicMathpixProvider />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import { Button } from "./button";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import SelectCompact from "./select-compact";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { addQueryToUrl } from "@/lib/utils";
 
 type Props = {
   totalPages?: Number;
@@ -18,17 +19,18 @@ const Pagination = ({ totalPages }: Props) => {
   const page = Number(searchParams.get("page") || 1);
   const limit = Number(searchParams.get("limit") || 10);
   const router = useRouter();
+  const pathname = usePathname();
 
   const onNext = () => {
-    router.push("?page=" + (page + 1));
+    router.push(addQueryToUrl(pathname, "page", page + 1));
   };
 
   const onPrev = () => {
-    router.push("?page=" + (page - 1));
+    router.push(addQueryToUrl(pathname, "page", page - 1));
   };
 
   const onLimitChange = (newLimit: string) => {
-    router.push("?page=" + page + "&limit=" + newLimit);
+    router.push(addQueryToUrl(pathname, "limit", newLimit));
   };
 
   return (

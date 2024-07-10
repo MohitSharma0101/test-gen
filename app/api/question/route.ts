@@ -8,10 +8,12 @@ export const GET = async (request: NextRequest) => {
     const chapter = searchParams.get("chapter");
     const limit = Number(searchParams.get("limit") || 10);
     const page = Number(searchParams.get("page") || 1);
+    const marks = Number(searchParams.get("marks"));
 
     const query: any = {
       chapter: chapter,
     };
+    if(marks) query.marks = marks;
     // if (chapter) query.chapter = chapter;
 
     await dbConnect();
