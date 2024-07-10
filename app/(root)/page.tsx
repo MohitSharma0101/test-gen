@@ -105,7 +105,7 @@ export default function Home() {
                   className="px-6"
                   onClick={() => {
                     startTransition(() => {
-                      // updateUsage(selectedQuestions);
+                      updateUsage(selectedQuestions);
                     });
                   }}
                 >
