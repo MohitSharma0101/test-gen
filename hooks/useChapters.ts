@@ -6,7 +6,8 @@ import { fetchChapters } from "@/service/core.service";
 import useSWR from "swr";
 
 const useChapters = (subject?: string, course?: string) => {
-  const cache = (!course || !subject) ? null : ENDPOINT.chapters + subject + course;
+  const cache =
+    !course || !subject ? null : ENDPOINT.chapters + subject + course;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
@@ -49,6 +50,30 @@ const useChapters = (subject?: string, course?: string) => {
     }
   };
 
+  const updateChapter = async (id: string, title: string) => {
+    try {
+      if (!title) {
+        throw new Error("Please add a chapter title!");
+      }
+      await api.put(ENDPOINT.chapters, {
+        id,
+        title,
+      });
+      toast({
+        title: "Successfully updated chapter title!",
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: (err as any)?.message || "Unable to update chapter!",
+        variant: "destructive",
+      });
+      console.log("err", err);
+    } finally {
+      refresh();
+    }
+  };
+
   const deleteChapter = async (id: string) => {
     try {
       if (!id) {
@@ -80,6 +105,7 @@ const useChapters = (subject?: string, course?: string) => {
     refresh,
     addChapter,
     deleteChapter,
+    updateChapter,
   };
 };
 

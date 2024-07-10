@@ -7,8 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { COURSES, SUBJECT_MAP } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import { TChapter } from "@/models/Chapter";
-import { InboxIcon, Trash2Icon } from "lucide-react";
+import { InboxIcon } from "lucide-react";
 import React, { useState } from "react";
+import ChapterItem from "./chapter-item";
 
 type Props = {};
 
@@ -20,6 +21,7 @@ const ChaptersPage = (props: Props) => {
     loading: chaptersLoading,
     addChapter,
     deleteChapter,
+    updateChapter,
   } = useChapters(subject, course);
   const [chapterTitle, setChapterTitle] = useState("");
 
@@ -86,10 +88,10 @@ const ChaptersPage = (props: Props) => {
           <ol className="rounded mt-1 max-h-full flex flex-col overflow-scroll py-2  sticky top-0 bg-slate-200">
             {chaptersLoading ? (
               <>
-                <Skeleton className="h-[22px] mx-4 my-1 bg-slate-300 rounded-full" />
-                <Skeleton className="h-[22px] mx-4 my-1 bg-slate-300 rounded-full" />
-                <Skeleton className="h-[22px] mx-4 my-1 bg-slate-300 rounded-full" />
-                <Skeleton className="h-[22px] mx-4 my-1 bg-slate-300 rounded-full" />
+                <Skeleton className="h-[32px] mx-4 my-1 bg-slate-300 rounded-full" />
+                <Skeleton className="h-[32px] mx-4 my-1 bg-slate-300 rounded-full" />
+                <Skeleton className="h-[32px] mx-4 my-1 bg-slate-300 rounded-full" />
+                <Skeleton className="h-[32px] mx-4 my-1 bg-slate-300 rounded-full" />
               </>
             ) : !chapters || chapters?.length === 0 ? (
               <div className="py-8 px-4 text-slate-600 flex items-center flex-col justify-center">
@@ -97,21 +99,14 @@ const ChaptersPage = (props: Props) => {
                 No chapter found!
               </div>
             ) : (
-              chapters?.map((q: TChapter, index: number) => (
-                <li
-                  key={index}
-                  className="text-start p-4 justify-start items-center rounded-none border-b last:border-none border-slate-300 flex "
-                >
-                  {`${index + 1}. ${q.title}`}
-                  <Button
-                    variant={"destructive"}
-                    size={"icon"}
-                    className="ml-auto"
-                    onClick={() => onDeleteChapter(q._id)}
-                  >
-                    <Trash2Icon className="w-4 h-4 text-destructive-foreground" />
-                  </Button>
-                </li>
+              chapters?.map((chapter: TChapter, index: number) => (
+                <ChapterItem
+                  chapter={chapter}
+                  key={chapter._id}
+                  index={index}
+                  onDelete={onDeleteChapter}
+                  onUpdate={updateChapter}
+                />
               ))
             )}
           </ol>
