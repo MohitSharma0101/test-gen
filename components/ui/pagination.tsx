@@ -63,7 +63,7 @@ const Pagination = ({ totalPages }: Props) => {
               className="w-fit"
               value={limit.toString()}
               placeholder=""
-              options={[10, 30, 50].map((item) => ({
+              options={[10, 30, 50, 100, 150, 200].map((item) => ({
                 label: item + " item",
                 value: item.toString(),
               }))}

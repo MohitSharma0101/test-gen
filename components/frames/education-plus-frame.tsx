@@ -15,7 +15,7 @@ const EducationPlusFrame = ({
   const today = new Date();
   return (
     <>
-      <table className={cn(" border border-black", className)}>
+      <table className={cn("border border-black", className)}>
         <thead className="report-header table-header-group w-full">
           <tr>
             <th className="report-header-cell">
@@ -39,7 +39,7 @@ const EducationPlusFrame = ({
                     <span suppressHydrationWarning>
                       DATE: {today.toLocaleDateString()}
                     </span>
-                    <span>className: {course}</span>
+                    <span>CLASS: {course}</span>
                     <span className="uppercase">SUBJECT: {subject}</span>
                     <span>NAME:</span>
                   </div>
@@ -49,7 +49,7 @@ const EducationPlusFrame = ({
             </th>
           </tr>
         </thead>
-        <tbody className="report-content h-screen">
+        <tbody className="report-content">
           <tr>
             <td className="report-content-cell">
               <div className="">{children}</div>
