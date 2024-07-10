@@ -70,6 +70,16 @@
   }
 }
 
+@page{
+  margin: 0;
+}
+
+@media print {
+  body {
+    zoom: 90%;
+  }
+}
+
 table.report-container {
   page-break-after: always;
 }

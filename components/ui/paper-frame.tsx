@@ -33,7 +33,7 @@ const PaperFrame = ({
           {questions?.map((q, index) => (
             <label
               key={index}
-              className="flex items-baseline rounded p-2 break-inside-avoid "
+              className="flex items-baseline rounded p-2"
             >
               <span className="pt-[10px] px-2">{index + 1}.</span>
               <MemoizedMathpixMarkdown text={q.text ?? ""} />
@@ -56,16 +56,15 @@ const PaperFrame = ({
         <h1 className="font-medium w-full mt-4 pb-4 text-center">ANSWERS</h1>
         <ol
           className={cn(
-            "border p-4 grid grid-cols-8 [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full md:[&_#preview]:!min-w-fit"
+            "border p-4 [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full md:[&_#preview]:!min-w-fit",
+            twoColumn && "columns-2"
           )}
           {...rest}
         >
           {questions?.map((q, index) => (
             <label
               key={index}
-              className={`flex items-baseline rounded p-2 ${
-                q.ans && q.ans?.length > 30 ? "col-span-4" : ""
-              } `}
+              className={`flex items-baseline rounded p-2`}
             >
               <span className="pt-[10px] px-2">{index + 1}.</span>
               <MemoizedMathpixMarkdown text={q.ans ?? ""} />

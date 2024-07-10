@@ -15,7 +15,7 @@ const EducationPlusFrame = ({
   const today = new Date();
   return (
     <>
-      <table className={cn("border border-black", className)}>
+      <table className={cn("w-full max-w-full border border-black", className)}>
         <thead className="report-header table-header-group w-full">
           <tr>
             <th className="report-header-cell">
