@@ -5,6 +5,7 @@ export type TChapter = {
   course: "8" | "9" | "10" | "11" | "12" | "JEE" | "NEET";
   subject: string;
   title: string;
+  book: string
 };
 
 export const ChapterSchema = new mongoose.Schema(

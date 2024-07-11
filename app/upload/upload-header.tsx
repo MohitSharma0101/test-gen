@@ -8,6 +8,7 @@ import { TChapter } from "@/models/Chapter";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Loader2Icon } from "lucide-react";
+import useBooks from "@/hooks/useBooks";
 
 type Props = {
   totalQuestion?: number;
@@ -17,7 +18,9 @@ type Props = {
 const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
   const [course, setCourse] = useState(COURSES[0]);
   const [subject, setSubject] = useState("");
-  const { chapters } = useChapters(subject, course);
+  const [book, setBook] = useState("");
+  const { books } = useBooks();
+  const { chapters } = useChapters(subject, course, book);
   const [chapter, setChapter] = useState("");
   const [marks, setMarks] = useState("1");
   const [loading, setLoading] = useState(false);
@@ -39,6 +42,7 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
           label="Subject"
           placeholder="Select a subject"
           className="w-[300px]"
+          emptyState="Select a Class first"
           value={subject}
           onChange={setSubject}
           options={SUBJECT_MAP[course].map((c) => ({
@@ -47,11 +51,23 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
           }))}
         />
         <SelectCompact
+          label="Book"
+          placeholder="Select a book"
+          className="w-[300px]"
+          value={book}
+          onChange={setBook}
+          options={books.map((b) => ({
+            label: b.title,
+            value: b._id,
+          }))}
+        />
+        <SelectCompact
           label="Chapter"
           placeholder="Select a chapter"
           className="w-[300px]"
           value={chapter}
           onChange={setChapter}
+          emptyState="Select a Book first"
           options={
             chapters?.map((c: TChapter) => ({
               label: c.title,

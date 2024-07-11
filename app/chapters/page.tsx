@@ -10,23 +10,26 @@ import { TChapter } from "@/models/Chapter";
 import { InboxIcon } from "lucide-react";
 import React, { useState } from "react";
 import ChapterItem from "./chapter-item";
+import useBooks from "@/hooks/useBooks";
 
 type Props = {};
 
 const ChaptersPage = (props: Props) => {
   const [course, setCourse] = useState(COURSES[0]);
   const [subject, setSubject] = useState("");
+  const { books } = useBooks();
+  const [book, setBook] = useState("");
   const {
     chapters,
     loading: chaptersLoading,
     addChapter,
     deleteChapter,
     updateChapter,
-  } = useChapters(subject, course);
+  } = useChapters(subject, course, book);
   const [chapterTitle, setChapterTitle] = useState("");
 
   const onAddChapter = async () => {
-    await addChapter(chapterTitle);
+    await addChapter(chapterTitle, book);
     setChapterTitle("");
   };
 
@@ -38,7 +41,7 @@ const ChaptersPage = (props: Props) => {
     <div className="p-6">
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1">
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-2">
             <SelectCompact
               label="Class"
               placeholder="Select a class"
@@ -61,6 +64,17 @@ const ChaptersPage = (props: Props) => {
                 value: c,
               }))}
             />
+            <SelectCompact
+              label="Book"
+              placeholder="Select a book"
+              className="w-full"
+              value={book}
+              onChange={setBook}
+              options={books?.map((b) => ({
+                label: b.title,
+                value: b._id,
+              }))}
+            />
           </div>
           <div className="mt-2">
             <p className="mb-2 ml-1 text-sm">Chapter Title</p>
@@ -76,7 +90,7 @@ const ChaptersPage = (props: Props) => {
               }}
               placeholder="Enter chapter title..."
             />
-            <Button className="mt-2" onClick={onAddChapter}>
+            <Button className="mt-4" onClick={onAddChapter}>
               Add Chapter
             </Button>
           </div>

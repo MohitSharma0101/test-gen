@@ -5,13 +5,15 @@ import { api, ENDPOINT } from "@/lib/api";
 import { fetchChapters } from "@/service/core.service";
 import useSWR from "swr";
 
-const useChapters = (subject?: string, course?: string) => {
+const useChapters = (subject?: string, course?: string, book?: string) => {
   const cache =
-    !course || !subject ? null : ENDPOINT.chapters + subject + course;
+    !course || !subject || !book
+      ? null
+      : ENDPOINT.chapters + subject + course + book;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
-      return await fetchChapters(subject, course);
+      return await fetchChapters(subject, course, book);
     },
     {
       revalidateIfStale: false,
@@ -23,7 +25,7 @@ const useChapters = (subject?: string, course?: string) => {
   const loading = isLoading || isValidating;
   const refresh = () => mutate();
 
-  const addChapter = async (title: string) => {
+  const addChapter = async (title: string, book: string) => {
     try {
       if (!course || !subject) {
         throw new Error("Please select a course and subject to add a chapter!");
@@ -35,6 +37,7 @@ const useChapters = (subject?: string, course?: string) => {
         subject,
         course,
         title: title,
+        book: book,
       });
       refresh();
       toast({

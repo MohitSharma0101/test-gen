@@ -2,6 +2,7 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
+import { TBook } from "@/models/Book";
 import { fetchBooks } from "@/service/core.service";
 import useSWR from "swr";
 
@@ -18,7 +19,7 @@ const useBooks = () => {
       errorRetryCount: 1,
     }
   );
-  const books = data;
+  const books = (data || []) as TBook[];
   const loading = isLoading || isValidating;
   const refresh = () => mutate();
 

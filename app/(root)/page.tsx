@@ -25,12 +25,19 @@ import TimesUsed from "@/components/ui/times-used";
 import RandomInput from "@/components/ui/random-input";
 import FilterSelect from "@/components/ui/filter-select";
 import Markdown from "@/components/ui/markdown";
+import useBooks from "@/hooks/useBooks";
 
 export default function Home() {
   const [course, setCourse] = useState(COURSES[5]);
   const [subject, setSubject] = useState("");
+  const [book, setBook] = useState("");
+  const { books } = useBooks();
 
-  const { chapters, loading: chaptersLoading } = useChapters(subject, course);
+  const { chapters, loading: chaptersLoading } = useChapters(
+    subject,
+    course,
+    book
+  );
   const [selectedChapter, setSelectedChapter] = useState<TChapter | null>();
   const {
     questions,
@@ -53,8 +60,8 @@ export default function Home() {
 
   return (
     <div className="text-primary">
-      <div className="px-6 py-3 flex flex-col lg:flex-row gap-6">
-        <div className="flex gap-6">
+      <div className="px-6 pt-2 pb-4 flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-wrap gap-2 md:gap-4">
           <SelectCompact
             label="Class"
             placeholder="Select a class"
@@ -70,11 +77,23 @@ export default function Home() {
             label="Subject"
             placeholder="Select a subject"
             className="w-[300px]"
+            emptyState="Select a Class first"
             value={subject}
             onChange={setSubject}
             options={SUBJECT_MAP[course].map((c) => ({
               label: c,
               value: c,
+            }))}
+          />
+          <SelectCompact
+            label="Book"
+            placeholder="Select a book"
+            className="w-[300px]"
+            value={book}
+            onChange={setBook}
+            options={books.map((b) => ({
+              label: b.title,
+              value: b._id,
             }))}
           />
         </div>
@@ -336,8 +355,7 @@ export default function Home() {
                     <div>
                       <Markdown text={q.text ?? ""} />
                       <div className="flex gap-2 items-start [&_#preview]:!py-0">
-                        <strong>Ans:</strong>{" "}
-                        <Markdown text={q.ans || ""} />
+                        <strong>Ans:</strong> <Markdown text={q.ans || ""} />
                       </div>
                     </div>
                     <span className="pt-[10px] px-2 font-medium ml-auto">

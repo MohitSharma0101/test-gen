@@ -26,12 +26,17 @@ export const fetchQuestions = async (
   ).data as TFetchQuestionsResponse;
 };
 
-export const fetchChapters = async (subject?: string, course?: string) => {
+export const fetchChapters = async (
+  subject?: string,
+  course?: string,
+  book?: string
+) => {
   return (
     await api.get(ENDPOINT.chapters, {
       params: {
         subject,
         course,
+        book,
       },
     })
   ).data.chapters;

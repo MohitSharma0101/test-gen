@@ -8,10 +8,12 @@ export const GET = async (request: NextRequest) => {
     const searchParams = request.nextUrl.searchParams;
     const course = searchParams.get("course");
     const subject = searchParams.get("subject");
+    const book = searchParams.get("book");
 
     const query: any = {};
     if (course) query.course = course;
     if (subject) query.subject = subject;
+    if (book) query.book = book;
 
     await dbConnect();
     const chapters = await Chapter.find(query);
@@ -30,9 +32,9 @@ export const GET = async (request: NextRequest) => {
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { course, subject, title } = (await request.json()) as TChapter;
+    const { course, subject, title, book } = (await request.json()) as TChapter;
 
-    if (!course || !subject || !title) {
+    if (!course || !subject || !title || !book) {
       return NextResponse.json(
         {
           status: "error",
@@ -44,7 +46,7 @@ export const POST = async (request: NextRequest) => {
 
     await dbConnect();
 
-    const newChapter = new Chapter({ course, subject, title });
+    const newChapter = new Chapter({ course, subject, title, book });
 
     await newChapter.save();
 

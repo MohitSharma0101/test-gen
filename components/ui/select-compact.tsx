@@ -17,6 +17,7 @@ export type TSelectCompactProps = {
   value?: string;
   label?: string;
   onChange?: (value: string) => void;
+  emptyState?: string;
 };
 
 const SelectCompact = ({
@@ -26,6 +27,7 @@ const SelectCompact = ({
   value,
   label,
   onChange,
+  emptyState,
 }: TSelectCompactProps) => {
   return (
     <div className={className}>
@@ -35,11 +37,15 @@ const SelectCompact = ({
           <SelectValue placeholder={placeholder || "Select a value"} />
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
+          {options.length === 0 ? (
+            <p className="text-sm font-medium p-2 text-slate-600">{emptyState || 'Nothing to select!'}</p>
+          ) : (
+            options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
     </div>
