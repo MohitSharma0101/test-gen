@@ -5,7 +5,7 @@ import Link from "next/link";
 import React from "react";
 
 type Props = {
-  active: "create" | "upload" | "chapter";
+  active: "create" | "upload" | "chapter" | "book";
 };
 
 const Header = ({ active }: Props) => {

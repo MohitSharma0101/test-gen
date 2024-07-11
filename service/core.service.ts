@@ -20,7 +20,7 @@ export const fetchQuestions = async (
         chapter: chapter,
         page: page || 1,
         limit: limit,
-        marks: marks
+        marks: marks,
       },
     })
   ).data as TFetchQuestionsResponse;
@@ -41,4 +41,8 @@ export const uploadQuestionsInBatch = async (questions: TQuestion[]) => {
   return await api.post(ENDPOINT.bulkUploadQuestion, {
     questions: questions,
   });
+};
+
+export const fetchBooks = async () => {
+  return (await api.get(ENDPOINT.books)).data.books;
 };

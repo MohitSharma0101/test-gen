@@ -17,6 +17,11 @@ export const ChapterSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    book: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Book",
+      required: true,
+    },
     title: {
       type: String,
       required: true,

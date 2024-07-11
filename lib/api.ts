@@ -4,6 +4,7 @@ export const ENDPOINT = {
     bulkUploadQuestion: 'bulk/question',
     questions: 'question',
     chapters: 'chapter',
+    books: 'books', 
     questionsUsed: 'questions/used'
 }
 
