@@ -1,3 +1,4 @@
+import type { SubjectQuestions, TQuestion } from "@/models/Question";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -29,16 +30,52 @@ export function getRandomItems<T>(arr: T[], numItems?: number): T[] {
   return shuffled.slice(0, length);
 }
 
-export function addQueryToUrl(url: string, key: string, value: string | number): string {
+export function addQueryToUrl(
+  url: string,
+  key: string,
+  value: string | number
+): string {
   // Check if the URL already has a query string
-  const separator = url.includes('?') ? '&' : '?';
-  
+  const separator = url.includes("?") ? "&" : "?";
+
   // Encode the key and value
   const encodedKey = encodeURIComponent(key);
   const encodedValue = encodeURIComponent(value);
-  
+
   // Construct the new URL with the added query parameter
   const updatedUrl = `${url}${separator}${encodedKey}=${encodedValue}`;
-  
+
   return updatedUrl;
+}
+
+export function segregateQuestionsBySubject(
+  questions: TQuestion[]
+): SubjectQuestions[] {
+  const subjectMap = questions.reduce((acc, question, index) => {
+    let subject: string | undefined;
+
+    if (typeof question.chapter === "string") {
+      subject = "Unknown Subject";
+    } else if (question.chapter && question.chapter.subject) {
+      subject = question.chapter.subject;
+    } else {
+      subject = "Unknown Subject";
+    }
+
+    // Add continuous index to each question
+    question.index = index + 1;
+
+    if (!acc[subject]) {
+      acc[subject] = [];
+    }
+
+    acc[subject].push(question);
+
+    return acc;
+  }, {} as { [subject: string]: TQuestion[] });
+
+  return Object.keys(subjectMap).map((subject) => ({
+    subject,
+    questions: subjectMap[subject],
+  }));
 }

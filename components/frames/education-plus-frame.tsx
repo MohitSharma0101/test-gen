@@ -40,7 +40,9 @@ const EducationPlusFrame = ({
                       DATE: {today.toLocaleDateString()}
                     </span>
                     <span>CLASS: {course}</span>
-                    <span className="uppercase">SUBJECT: {subject}</span>
+                    {subject && (
+                      <span className="uppercase">SUBJECT: {subject}</span>
+                    )}
                     <span>NAME:</span>
                   </div>
                 </div>

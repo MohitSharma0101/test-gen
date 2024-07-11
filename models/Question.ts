@@ -1,12 +1,19 @@
 import mongoose from "mongoose";
+import { TChapter } from "./Chapter";
 
 export type TQuestion = {
   _id?: string;
   text?: string;
   ans?: string;
-  chapter?: string;
+  chapter?: string | TChapter;
   mark?: number;
   timesUsed?: number;
+  index?: number;
+};
+
+export type SubjectQuestions = {
+  subject: string;
+  questions: TQuestion[];
 };
 
 export const QuestionSchema = new mongoose.Schema(
