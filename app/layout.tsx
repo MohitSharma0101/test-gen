@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Lato } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import PageProgressProvider from "@/provider/PageProgressProvider";
 
 const lato = Lato({
   subsets: ["latin"],
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body className={`${lato.className} bg-gray-100 print:hidden`}>
         {children}
         <Toaster />
+        <PageProgressProvider />
       </body>
     </html>
   );
