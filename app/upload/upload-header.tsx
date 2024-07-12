@@ -19,8 +19,12 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
   const [course, setCourse] = useState(COURSES[0]);
   const [subject, setSubject] = useState("");
   const [book, setBook] = useState("");
-  const { books } = useBooks(subject, course);
-  const { chapters } = useChapters(subject, course, book);
+  const { books, loading: booksLoading } = useBooks(subject, course);
+  const { chapters, loading: chaptersLoading } = useChapters(
+    subject,
+    course,
+    book
+  );
   const [chapter, setChapter] = useState("");
   const [marks, setMarks] = useState("1");
   const [loading, setLoading] = useState(false);
@@ -60,6 +64,7 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
             label: b.title,
             value: b._id,
           }))}
+          loading={booksLoading}
         />
         <SelectCompact
           label="Chapter"
@@ -74,6 +79,7 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
               value: c._id,
             })) ?? []
           }
+          loading={chaptersLoading}
         />
         <SelectCompact
           label="Marks"

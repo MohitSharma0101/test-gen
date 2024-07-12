@@ -17,7 +17,7 @@ type Props = {};
 const ChaptersPage = (props: Props) => {
   const [course, setCourse] = useState(COURSES[0]);
   const [subject, setSubject] = useState("");
-  const { books } = useBooks(subject, course);
+  const { books, loading: booksLoading } = useBooks(subject, course);
   const [book, setBook] = useState("");
   const {
     chapters,
@@ -74,6 +74,7 @@ const ChaptersPage = (props: Props) => {
                 label: b.title,
                 value: b._id,
               }))}
+              loading={booksLoading}
             />
           </div>
           <div className="mt-2">
