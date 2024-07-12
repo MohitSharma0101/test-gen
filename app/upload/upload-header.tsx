@@ -19,7 +19,7 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
   const [course, setCourse] = useState(COURSES[0]);
   const [subject, setSubject] = useState("");
   const [book, setBook] = useState("");
-  const { books } = useBooks();
+  const { books } = useBooks(subject, course);
   const { chapters } = useChapters(subject, course, book);
   const [chapter, setChapter] = useState("");
   const [marks, setMarks] = useState("1");

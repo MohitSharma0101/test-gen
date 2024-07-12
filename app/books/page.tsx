@@ -8,11 +8,15 @@ import { InboxIcon } from "lucide-react";
 import React, { useState } from "react";
 import BookItem from "./book-item";
 import useBooks from "@/hooks/useBooks";
+import SelectCompact from "@/components/ui/select-compact";
+import { COURSES, SUBJECT_MAP } from "@/data/const";
 
 type Props = {};
 
 const BooksPage = (props: Props) => {
-  const { books, loading, addBook, deleteBook, updateBook } = useBooks();
+  const [course, setCourse] = useState(COURSES[0]);
+  const [subject, setSubject] = useState("");
+  const { books, loading, addBook, deleteBook, updateBook } = useBooks(subject, course);
   const [chapterTitle, setBookTitle] = useState("");
 
   const onAddBook = async () => {
@@ -28,7 +32,31 @@ const BooksPage = (props: Props) => {
     <div className="p-6">
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1">
-          <div className="mt-2">
+        <div className="flex gap-2">
+            <SelectCompact
+              label="Class"
+              placeholder="Select a class"
+              className="w-full"
+              value={course}
+              onChange={setCourse}
+              options={COURSES.map((c) => ({
+                label: c,
+                value: c,
+              }))}
+            />
+            <SelectCompact
+              label="Subject"
+              placeholder="Select a subject"
+              className="w-full"
+              value={subject}
+              onChange={setSubject}
+              options={SUBJECT_MAP[course].map((c) => ({
+                label: c,
+                value: c,
+              }))}
+            />
+          </div>
+          <div className="mt-2 flex-1">
             <p className="mb-2 ml-1 text-sm">Book Title</p>
             <Input
               value={chapterTitle}
@@ -42,7 +70,7 @@ const BooksPage = (props: Props) => {
               }}
               placeholder="Enter book title..."
             />
-            <Button className="mt-2" onClick={onAddBook}>
+            <Button className="mt-4" onClick={onAddBook}>
               Add Book
             </Button>
           </div>

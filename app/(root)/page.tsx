@@ -31,7 +31,7 @@ export default function Home() {
   const [course, setCourse] = useState(COURSES[5]);
   const [subject, setSubject] = useState("");
   const [book, setBook] = useState("");
-  const { books } = useBooks();
+  const { books } = useBooks(subject, course);
 
   const { chapters, loading: chaptersLoading } = useChapters(
     subject,
@@ -265,7 +265,10 @@ export default function Home() {
             {totalPages ? <Pagination totalPages={totalPages} /> : null}
             <RandomInput
               onSubmit={(random) => {
-                setSelectedQuestions(getRandomItems(questions, random));
+                setSelectedQuestions([
+                  ...selectedQuestions,
+                  ...getRandomItems(questions, random),
+                ]);
               }}
             />
             <Button
