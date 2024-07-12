@@ -12,6 +12,7 @@ import { startTransition, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   CheckCheckIcon,
+  CloudUploadIcon,
   Columns2Icon,
   InboxIcon,
   MenuIcon,
@@ -26,6 +27,7 @@ import RandomInput from "@/components/ui/random-input";
 import FilterSelect from "@/components/ui/filter-select";
 import Markdown from "@/components/ui/markdown";
 import useBooks from "@/hooks/useBooks";
+import { savePaper } from "@/service/core.service";
 
 export default function Home() {
   const [course, setCourse] = useState(COURSES[5]);
@@ -111,9 +113,23 @@ export default function Home() {
               )}
             </strong>
           </p>
+          <Button
+            disabled={selectedQuestions.length === 0}
+            variant={"outline"}
+            onClick={() => {
+              savePaper(`${course}-${subject}`, selectedQuestions);
+            }}
+          >
+            <CloudUploadIcon className="w-4 h-4 mr-2" /> Save
+          </Button>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant={"outline"}>Preview</Button>
+              <Button
+                disabled={selectedQuestions.length === 0}
+                variant={"outline"}
+              >
+                Preview
+              </Button>
             </SheetTrigger>
             <SheetContent
               side={"bottom"}
@@ -127,6 +143,7 @@ export default function Home() {
                       updateUsage(selectedQuestions);
                     });
                   }}
+                  disabled={selectedQuestions.length === 0}
                 >
                   Print
                 </PrintTrigger>
@@ -265,7 +282,10 @@ export default function Home() {
             {totalPages ? <Pagination totalPages={totalPages} /> : null}
             <RandomInput
               onSubmit={(random) => {
-                setSelectedQuestions(getRandomItems(questions, random));
+                setSelectedQuestions([
+                  ...selectedQuestions,
+                  ...getRandomItems(questions, random),
+                ]);
               }}
             />
             <Button

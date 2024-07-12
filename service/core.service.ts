@@ -1,3 +1,4 @@
+import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
 import { TQuestion } from "@/models/Question";
 
@@ -50,4 +51,28 @@ export const uploadQuestionsInBatch = async (questions: TQuestion[]) => {
 
 export const fetchBooks = async () => {
   return (await api.get(ENDPOINT.books)).data.books;
+};
+
+export const fetchPapers = async () => {
+  return (await api.get(ENDPOINT.papers)).data.papers;
+};
+
+export const savePaper = async (title: string, questions: TQuestion[]) => {
+  if(questions.length === 0) return;
+  try {
+    await api.post(ENDPOINT.papers, {
+      title,
+      questions,
+    });
+    toast({
+      title: "💾 Question Paper saved!",
+      variant: "success",
+    });
+  } catch (err) {
+    toast({
+      title: "Unable to save question paper!",
+      variant: "destructive",
+    });
+    console.log(err);
+  }
 };

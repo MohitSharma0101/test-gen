@@ -4,6 +4,7 @@ import {
   FilePenLineIcon,
   FileUpIcon,
   MenuIcon,
+  NewspaperIcon,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -56,13 +57,19 @@ const Header = ({ active }: Props) => {
           <DropdownMenuItem asChild>
             <Link href={"/chapters"} className="cursor-pointer">
               <BookOpenTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />
-              Manage Chapters
+              Chapters
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={"/books"} className="cursor-pointer">
               <BookTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />
-              Manage Books
+              Books
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={"/papers"} className="cursor-pointer">
+              <NewspaperIcon className="w-5 h-5 mr-2" strokeWidth={2} />
+              Papers
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>

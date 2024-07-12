@@ -5,6 +5,7 @@ export const ENDPOINT = {
     questions: 'question',
     chapters: 'chapter',
     books: 'books', 
+    papers: 'papers',
     questionsUsed: 'questions/used'
 }
 

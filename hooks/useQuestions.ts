@@ -35,6 +35,7 @@ const useQuestions = (chapter?: string) => {
   const lastIndex = (page - 1) * limit;
 
   const updateUsage = async (questions: TQuestion[]) => {
+    if (questions.length === 0) return;
     try {
       await api.post(ENDPOINT.questionsUsed, {
         questions,
