@@ -5,13 +5,18 @@ import { Skeleton } from "./skeleton";
 
 const MathpixMarkdown = dynamic(
   () => import("mathpix-markdown-it").then((comp) => comp.MathpixMarkdown),
-  { ssr: false, loading: () => (
-    <Skeleton className="w-[100px] h-[100px]" />
-  )}
+  { ssr: false, loading: () => <Skeleton className="w-[100px] h-[100px]" /> }
 );
 
 const Markdown = (props: MathpixMarkdownProps) => {
-  return <MathpixMarkdown {...props} />;
+  return (
+    <MathpixMarkdown
+      outMath={{
+        include_table_html: true,
+      }}
+      {...props}
+    />
+  );
 };
 
 export default memo(Markdown);

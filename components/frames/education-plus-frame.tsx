@@ -54,7 +54,7 @@ const EducationPlusFrame = ({
         <tbody className="report-content">
           <tr>
             <td className="report-content-cell">
-              <div className="">{children}</div>
+              <div>{children}</div>
             </td>
           </tr>
         </tbody>
