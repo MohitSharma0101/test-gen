@@ -70,7 +70,7 @@
   }
 }
 
-@page{
+@page {
   margin: 0;
 }
 
@@ -88,4 +88,8 @@ thead.report-header {
 }
 tfoot.report-footer {
   display: table-footer-group;
+}
+
+#preview svg {
+  width: 100%;
 }

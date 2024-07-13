@@ -2,16 +2,16 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
-import { TBook } from "@/models/Book";
+import type { TBook } from "@/models/Book";
 import { fetchBooks } from "@/service/core.service";
 import useSWR from "swr";
 
-const useBooks = () => {
-  const cache = ENDPOINT.books;
+const useBooks = (subject?: string, course?: string) => {
+  const cache = !course || !subject ? null : ENDPOINT.books + subject + course;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
-      return await fetchBooks();
+      return await fetchBooks(subject, course);
     },
     {
       revalidateIfStale: false,
@@ -25,10 +25,15 @@ const useBooks = () => {
 
   const addBook = async (title: string) => {
     try {
+      if (!course || !subject) {
+        throw new Error("Please select a course and subject to add a book!");
+      }
       if (!title) {
-        throw new Error("Please add a chapter title!");
+        throw new Error("Please add a book title!");
       }
       await api.post(ENDPOINT.books, {
+        subject,
+        course,
         title: title,
       });
       refresh();
@@ -48,7 +53,7 @@ const useBooks = () => {
   const updateBook = async (id: string, title: string) => {
     try {
       if (!title) {
-        throw new Error("Please add a chapter title!");
+        throw new Error("Please add a book title!");
       }
       await api.put(ENDPOINT.books, {
         id,
@@ -60,7 +65,7 @@ const useBooks = () => {
       });
     } catch (err) {
       toast({
-        title: (err as any)?.message || "Unable to book chapter!",
+        title: (err as any)?.message || "Unable to update book!",
         variant: "destructive",
       });
       console.log("err", err);
@@ -81,12 +86,12 @@ const useBooks = () => {
       });
       refresh();
       toast({
-        title: "Successfully deleted chapter!",
+        title: "Successfully deleted book!",
         variant: "success",
       });
     } catch (err) {
       toast({
-        title: (err as any)?.message || "Unable to add chapter!",
+        title: (err as any)?.message || "Unable to add book!",
         variant: "destructive",
       });
       console.log("err", err);

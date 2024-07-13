@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./select";
+import { Skeleton } from "./skeleton";
 
 export type TSelectCompactProps = {
   placeholder?: string;
@@ -18,6 +19,7 @@ export type TSelectCompactProps = {
   label?: string;
   onChange?: (value: string) => void;
   emptyState?: string;
+  loading?: boolean
 };
 
 const SelectCompact = ({
@@ -28,6 +30,7 @@ const SelectCompact = ({
   label,
   onChange,
   emptyState,
+  loading
 }: TSelectCompactProps) => {
   return (
     <div className={className}>
@@ -37,7 +40,12 @@ const SelectCompact = ({
           <SelectValue placeholder={placeholder || "Select a value"} />
         </SelectTrigger>
         <SelectContent>
-          {options.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col gap-2 p-1">
+              <Skeleton className="w-full h-6"/>
+              <Skeleton className="w-full h-6"/>
+            </div>
+          ) : options.length === 0 ? (
             <p className="text-sm font-medium p-2 text-slate-600">{emptyState || 'Nothing to select!'}</p>
           ) : (
             options.map((option) => (

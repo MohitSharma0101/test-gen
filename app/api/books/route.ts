@@ -4,8 +4,16 @@ import Book, { TBook } from "@/models/Book";
 
 export const GET = async (request: NextRequest) => {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const course = searchParams.get("course");
+    const subject = searchParams.get("subject");
+
+    const query: any = {};
+    if (course) query.course = course;
+    if (subject) query.subject = subject;
+
     await dbConnect();
-    const books = await Book.find();
+    const books = await Book.find(query);
 
     return NextResponse.json(
       { status: "success", books: books },
@@ -21,9 +29,9 @@ export const GET = async (request: NextRequest) => {
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { title } = (await request.json()) as TBook;
+    const { title, course, subject } = (await request.json()) as TBook;
 
-    if (!title) {
+    if (!course || !subject || !title) {
       return NextResponse.json(
         {
           status: "error",
@@ -35,7 +43,7 @@ export const POST = async (request: NextRequest) => {
 
     await dbConnect();
 
-    const newBook = new Book({ title });
+    const newBook = new Book({ title, subject, course });
 
     await newBook.save();
 

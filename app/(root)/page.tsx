@@ -33,7 +33,7 @@ export default function Home() {
   const [course, setCourse] = useState(COURSES[5]);
   const [subject, setSubject] = useState("");
   const [book, setBook] = useState("");
-  const { books } = useBooks();
+  const { books, loading:booksLoading } = useBooks(subject, course);
 
   const { chapters, loading: chaptersLoading } = useChapters(
     subject,
@@ -97,6 +97,7 @@ export default function Home() {
               label: b.title,
               value: b._id,
             }))}
+            loading={booksLoading}
           />
         </div>
 

@@ -49,8 +49,15 @@ export const uploadQuestionsInBatch = async (questions: TQuestion[]) => {
   });
 };
 
-export const fetchBooks = async () => {
-  return (await api.get(ENDPOINT.books)).data.books;
+export const fetchBooks = async (subject?: string, course?: string) => {
+  return (
+    await api.get(ENDPOINT.books, {
+      params: {
+        subject,
+        course,
+      },
+    })
+  ).data.books;
 };
 
 export const fetchPapers = async () => {

@@ -17,7 +17,7 @@ type Props = {};
 const ChaptersPage = (props: Props) => {
   const [course, setCourse] = useState(COURSES[0]);
   const [subject, setSubject] = useState("");
-  const { books } = useBooks();
+  const { books, loading: booksLoading } = useBooks(subject, course);
   const [book, setBook] = useState("");
   const {
     chapters,
@@ -41,11 +41,11 @@ const ChaptersPage = (props: Props) => {
     <div className="p-6">
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1">
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 w-full">
             <SelectCompact
               label="Class"
               placeholder="Select a class"
-              className="w-full "
+              className="w-full"
               value={course}
               onChange={setCourse}
               options={COURSES.map((c) => ({
@@ -67,13 +67,14 @@ const ChaptersPage = (props: Props) => {
             <SelectCompact
               label="Book"
               placeholder="Select a book"
-              className="w-full"
+              className="w-full col-span-2"
               value={book}
               onChange={setBook}
               options={books?.map((b) => ({
                 label: b.title,
                 value: b._id,
               }))}
+              loading={booksLoading}
             />
           </div>
           <div className="mt-2">
