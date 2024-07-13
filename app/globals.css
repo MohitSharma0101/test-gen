@@ -92,4 +92,6 @@ tfoot.report-footer {
 
 #preview svg {
   width: 100%;
+  display: inline-block;
+  vertical-align: bottom;
 }
