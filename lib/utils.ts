@@ -79,3 +79,11 @@ export function segregateQuestionsBySubject(
     questions: subjectMap[subject],
   }));
 }
+
+export const getTotalMarks = (questions: TQuestion[]) =>
+  questions.reduce((sum, item) => sum + (item.mark || 1), 0);
+
+export const getDateFromISO = (isoDate: string) => {
+  const date = new Date(isoDate);
+  return date.toLocaleDateString();
+};

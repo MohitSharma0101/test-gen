@@ -65,7 +65,7 @@ export const fetchPapers = async () => {
 };
 
 export const savePaper = async (title: string, questions: TQuestion[]) => {
-  if(questions.length === 0) return;
+  if (questions.length === 0) return;
   try {
     await api.post(ENDPOINT.papers, {
       title,
@@ -82,4 +82,10 @@ export const savePaper = async (title: string, questions: TQuestion[]) => {
     });
     console.log(err);
   }
+};
+
+export const postUpdateUsage = async (questions: TQuestion[]) => {
+  return await api.post(ENDPOINT.questionsUsed, {
+    questions,
+  });
 };

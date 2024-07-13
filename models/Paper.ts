@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
-import { QuestionSchema, TQuestion } from "./Question";
+import { TQuestion } from "./Question";
 
 export type TPaper = {
   _id: string;
   title: string;
-  questions: TQuestion[]
+  questions: TQuestion[];
+  createdAt: string,
+  updatedAt: string,
 };
 
 export const PaperSchema = new mongoose.Schema(

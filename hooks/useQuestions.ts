@@ -1,8 +1,8 @@
 "use client";
 
-import { api, ENDPOINT } from "@/lib/api";
-import { TQuestion } from "@/models/Question";
-import { fetchQuestions } from "@/service/core.service";
+import { ENDPOINT } from "@/lib/api";
+import type { TQuestion } from "@/models/Question";
+import { fetchQuestions, postUpdateUsage } from "@/service/core.service";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
@@ -37,9 +37,7 @@ const useQuestions = (chapter?: string) => {
   const updateUsage = async (questions: TQuestion[]) => {
     if (questions.length === 0) return;
     try {
-      await api.post(ENDPOINT.questionsUsed, {
-        questions,
-      });
+      await postUpdateUsage(questions);
       refresh();
     } catch (err) {
       console.log(err);

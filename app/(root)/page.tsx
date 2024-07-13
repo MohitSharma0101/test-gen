@@ -6,8 +6,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { COURSES, SUBJECT_MAP } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import useQuestions from "@/hooks/useQuestions";
-import { TChapter } from "@/models/Chapter";
-import { TQuestion } from "@/models/Question";
+import type { TChapter } from "@/models/Chapter";
+import type { TQuestion } from "@/models/Question";
 import { startTransition, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,7 @@ import {
   InboxIcon,
   MenuIcon,
 } from "lucide-react";
-import { cn, getRandomItems } from "@/lib/utils";
+import { cn, getRandomItems, getTotalMarks } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
 import PaperFrame from "@/components/ui/paper-frame";
@@ -27,12 +27,13 @@ import FilterSelect from "@/components/ui/filter-select";
 import Markdown from "@/components/ui/markdown";
 import useBooks from "@/hooks/useBooks";
 import SavePaperButton from "@/components/ui/save-paper-button";
+import PreviewButton from "@/components/ui/preview-button";
 
 export default function Home() {
   const [course, setCourse] = useState(COURSES[5]);
   const [subject, setSubject] = useState("");
   const [book, setBook] = useState("");
-  const { books, loading:booksLoading } = useBooks(subject, course);
+  const { books, loading: booksLoading } = useBooks(subject, course);
 
   const { chapters, loading: chaptersLoading } = useChapters(
     subject,
@@ -100,76 +101,43 @@ export default function Home() {
           />
         </div>
 
-        <div className="flex gap-4 ml-auto items-center whitespace-nowrap">
-          <p>
-            Selected Questions:{" "}
-            <strong>{selectedQuestions?.length || 0}</strong>
-            <br />
-            Total Marks:{" "}
-            <strong>
-              {selectedQuestions.reduce(
-                (sum, item) => sum + (item.mark || 1),
-                0
-              )}
-            </strong>
-          </p>
-          <SavePaperButton questions={selectedQuestions} />
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                disabled={selectedQuestions.length === 0}
-                variant={"outline"}
+        <div className="flex flex-wrap gap-4 ml-auto justify-end items-center whitespace-nowrap">
+          <div className="flex md:flex-col gap-2 md:gap-0">
+            <p>
+              Selected Questions:{" "}
+              <strong>{selectedQuestions?.length || 0}</strong>
+            </p>
+            <p>
+              Total Marks: <strong>{getTotalMarks(selectedQuestions)}</strong>
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <SavePaperButton questions={selectedQuestions} />
+            <PreviewButton
+              questions={selectedQuestions}
+              onPrint={() => updateUsage(selectedQuestions)}
+            />
+            <Print>
+              <PrintTrigger
+                className="px-6"
+                onClick={async () => {
+                  startTransition(() => {
+                    updateUsage(selectedQuestions);
+                  });
+                }}
               >
-                Preview
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side={"bottom"}
-              className="max-h-[80svh] m-auto rounded max-w-screen-lg overflow-scroll scrollbar-hide"
-            >
-              <Print>
-                <PrintTrigger
-                  className="px-6"
-                  onClick={() => {
-                    startTransition(() => {
-                      updateUsage(selectedQuestions);
-                    });
-                  }}
-                  disabled={selectedQuestions.length === 0}
-                >
-                  Print
-                </PrintTrigger>
-                <PrintContent className="block">
-                  <PaperFrame
-                    questions={selectedQuestions}
-                    twoColumn={twoColumn}
-                    course={course}
-                    subject={subject}
-                  />
-                </PrintContent>
-              </Print>
-            </SheetContent>
-          </Sheet>
-          <Print>
-            <PrintTrigger
-              className="px-6"
-              onClick={async () => {
-                startTransition(() => {
-                  updateUsage(selectedQuestions);
-                });
-              }}
-            >
-              Print
-            </PrintTrigger>
-            <PrintContent>
-              <PaperFrame
-                questions={selectedQuestions}
-                twoColumn={twoColumn}
-                course={course}
-                subject={subject}
-              />
-            </PrintContent>
-          </Print>
+                Print
+              </PrintTrigger>
+              <PrintContent>
+                <PaperFrame
+                  questions={selectedQuestions}
+                  twoColumn={twoColumn}
+                  course={course}
+                  subject={subject}
+                />
+              </PrintContent>
+            </Print>
+          </div>
         </div>
       </div>
 
