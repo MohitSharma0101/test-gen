@@ -13,15 +13,15 @@ export const GET = async (request: NextRequest) => {
     const query: any = {
       chapter: chapter,
     };
-    if(marks) query.marks = marks;
+    if (marks) query.marks = marks;
     // if (chapter) query.chapter = chapter;
 
     await dbConnect();
 
     const questions = await Question.find(query)
-      .limit(limit * 1)
+      .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
-      .sort({ timesUsed: 1 })
+      .limit(limit * 1)
       .populate("chapter", {
         subject: 1,
         course: 1,

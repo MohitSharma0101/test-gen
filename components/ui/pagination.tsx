@@ -1,14 +1,11 @@
 import React, { Suspense } from "react";
 import { Button } from "./button";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  CircleEllipsisIcon,
 } from "lucide-react";
 import SelectCompact from "./select-compact";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
-import { addQueryToUrl } from "@/lib/utils";
 
 type Props = {
   totalPages?: Number;
@@ -19,18 +16,17 @@ const Pagination = ({ totalPages }: Props) => {
   const page = Number(searchParams.get("page") || 1);
   const limit = Number(searchParams.get("limit") || 50);
   const router = useRouter();
-  const pathname = usePathname();
 
   const onNext = () => {
-    router.push(addQueryToUrl(pathname, "page", page + 1));
+    router.push("?page=" + (page + 1) + "&limit=" + limit);
   };
 
   const onPrev = () => {
-    router.push(addQueryToUrl(pathname, "page", page - 1));
+    router.push("?page=" + (page - 1) + "&limit=" + limit);
   };
 
   const onLimitChange = (newLimit: string) => {
-    router.push(addQueryToUrl(pathname, "limit", newLimit));
+    router.push("?page=" + page + "&limit=" + newLimit);
   };
 
   return (
@@ -52,7 +48,18 @@ const Pagination = ({ totalPages }: Props) => {
       >
         <ChevronRightIcon className="w-4 h-4" />
       </Button>
-      <Popover>
+      <SelectCompact
+        className="w-fit"
+        value={limit.toString()}
+        placeholder=""
+        options={[10, 30, 50, 100, 150, 200].map((item) => ({
+          label: item + " item",
+          value: item.toString(),
+        }))}
+        onChange={onLimitChange}
+        triggerClassName="h-9"
+      />
+      {/* <Popover>
         <PopoverTrigger>
           <CircleEllipsisIcon className="w-4 h-4" />
         </PopoverTrigger>
@@ -71,7 +78,7 @@ const Pagination = ({ totalPages }: Props) => {
             />
           </div>
         </PopoverContent>
-      </Popover>
+      </Popover> */}
     </div>
   );
 };

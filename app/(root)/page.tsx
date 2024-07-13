@@ -20,6 +20,7 @@ import {
   cn,
   getRandomItems,
   getTotalMarks,
+  getUniqueElementsById,
   isArrayIncluded,
   removeElementsById,
 } from "@/lib/utils";
@@ -232,26 +233,39 @@ export default function Home() {
             <p className="whitespace-nowrap">
               QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}
             </p>
-            <Button
-              size={"sm"}
-              variant={allSelected ? "default" : "outline"}
-              className="border"
-              onClick={() => {
-                if (allSelected) {
-                  setSelectedQuestions(removeElementsById(selectedQuestions, questions));
-                } else {
-                  setSelectedQuestions([...selectedQuestions, ...questions]);
-                }
-              }}
-            >
-              <CheckCheckIcon className="w-4 h-4" />
-            </Button>
+            {questions?.length > 0 && (
+              <Button
+                size={"sm"}
+                variant={allSelected ? "default" : "outline"}
+                className="border"
+                onClick={() => {
+                  if (allSelected) {
+                    setSelectedQuestions(
+                      removeElementsById(selectedQuestions, questions)
+                    );
+                  } else {
+                    setSelectedQuestions(
+                      getUniqueElementsById([
+                        ...selectedQuestions,
+                        ...questions,
+                      ])
+                    );
+                  }
+                }}
+              >
+                <CheckCheckIcon className="w-4 h-4" />
+              </Button>
+            )}
+
             {totalPages ? <Pagination totalPages={totalPages} /> : null}
-            <RandomInput
-              onSubmit={(random) => {
-                setSelectedQuestions(getRandomItems(questions, random));
-              }}
-            />
+            {questions?.length > 0 && (
+              <RandomInput
+                onSubmit={(random) => {
+                  setSelectedQuestions(getRandomItems(questions, random));
+                }}
+              />
+            )}
+
             <Button
               size={"sm"}
               variant={twoColumn ? "default" : "outline"}
