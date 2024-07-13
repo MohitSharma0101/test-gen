@@ -1,4 +1,4 @@
-import React, { startTransition, useState } from "react";
+import React, { startTransition, useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "./sheet";
 import { Button } from "./button";
 import { Print, PrintContent, PrintTrigger } from "./print";
@@ -20,6 +20,13 @@ const PreviewButton = ({
   className,
 }: Props) => {
   const [twoColumn, setTwoColumn] = useState(defaultTwoColumn);
+
+  useEffect(() => {
+    if (defaultTwoColumn != twoColumn) {
+      setTwoColumn(defaultTwoColumn);
+    }
+  }, [defaultTwoColumn]);
+  
   return (
     <Sheet>
       <SheetTrigger asChild>

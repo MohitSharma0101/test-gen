@@ -9,7 +9,7 @@ import useSWR from "swr";
 const useQuestions = (chapter?: string) => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page") || 1);
-  const limit = Number(searchParams.get("limit") || 10);
+  const limit = Number(searchParams.get("limit") || 50);
   const marks = Number(searchParams.get("marks"));
   const cache = !chapter ? null : ENDPOINT.questions + chapter + page + limit;
   const { data, isLoading, isValidating, error, mutate } = useSWR(

@@ -88,3 +88,27 @@ export const getDateFromISO = (isoDate: string) => {
   const date = new Date(isoDate);
   return date.toLocaleDateString();
 };
+
+export function isArrayIncluded<T extends { id?: string; _id?: string }>(
+  subArray: T[],
+  mainArray: T[]
+): boolean {
+  if (mainArray.length === 0 || subArray.length === 0) return false;
+  const mainSet = new Set(mainArray.map((item) => item.id || item._id));
+
+  for (const element of subArray) {
+    if (!mainSet.has(element.id || element._id)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function removeElementsById<T extends { id?: string; _id?: string }>(
+  parentArray: T[],
+  elementsToRemove: T[]
+): T[] {
+  const idsToRemove = new Set(elementsToRemove.map((item) => item.id || item._id));
+  return parentArray.filter((item) => !idsToRemove.has(item.id || item._id));
+}

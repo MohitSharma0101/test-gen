@@ -17,7 +17,7 @@ type Props = {
 const Pagination = ({ totalPages }: Props) => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page") || 1);
-  const limit = Number(searchParams.get("limit") || 10);
+  const limit = Number(searchParams.get("limit") || 50);
   const router = useRouter();
   const pathname = usePathname();
 

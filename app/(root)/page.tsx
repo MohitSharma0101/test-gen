@@ -16,7 +16,13 @@ import {
   InboxIcon,
   MenuIcon,
 } from "lucide-react";
-import { cn, getRandomItems, getTotalMarks } from "@/lib/utils";
+import {
+  cn,
+  getRandomItems,
+  getTotalMarks,
+  isArrayIncluded,
+  removeElementsById,
+} from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
 import PaperFrame from "@/components/ui/paper-frame";
@@ -51,8 +57,8 @@ export default function Home() {
   } = useQuestions(selectedChapter?._id);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>([]);
-  const [twoColumn, setTwoColumn] = useState(false);
-  const allSelected = selectedQuestions?.length === questions?.length;
+  const [twoColumn, setTwoColumn] = useState(true);
+  const allSelected = isArrayIncluded(questions ?? [], selectedQuestions);
 
   useEffect(() => {
     if (chapters) {
@@ -61,8 +67,8 @@ export default function Home() {
   }, [chapters]);
 
   return (
-    <div className="text-primary">
-      <div className="px-6 pt-2 pb-4 flex flex-col lg:flex-row gap-6">
+    <div className="text-primary max-h-screen flex flex-col">
+      <div className="px-6 pt-2 pb-4 flex flex-col lg:flex-row gap-6 bg-slate-100">
         <div className="flex flex-wrap gap-2 md:gap-4">
           <SelectCompact
             label="Class"
@@ -116,6 +122,7 @@ export default function Home() {
             <PreviewButton
               questions={selectedQuestions}
               onPrint={() => updateUsage(selectedQuestions)}
+              defaultTwoColumn={twoColumn}
             />
             <Print>
               <PrintTrigger
@@ -141,12 +148,12 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="h-fit flex border-t border-slate-200 ">
+      <div className="h-fit flex-grow overflow-scroll flex border-t border-slate-200">
         <div className="hidden md:block md:w-[200px] lg:w-[300px] h-full sticky top-0">
           <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">
             CHAPTERS
           </div>
-          <ol className=" max-h-full list-decimal flex flex-col overflow-scroll scrollbar-hide py-4 sticky top-0">
+          <ol className=" max-h-full list-decimal flex flex-col overflow-scroll scrollbar-hide py-4">
             {chaptersLoading ? (
               <>
                 <Skeleton className="h-[30px] mx-4 my-1" />
@@ -178,7 +185,7 @@ export default function Home() {
           </ol>
         </div>
         <div className="flex-1 h-full">
-          <div className="w-full max-w-[100vw] overflow-scroll scrollbar-hide h-[52px] px-2 md:px-4 border border-slate-200 text-sm font-medium flex items-center gap-2 md:gap-4 sticky top-0 bg-slate-100 z-10">
+          <div className="sticky top-0 w-full max-w-[100vw] overflow-scroll scrollbar-hide h-[52px] px-2 md:px-4 border border-slate-200 text-sm font-medium flex items-center gap-2 md:gap-4 bg-slate-100 z-10">
             <Sheet>
               <SheetTrigger className="md:hidden">
                 <MenuIcon className="w-4 h-4" />
@@ -231,9 +238,9 @@ export default function Home() {
               className="border"
               onClick={() => {
                 if (allSelected) {
-                  setSelectedQuestions([]);
+                  setSelectedQuestions(removeElementsById(selectedQuestions, questions));
                 } else {
-                  setSelectedQuestions(questions);
+                  setSelectedQuestions([...selectedQuestions, ...questions]);
                 }
               }}
             >
@@ -242,10 +249,7 @@ export default function Home() {
             {totalPages ? <Pagination totalPages={totalPages} /> : null}
             <RandomInput
               onSubmit={(random) => {
-                setSelectedQuestions([
-                  ...selectedQuestions,
-                  ...getRandomItems(questions, random),
-                ]);
+                setSelectedQuestions(getRandomItems(questions, random));
               }}
             />
             <Button
