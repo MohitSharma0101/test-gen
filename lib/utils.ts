@@ -49,17 +49,18 @@ export function addQueryToUrl(
 }
 
 export function segregateQuestionsBySubject(
-  questions: TQuestion[]
+  questions: TQuestion[],
+  defaultSubject: string = "-"
 ): SubjectQuestions[] {
   const subjectMap = questions.reduce((acc, question, index) => {
     let subject: string | undefined;
 
     if (typeof question.chapter === "string") {
-      subject = "Unknown Subject";
+      subject = defaultSubject;
     } else if (question.chapter && question.chapter.subject) {
       subject = question.chapter.subject;
     } else {
-      subject = "Unknown Subject";
+      subject = defaultSubject;
     }
 
     // Add continuous index to each question

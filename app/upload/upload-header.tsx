@@ -4,18 +4,22 @@ import SelectCompact from "@/components/ui/select-compact";
 import { COURSES, MARKS, SUBJECT_MAP } from "@/data/const";
 import React, { useState } from "react";
 import useChapters from "@/hooks/useChapters";
-import { TChapter } from "@/models/Chapter";
+import type { TChapter } from "@/models/Chapter";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Loader2Icon } from "lucide-react";
 import useBooks from "@/hooks/useBooks";
+import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
+import PaperFrame from "@/components/ui/paper-frame";
+import type { TQuestion } from "@/models/Question";
 
 type Props = {
-  totalQuestion?: number;
   onUpload?: (chapter: string, marks: string) => Promise<void>;
+  questions: TQuestion[];
+  twoColumn?: boolean;
 };
 
-const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
+const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
   const [course, setCourse] = useState(COURSES[0]);
   const [subject, setSubject] = useState("");
   const [book, setBook] = useState("");
@@ -97,7 +101,14 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
       </div>
       <div className="flex gap-4 ml-auto items-center whitespace-nowrap">
         <p>
-          Total Questions: <strong>{totalQuestion || 0}</strong>
+          Total Questions: <strong>{questions?.length || 0}</strong>
+          <br />
+          Total Ans:{" "}
+          <strong>
+            {questions?.map((q) => q.ans)?.filter(Boolean)?.length || 0}
+          </strong>
+          <br />
+          Total Marks: <strong>{questions?.length * Number(marks)}</strong>
         </p>
         <Button
           disabled={loading}
@@ -118,6 +129,20 @@ const UploadHeader = ({ totalQuestion, onUpload }: Props) => {
           {loading && <Loader2Icon className="w-4 h-4 animate-spin mr-2" />}
           Upload Questions
         </Button>
+        <Print>
+          <PrintTrigger className="px-6">Print</PrintTrigger>
+          <PrintContent>
+            <PaperFrame
+              questions={questions.map((q) => ({
+                ...q,
+                mark: Number(marks),
+              }))}
+              twoColumn={twoColumn}
+              course={course}
+              subject={subject}
+            />
+          </PrintContent>
+        </Print>
       </div>
     </div>
   );

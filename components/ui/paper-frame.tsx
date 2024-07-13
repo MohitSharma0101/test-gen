@@ -22,7 +22,7 @@ const PaperFrame = ({
   subject,
   ...rest
 }: Props) => {
-  const subjectQuestions = segregateQuestionsBySubject(questions);
+  const subjectQuestions = segregateQuestionsBySubject(questions, subject);
   const fallbackCourse = (questions?.[0]?.chapter as TChapter)?.course;
   return (
     <div className="pt-4 print:px-4">
@@ -30,23 +30,23 @@ const PaperFrame = ({
         <EducationPlusFrame
           key={sub}
           course={course || fallbackCourse}
-          subject={sub}
+          subject={sub || subject}
           className="break-before-page"
         >
           <ol
             className={cn(
-              "px-2 print:[&_#preview]:!text-base",
+              "px-2 print:[&_#preview]:!text-base gap-1",
               twoColumn && "columns-2",
               className
             )}
             {...rest}
           >
             {q?.map((q, index) => (
-              <label key={index} className="flex rounded p-2 ">
+              <label key={index} className="flex rounded p-1">
                 <span className="pt-[10px] px-2">{q.index || 0}.</span>
                 <Markdown text={q.text ?? ""} />
                 <span
-                  className="pt-[10px] px-2 font-medium ml-auto focus-visible:outline-none"
+                  className="pt-[10px] pr-2 font-medium ml-auto focus-visible:outline-none"
                   contentEditable
                 >
                   [{q.mark}]
@@ -67,7 +67,7 @@ const PaperFrame = ({
             </h1>
             <ol
               className={cn(
-                "border p-4 print:[&_#preview]:!text-base",
+                "border p-2 print:[&_#preview]:!text-base c gap-1",
                 twoColumn && "columns-2"
               )}
               {...rest}
@@ -75,9 +75,9 @@ const PaperFrame = ({
               {q?.map((q, index) => (
                 <label
                   key={index}
-                  className={`flex items-baseline rounded p-2`}
+                  className={`flex items-baseline rounded p-1`}
                 >
-                  <span className="pt-[10px] px-2">{q.index || 0}.</span>
+                  <span className="pt-[10px] pr-2">{q.index || 0}.</span>
                   <Markdown text={q.ans ?? ""} />
                 </label>
               ))}
