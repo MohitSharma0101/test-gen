@@ -12,7 +12,6 @@ const EducationPlusFrame = ({
   subject,
   className,
 }: TEducationPlusFrame) => {
-  const today = new Date();
   return (
     <>
       <table className={cn("w-full max-w-full border border-black", className)}>
@@ -35,15 +34,12 @@ const EducationPlusFrame = ({
                 </div>
                 <div className="w-full h-[1px] bg-black mb-0.5" />
                 <div className="border-y border-black py-0.5">
-                  <div className="grid grid-cols-4 px-4 w-full font-medium border-y border-black">
-                    <span suppressHydrationWarning>
-                      DATE: {today.toLocaleDateString()}
-                    </span>
+                  <div className="grid grid-cols-3 px-4 w-full font-medium border-y border-black">
+                    <span suppressHydrationWarning>DATE:</span>
                     <span>CLASS: {course}</span>
                     {subject && (
                       <span className="uppercase">SUBJECT: {subject}</span>
                     )}
-                    <span>NAME:</span>
                   </div>
                 </div>
                 <div className="w-full h-[1px] bg-black mt-0.5" />

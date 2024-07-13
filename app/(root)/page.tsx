@@ -148,7 +148,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="h-fit flex-grow overflow-scroll flex border-t border-slate-200">
+      <div className="h-fit flex-grow overflow-y-scroll flex border-t border-slate-200">
         <div className="hidden md:block md:w-[200px] lg:w-[300px] h-full sticky top-0">
           <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">
             CHAPTERS
@@ -292,7 +292,7 @@ export default function Home() {
           ) : (
             <ol
               className={cn(
-                "border-l p-2 md:p-4 max-w-full overflow-scroll scrollbar-hide",
+                "border-l p-2 md:p-4 max-w-full",
                 twoColumn && "grid grid-cols-2"
               )}
             >
