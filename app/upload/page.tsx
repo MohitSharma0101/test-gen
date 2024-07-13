@@ -110,7 +110,7 @@ const DashboardPage = (props: Props) => {
             onChange={onAnswerChange}
           />
         </label>
-        <div className="col-span-2 row-span-3 overflow-scroll border border-slate-200 text-slate-600 font-medium">
+        <div className="col-span-2 row-span-3 scrollbar-hide overflow-scroll border border-slate-200 text-slate-600 font-medium">
           <div className="w-full p-3 border-b border-slate-200 font-bold ">
             Preview Mode
           </div>

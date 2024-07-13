@@ -79,7 +79,7 @@ const BooksPage = (props: Props) => {
           <div className="rounded h-[52px] px-4 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center ">
             BOOKS
           </div>
-          <ol className="rounded mt-1 max-h-full flex flex-col overflow-scroll py-2  sticky top-0 bg-slate-200">
+          <ol className="rounded mt-1 max-h-full flex flex-col overflow-scroll scrollbar-hide py-2  sticky top-0 bg-slate-200">
             {loading ? (
               <>
                 <Skeleton className="h-[32px] mx-4 my-1 bg-slate-300 rounded-full" />

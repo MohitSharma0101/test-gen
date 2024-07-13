@@ -134,7 +134,7 @@ export default function Home() {
             </SheetTrigger>
             <SheetContent
               side={"bottom"}
-              className="max-h-[80svh] m-auto rounded max-w-screen-lg overflow-scroll"
+              className="max-h-[80svh] m-auto rounded max-w-screen-lg overflow-scroll scrollbar-hide"
             >
               <Print>
                 <PrintTrigger
@@ -187,7 +187,7 @@ export default function Home() {
           <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">
             CHAPTERS
           </div>
-          <ol className=" max-h-full list-decimal flex flex-col overflow-scroll py-4 sticky top-0">
+          <ol className=" max-h-full list-decimal flex flex-col overflow-scroll scrollbar-hide py-4 sticky top-0">
             {chaptersLoading ? (
               <>
                 <Skeleton className="h-[30px] mx-4 my-1" />
@@ -228,7 +228,7 @@ export default function Home() {
                 <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">
                   CHAPTERS
                 </div>
-                <ol className=" max-h-full list-decimal flex flex-col overflow-scroll py-4 sticky top-0">
+                <ol className=" max-h-full list-decimal flex flex-col overflow-scroll scrollbar-hide py-4 sticky top-0">
                   {chaptersLoading ? (
                     <>
                       <Skeleton className="h-[30px] mx-4 my-1" />
@@ -329,7 +329,7 @@ export default function Home() {
           ) : (
             <ol
               className={cn(
-                "border-l p-2 md:p-4 max-w-full overflow-scroll",
+                "border-l p-2 md:p-4 max-w-full overflow-scroll scrollbar-hide",
                 twoColumn && "grid grid-cols-2"
               )}
             >

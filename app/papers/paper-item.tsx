@@ -77,7 +77,7 @@ const PaperItem = ({ index, paper, onDelete, onUpdate }: Props) => {
         </SheetTrigger>
         <SheetContent
           side={"bottom"}
-          className="max-h-[80svh] m-auto rounded max-w-screen-lg overflow-scroll"
+          className="max-h-[80svh] m-auto rounded max-w-screen-lg scrollbar-hide overflow-scroll"
         >
           <Print>
             <PrintTrigger
