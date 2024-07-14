@@ -16,19 +16,23 @@ import PreviewButton from "@/components/ui/preview-button";
 import { postUpdateUsage } from "@/service/core.service";
 import DeleteButton from "@/components/ui/delete-button";
 import Link from "next/link";
-import { Edit2Icon } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { Edit2Icon, RefreshCcw } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 type Props = {};
 
 const PapersPage = (props: Props) => {
-  const { papers, loading, deletePaper } = usePapers();
+  const { papers, loading, deletePaper, refresh } = usePapers();
 
   return (
     <div className="p-6">
       <div className="flex-1 rounded">
-        <div className="rounded h-[52px] px-4 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center ">
+        <div className="rounded h-[52px] px-4 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center justify-between">
           PAPERS
+          <Button variant={"outline"} size={"sm"} onClick={refresh}>
+            <RefreshCcw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
         </div>
         {loading ? (
           <div className="w-full flex flex-col gap-2 mt-4">
@@ -51,6 +55,9 @@ const PapersPage = (props: Props) => {
                 <TableHead className="w-[150px] text-right">
                   Created At
                 </TableHead>
+                <TableHead className="w-[150px] text-right">
+                  Last Updated At
+                </TableHead>
                 <TableHead className="w-[100px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -61,7 +68,7 @@ const PapersPage = (props: Props) => {
                   className="divide-x divide-slate-300 border-slate-300"
                 >
                   <TableCell className="font-medium  flex items-center justify-between">
-                    <p className="w-[100px]">{paper.title}</p>
+                    <p className="w-[100px] md:w-fit">{paper.title}</p>
                     <PreviewButton
                       questions={paper.questions}
                       defaultTwoColumn
@@ -77,6 +84,9 @@ const PapersPage = (props: Props) => {
                   </TableCell>
                   <TableCell className="text-right">
                     {getDateFromISO(paper.createdAt)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {getDateFromISO(paper.updatedAt)}
                   </TableCell>
                   <TableCell className="text-center flex items-center justify-center gap-2">
                     <Link
