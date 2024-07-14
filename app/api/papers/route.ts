@@ -1,6 +1,8 @@
 import { dbConnect } from "@/lib/dbUtils";
 import Paper, { TPaper } from "@/models/Paper";
 import { NextRequest, NextResponse } from "next/server";
+import '@/models/Chapter';
+import '@/models/Question';
 
 export const GET = async (request: NextRequest) => {
   try {
