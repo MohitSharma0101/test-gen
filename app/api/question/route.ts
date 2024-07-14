@@ -14,7 +14,7 @@ export const GET = async (request: NextRequest) => {
     const query: any = {
       chapter: chapter,
     };
-    if (marks) query.marks = marks;
+    if (marks) query.mark = marks;
     // if (chapter) query.chapter = chapter;
 
     await dbConnect();

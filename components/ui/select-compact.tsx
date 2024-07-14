@@ -7,6 +7,8 @@ import {
   SelectValue,
 } from "./select";
 import { Skeleton } from "./skeleton";
+import { Button } from "./button";
+import { XIcon } from "lucide-react";
 
 export type TSelectCompactProps = {
   placeholder?: string;
@@ -21,6 +23,7 @@ export type TSelectCompactProps = {
   emptyState?: string;
   loading?: boolean;
   triggerClassName?: string;
+  canUnselect?: boolean;
 };
 
 const SelectCompact = ({
@@ -33,11 +36,25 @@ const SelectCompact = ({
   emptyState,
   loading,
   triggerClassName,
+  canUnselect,
 }: TSelectCompactProps) => {
   return (
     <div className={className}>
       {label && (
-        <label className="block font-medium ml-1 mb-1 text-sm">{label}</label>
+        <>
+          <label className="font-medium ml-1 mb-1 text-sm flex gap-2 items-center">
+            {label}
+            {canUnselect && value && (
+              <Button
+                className="w-min h-min p-0"
+                variant={"ghost"}
+                onClick={() => onChange?.("")}
+              >
+                <XIcon className="w-4 h-4" />
+              </Button>
+            )}
+          </label>
+        </>
       )}
 
       <Select value={value} onValueChange={onChange}>

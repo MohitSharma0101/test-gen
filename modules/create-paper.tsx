@@ -3,7 +3,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import SelectCompact from "@/components/ui/select-compact";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { COURSES, SUBJECT_MAP } from "@/data/const";
+import { COURSES, MARKS, SUBJECT_MAP } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import useQuestions from "@/hooks/useQuestions";
 import type { TChapter } from "@/models/Chapter";
@@ -30,7 +30,6 @@ import PaperFrame from "@/components/ui/paper-frame";
 import Pagination from "@/components/ui/pagination";
 import TimesUsed from "@/components/ui/times-used";
 import RandomInput from "@/components/ui/random-input";
-import FilterSelect from "@/components/ui/filter-select";
 import Markdown from "@/components/ui/markdown";
 import useBooks from "@/hooks/useBooks";
 import SavePaperButton from "@/components/ui/save-paper-button";
@@ -48,6 +47,7 @@ export default function CreatePaper({
 }: TCreatePaperProps) {
   const [course, setCourse] = useState(COURSES[5]);
   const [subject, setSubject] = useState("");
+  const [marks, setMarks] = useState("");
   const [book, setBook] = useState("");
   const { books, loading: booksLoading } = useBooks(subject, course);
 
@@ -64,7 +64,7 @@ export default function CreatePaper({
     totalPages,
     totalQuestions,
     updateUsage,
-  } = useQuestions(selectedChapter?._id);
+  } = useQuestions(selectedChapter?._id, marks);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>(
     defaultPaper?.questions || []
@@ -81,12 +81,12 @@ export default function CreatePaper({
 
   return (
     <div className="text-primary max-h-screen flex flex-col">
-      <div className="px-6 pt-2 pb-4 flex flex-col lg:flex-row gap-6 bg-slate-100">
-        <div className="flex flex-wrap gap-2 md:gap-4">
+      <div className="px-3 md:px-6 pt-2 pb-2 md:pb-4 flex flex-col lg:flex-row gap-2 md:gap-6 bg-slate-100">
+        <div className="grid grid-cols-2 md:flex flex-wrap gap-2 md:gap-4">
           <SelectCompact
             label="Class"
             placeholder="Select a class"
-            className="w-[300px] "
+            className="md:w-[300px] "
             value={course}
             onChange={setCourse}
             options={COURSES.map((c) => ({
@@ -97,7 +97,7 @@ export default function CreatePaper({
           <SelectCompact
             label="Subject"
             placeholder="Select a subject"
-            className="w-[300px]"
+            className="md:w-[300px]"
             emptyState="Select a Class first"
             value={subject}
             onChange={setSubject}
@@ -109,7 +109,7 @@ export default function CreatePaper({
           <SelectCompact
             label="Book"
             placeholder="Select a book"
-            className="w-[300px]"
+            className="md:w-[300px]"
             value={book}
             onChange={setBook}
             options={books.map((b) => ({
@@ -118,6 +118,18 @@ export default function CreatePaper({
             }))}
             loading={booksLoading}
           />
+          <SelectCompact
+              label="Marks"
+              className="w-fit"
+              value={marks}
+              onChange={setMarks}
+              placeholder="Filter by marks"
+              options={MARKS.map((mark) => ({
+                label: mark + " mark",
+                value: (mark || 1).toString(),
+              }))}
+              canUnselect
+            />
         </div>
 
         <div className="flex flex-wrap gap-4 ml-auto justify-end items-center whitespace-nowrap">
@@ -292,19 +304,6 @@ export default function CreatePaper({
             >
               <Columns2Icon className="w-4 h-4" />
             </Button>
-          </div>
-          <div className="py-1 px-4">
-            <FilterSelect
-              filterKey="marks"
-              className="w-fit"
-              placeholder="marks"
-              options={Array.from(
-                new Set(questions?.map((q) => q.mark) ?? [])
-              ).map((mark) => ({
-                label: mark + " mark",
-                value: (mark || 1).toString(),
-              }))}
-            />
           </div>
           {loading ? (
             <ol

@@ -13,7 +13,7 @@ export const fetchQuestions = async (
   chapter?: string,
   page?: number | null,
   limit?: number | null,
-  marks?: number
+  marks?: string
 ) => {
   return (
     await api.get(ENDPOINT.questions, {

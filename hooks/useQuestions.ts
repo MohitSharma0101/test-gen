@@ -6,17 +6,16 @@ import { fetchQuestions, postUpdateUsage } from "@/service/core.service";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
-const useQuestions = (chapter?: string) => {
+const useQuestions = (chapter?: string, marks?: string) => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page") || 1);
   const limit = Number(searchParams.get("limit") || 50);
-  const marks = Number(searchParams.get("marks"));
-  const cache = !chapter ? null : ENDPOINT.questions + chapter + page + limit;
+  const cache = !chapter ? null : ENDPOINT.questions + chapter + page + limit + marks;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
       if (!chapter) return;
-      return await fetchQuestions(chapter, page, limit);
+      return await fetchQuestions(chapter, page, limit, marks);
     },
     {
       revalidateIfStale: false,
@@ -25,9 +24,7 @@ const useQuestions = (chapter?: string) => {
       keepPreviousData: true,
     }
   );
-  const questions = marks
-    ? data?.questions.filter((q) => q.mark == marks) || []
-    : (data?.questions as TQuestion[]);
+  const questions = (data?.questions as TQuestion[]);
   const loading = isLoading || isValidating;
   const refresh = () => mutate();
   const totalQuestions = data?.totalQuestions;
