@@ -25,14 +25,21 @@ type Props = {
 
 const Header = ({ active }: Props) => {
   return (
-    <div className="bg-white w-full px-6 py-2 flex justify-between gap-4 text-sm font-bold">
-      <Image
-        src={"/education-plus-logo.png"}
-        alt="education plus log"
-        width={100}
-        height={22}
-        className="w-[50px] object-contain aspect-square -mt-2"
-      />
+    <div className="bg-white w-full px-3 md:px-6 py-2 flex justify-between gap-4 text-sm font-bold">
+      <div className="flex items-center justify-center gap-2 font-bold text-xl">
+        <Image
+          src={"/eplus-logo-min.png"}
+          alt="education plus log"
+          width={50}
+          height={50}
+          className="w-[50px] object-contain aspect-square -mt-2"
+        />
+        <div className="flex flex-col leading-4">
+          Education+ 
+          <span className="text-sky-500 text-[10px] font-medium">Believe in Results</span>
+        </div>
+      </div>
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant={"outline"}>
