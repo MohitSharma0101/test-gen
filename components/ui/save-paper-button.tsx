@@ -14,11 +14,13 @@ import type { TQuestion } from "@/models/Question";
 import { savePaper } from "@/service/core.service";
 
 type Props = {
+  id?: string;
+  defaultTitle?: string;
   questions: TQuestion[];
 };
 
-const SavePaperButton = ({ questions }: Props) => {
-  const [title, setTitle] = useState("");
+const SavePaperButton = ({ questions, defaultTitle = "" , id}: Props) => {
+  const [title, setTitle] = useState(defaultTitle);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
   return (
@@ -66,7 +68,7 @@ const SavePaperButton = ({ questions }: Props) => {
           disabled={questions.length === 0}
           onClick={async () => {
             if (title) {
-              await savePaper(title, questions);
+              await savePaper(title, questions, id);
               setOpen(false);
               setTitle("");
             } else {

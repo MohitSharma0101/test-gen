@@ -15,6 +15,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PreviewButton from "@/components/ui/preview-button";
 import { postUpdateUsage } from "@/service/core.service";
 import DeleteButton from "@/components/ui/delete-button";
+import Link from "next/link";
+import { Edit2Icon } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 
 type Props = {};
 
@@ -58,7 +61,7 @@ const PapersPage = (props: Props) => {
                   className="divide-x divide-slate-300 border-slate-300"
                 >
                   <TableCell className="font-medium  flex items-center justify-between">
-                   <p className="w-[100px]">{paper.title}</p> 
+                    <p className="w-[100px]">{paper.title}</p>
                     <PreviewButton
                       questions={paper.questions}
                       defaultTwoColumn
@@ -75,7 +78,16 @@ const PapersPage = (props: Props) => {
                   <TableCell className="text-right">
                     {getDateFromISO(paper.createdAt)}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center flex items-center justify-center gap-2">
+                    <Link
+                      href={`/papers/edit/${paper._id}`}
+                      className={buttonVariants({
+                        variant: "outline",
+                        size: "icon",
+                      })}
+                    >
+                      <Edit2Icon className="w-4 h-4" />
+                    </Link>
                     <DeleteButton onDelete={() => deletePaper(paper._id)} />
                   </TableCell>
                 </TableRow>

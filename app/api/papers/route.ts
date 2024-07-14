@@ -1,13 +1,18 @@
 import { dbConnect } from "@/lib/dbUtils";
 import Paper, { TPaper } from "@/models/Paper";
 import { NextRequest, NextResponse } from "next/server";
-import '@/models/Chapter';
-import '@/models/Question';
+import "@/models/Chapter";
+import "@/models/Question";
 
 export const GET = async (request: NextRequest) => {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const id = searchParams.get("id");
+    const query: any = {};
+    if (id) query._id = id;
+
     await dbConnect();
-    const papers = await Paper.find().populate({
+    const papers = await Paper.find(query).populate({
       path: "questions",
       populate: {
         path: "chapter",
@@ -29,7 +34,7 @@ export const GET = async (request: NextRequest) => {
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { title, questions } = (await request.json()) as TPaper;
+    const { id, title, questions } = (await request.json()) as TPaper;
 
     if (!title || !questions || !questions.length) {
       return NextResponse.json(
@@ -45,14 +50,23 @@ export const POST = async (request: NextRequest) => {
 
     const questionsIds = questions.map((q) => q._id);
 
-    const paper = new Paper({ title, questions: questionsIds });
+    const paperObj = { title, questions: questionsIds };
 
-    await paper.save();
+    if (id) {
+      const paper = await Paper.findByIdAndUpdate(id, paperObj);
+      return NextResponse.json(
+        { status: "success", question: paper },
+        { status: 201 }
+      );
+    } else {
+      const paper = new Paper(paperObj);
+      await paper.save();
 
-    return NextResponse.json(
-      { status: "success", question: paper },
-      { status: 201 }
-    );
+      return NextResponse.json(
+        { status: "success", question: paper },
+        { status: 201 }
+      );
+    }
   } catch (err: any) {
     return NextResponse.json(
       { status: "error", error: err.message ?? "Something went wrong" },

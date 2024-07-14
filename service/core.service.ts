@@ -60,16 +60,23 @@ export const fetchBooks = async (subject?: string, course?: string) => {
   ).data.books;
 };
 
-export const fetchPapers = async () => {
-  return (await api.get(ENDPOINT.papers)).data.papers;
+export const fetchPapers = async (id?: string | null) => {
+  return (
+    await api.get(ENDPOINT.papers, {
+      params: {
+        id: id,
+      },
+    })
+  ).data.papers;
 };
 
-export const savePaper = async (title: string, questions: TQuestion[]) => {
+export const savePaper = async (title: string, questions: TQuestion[], id?: string) => {
   if (questions.length === 0) return;
   try {
     await api.post(ENDPOINT.papers, {
       title,
       questions,
+      id
     });
     toast({
       title: "💾 Question Paper saved!",
