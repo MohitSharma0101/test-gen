@@ -5,6 +5,7 @@ import { Print, PrintContent, PrintTrigger } from "./print";
 import PaperFrame from "./paper-frame";
 import type { TQuestion } from "@/models/Question";
 import { Columns2Icon } from "lucide-react";
+import MCQAnsFrame from "../frames/mcq-ans-frame";
 
 type Props = {
   questions: TQuestion[];
@@ -26,7 +27,7 @@ const PreviewButton = ({
       setTwoColumn(defaultTwoColumn);
     }
   }, [defaultTwoColumn]);
-  
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -63,6 +64,12 @@ const PreviewButton = ({
             >
               <Columns2Icon className="w-4 h-4" />
             </Button>
+            <Print>
+              <PrintTrigger>Print MCQ Answer</PrintTrigger>
+              <PrintContent>
+                <MCQAnsFrame questions={questions} />
+              </PrintContent>
+            </Print>
           </div>
 
           <PrintContent className="block">
