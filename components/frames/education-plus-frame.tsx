@@ -4,6 +4,7 @@ import Image from "next/image";
 type TEducationPlusFrame = JSX.IntrinsicElements["div"] & {
   course?: string;
   subject?: string;
+  totalMarks?: number;
   hideSecondaryHeader?: boolean;
 };
 
@@ -12,6 +13,7 @@ const EducationPlusFrame = ({
   course,
   subject,
   className,
+  totalMarks,
   hideSecondaryHeader = false,
 }: TEducationPlusFrame) => {
   return (
@@ -38,12 +40,13 @@ const EducationPlusFrame = ({
                   <>
                     <div className="w-full h-[1px] bg-black mb-0.5" />
                     <div className="border-y border-black py-0.5">
-                      <div className="grid grid-cols-3 px-4 w-full font-medium border-y border-black">
+                      <div className="grid grid-cols-4 px-4 w-full font-medium border-y border-black">
                         <span suppressHydrationWarning>DATE:</span>
                         <span>CLASS: {course}</span>
                         {subject && (
                           <span className="uppercase">SUBJECT: {subject}</span>
                         )}
+                        <span>TOTAL MARKS: {totalMarks}</span>
                       </div>
                     </div>
                   </>

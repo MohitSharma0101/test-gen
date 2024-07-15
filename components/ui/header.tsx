@@ -43,7 +43,7 @@ const Header = ({ active }: Props) => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant={"outline"}>
-            <MenuIcon className="w-4 h-4" /> Menu
+            <MenuIcon className="w-4 h-4 mr-1" /> Menu
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="bottom" align="end" className="p-1">

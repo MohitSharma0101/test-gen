@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, segregateQuestionsBySubject } from "@/lib/utils";
+import { cn, getTotalMarks, segregateQuestionsBySubject } from "@/lib/utils";
 import type { TQuestion } from "@/models/Question";
 import React, { Fragment } from "react";
 import EducationPlusFrame from "../frames/education-plus-frame";
@@ -24,6 +24,7 @@ const PaperFrame = ({
 }: Props) => {
   const subjectQuestions = segregateQuestionsBySubject(questions, subject);
   const fallbackCourse = (questions?.[0]?.chapter as TChapter)?.course;
+  const totalMarks = getTotalMarks(questions);
   return (
     <div className="pt-4 print:px-4">
       {subjectQuestions.map(({ subject: sub, questions: q }) => (
@@ -31,6 +32,7 @@ const PaperFrame = ({
           key={sub}
           course={course || fallbackCourse}
           subject={sub || subject}
+          totalMarks={totalMarks}
           className="break-before-page"
         >
           <ol
@@ -58,6 +60,7 @@ const PaperFrame = ({
       ))}
       <EducationPlusFrame
         course={course || fallbackCourse}
+        totalMarks={totalMarks}
         className="mt-4 break-before-page"
       >
         {subjectQuestions.map(({ subject: sub, questions: q }) => (
