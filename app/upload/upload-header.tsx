@@ -12,6 +12,7 @@ import useBooks from "@/hooks/useBooks";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
 import PaperFrame from "@/components/ui/paper-frame";
 import type { TQuestion } from "@/models/Question";
+import PreviewButton from "@/components/ui/preview-button";
 
 type Props = {
   onUpload?: (chapter: string, marks: string) => Promise<void>;
@@ -129,6 +130,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
           {loading && <Loader2Icon className="w-4 h-4 animate-spin mr-2" />}
           Upload Questions
         </Button>
+        <PreviewButton questions={questions} defaultTwoColumn={twoColumn} />
         <Print>
           <PrintTrigger className="px-6">Print</PrintTrigger>
           <PrintContent>

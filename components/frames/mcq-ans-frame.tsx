@@ -1,6 +1,6 @@
 import React from "react";
 import EducationPlusFrame from "./education-plus-frame";
-import { TQuestion } from "@/models/Question";
+import type { TQuestion } from "@/models/Question";
 
 type Props = {
   questions?: TQuestion[];
@@ -13,13 +13,15 @@ const MCQAnsFrame = ({ questions }: Props) => {
         ANSWERS
       </h1>
       <ol
-        className={"grid grid-cols-10 border p-2 print:[&_#preview]:!text-base gap-1"}
+        className={
+          "grid grid-cols-10 border p-2 print:[&_#preview]:!text-base gap-1"
+        }
       >
-        {questions?.map(({ ans, index }) => {
+        {questions?.map(({ ans, index }, normalIndex) => {
           const mcqAns = ans?.split("\n")?.[0]?.slice(0, 2);
           return (
             <label key={mcqAns} className={`p-1`}>
-              {index || 0}. {mcqAns}
+              {index || normalIndex + 1}. {mcqAns}
             </label>
           );
         })}
