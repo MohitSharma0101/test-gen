@@ -1,20 +1,32 @@
-import React, { useState } from "react";
+import React, { ReactNode, useState } from "react";
 import { Button } from "./button";
 import { ShuffleIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Props = {
+  defaultValue?: number;
   onSubmit?: (random: number) => void;
+  icon?: ReactNode;
+  className?: string;
 };
 
-const RandomInput = ({ onSubmit }: Props) => {
-  const [value, setValue] = useState(5);
+const RandomInput = ({
+  onSubmit,
+  defaultValue = 5,
+  icon,
+  className,
+}: Props) => {
+  const [value, setValue] = useState(defaultValue);
   return (
-    <span className="flex items-center justify-center ">
+    <span className={cn("flex items-center justify-center", className)}>
       <input
         value={value}
         type="number"
         min={0}
         onChange={(e) => setValue(Number(e.target.value))}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSubmit?.(value);
+        }}
         className="px-2 w-[40px] h-8 rounded-l focus-visible:outline-none border-0 no-spinner"
       />
       <Button
@@ -22,7 +34,7 @@ const RandomInput = ({ onSubmit }: Props) => {
         className="rounded-l-none h-8"
         onClick={() => onSubmit?.(value)}
       >
-        <ShuffleIcon className="w-4 h-4" />
+        {icon || <ShuffleIcon className="w-4 h-4" />}
       </Button>
     </span>
   );

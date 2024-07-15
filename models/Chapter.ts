@@ -6,6 +6,7 @@ export type TChapter = {
   subject: string;
   title: string;
   book: string
+  order: number
 };
 
 export const ChapterSchema = new mongoose.Schema(
@@ -26,6 +27,11 @@ export const ChapterSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
+    },
+    order: {
+      type: Number,
+      required: true,
+      default: 0
     },
   },
   { timestamps: true }

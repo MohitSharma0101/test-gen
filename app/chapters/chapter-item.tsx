@@ -9,17 +9,23 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import RandomInput from "@/components/ui/random-input";
 import { toast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { TChapter } from "@/models/Chapter";
-import { CheckIcon, PenLineIcon, Trash2Icon } from "lucide-react";
+import {
+  ArrowUpDownIcon,
+  CheckIcon,
+  PenLineIcon,
+  Trash2Icon,
+} from "lucide-react";
 import React, { useRef, useState } from "react";
 
 type Props = {
   index: number;
   chapter: TChapter;
   onDelete: (id: string) => void;
-  onUpdate: (id: string, title: string) => void;
+  onUpdate: (id: string, title: string, order?: number) => void;
 };
 
 const ChapterItem = ({ index, chapter, onDelete, onUpdate }: Props) => {
@@ -62,12 +68,15 @@ const ChapterItem = ({ index, chapter, onDelete, onUpdate }: Props) => {
         )}
         autoFocus={editMode}
       />
-      <Button
-        variant={"outline"}
-        size={"icon"}
-        className="ml-auto"
-        onClick={onEditClick}
-      >
+      <RandomInput
+        defaultValue={chapter.order}
+        className="ml-auto mr-2"
+        icon={<ArrowUpDownIcon className="w-4 h-4" />}
+        onSubmit={(order) => {
+          onUpdate(chapter._id, chapter.title, order);
+        }}
+      />
+      <Button variant={"outline"} size={"icon"} onClick={onEditClick}>
         {editMode ? (
           <CheckIcon className="w-4 h-4" />
         ) : (

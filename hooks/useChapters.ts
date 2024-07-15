@@ -53,7 +53,7 @@ const useChapters = (subject?: string, course?: string, book?: string) => {
     }
   };
 
-  const updateChapter = async (id: string, title: string) => {
+  const updateChapter = async (id: string, title: string, order?: number) => {
     try {
       if (!title) {
         throw new Error("Please add a chapter title!");
@@ -61,9 +61,11 @@ const useChapters = (subject?: string, course?: string, book?: string) => {
       await api.put(ENDPOINT.chapters, {
         id,
         title,
+        order,
       });
+      refresh();
       toast({
-        title: "Successfully updated chapter title!",
+        title: "Successfully updated chapter!",
         variant: "success",
       });
     } catch (err) {

@@ -16,7 +16,7 @@ export const GET = async (request: NextRequest) => {
     if (book) query.book = book;
 
     await dbConnect();
-    const chapters = await Chapter.find(query);
+    const chapters = await Chapter.find(query).sort({ order: 1 });
 
     return NextResponse.json(
       { status: "success", chapters: chapters },
@@ -32,7 +32,8 @@ export const GET = async (request: NextRequest) => {
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { course, subject, title, book } = (await request.json()) as TChapter;
+    const { course, subject, title, book, order } =
+      (await request.json()) as TChapter;
 
     if (!course || !subject || !title || !book) {
       return NextResponse.json(
@@ -46,7 +47,7 @@ export const POST = async (request: NextRequest) => {
 
     await dbConnect();
 
-    const newChapter = new Chapter({ course, subject, title, book });
+    const newChapter = new Chapter({ course, subject, title, book, order });
 
     await newChapter.save();
 
@@ -64,7 +65,7 @@ export const POST = async (request: NextRequest) => {
 
 export const PUT = async (request: NextRequest) => {
   try {
-    const { id, title } = await request.json();
+    const { id, title, order } = await request.json();
 
     if (!id || !title) {
       return NextResponse.json(
@@ -78,7 +79,12 @@ export const PUT = async (request: NextRequest) => {
 
     await dbConnect();
 
-    const newChapter = await Chapter.findByIdAndUpdate(id, { title: title });
+    const chapterObj: any = { title: title };
+    if (order) {
+      chapterObj.order = order;
+    }
+
+    const newChapter = await Chapter.findByIdAndUpdate(id, chapterObj);
 
     return NextResponse.json(
       { status: "success", chapter: newChapter },
