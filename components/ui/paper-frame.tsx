@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, getTotalMarks, segregateQuestionsBySubject } from "@/lib/utils";
+import { cn, getTotalMarks, segregateQuestionsBySubject, sortQuestionsByMarks } from "@/lib/utils";
 import type { TQuestion } from "@/models/Question";
 import React, { Fragment } from "react";
 import EducationPlusFrame from "../frames/education-plus-frame";
@@ -22,9 +22,10 @@ const PaperFrame = ({
   subject,
   ...rest
 }: Props) => {
-  const subjectQuestions = segregateQuestionsBySubject(questions, subject);
+  const sortedQuestion = sortQuestionsByMarks(questions);
+  const subjectQuestions = segregateQuestionsBySubject(sortedQuestion, subject);
   const fallbackCourse = (questions?.[0]?.chapter as TChapter)?.course;
-  const totalMarks = getTotalMarks(questions);
+  const totalMarks = getTotalMarks(sortedQuestion);
   return (
     <div className="pt-4 print:px-4">
       {subjectQuestions.map(({ subject: sub, questions: q }) => (

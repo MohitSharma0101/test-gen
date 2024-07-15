@@ -109,18 +109,27 @@ export function removeElementsById<T extends { id?: string; _id?: string }>(
   parentArray: T[],
   elementsToRemove: T[]
 ): T[] {
-  const idsToRemove = new Set(elementsToRemove.map((item) => item.id || item._id));
+  const idsToRemove = new Set(
+    elementsToRemove.map((item) => item.id || item._id)
+  );
   return parentArray.filter((item) => !idsToRemove.has(item.id || item._id));
 }
 
-export function getUniqueElementsById<T extends { id?: string; _id?: string }>(array: T[]): T[] {
+export function getUniqueElementsById<T extends { id?: string; _id?: string }>(
+  array: T[]
+): T[] {
   const seenIds = new Set();
-  return array.filter(item => {
-      if (seenIds.has(item.id || item._id)) {
-          return false;
-      } else {
-          seenIds.add(item.id || item._id);
-          return true;
-      }
+  return array.filter((item) => {
+    if (seenIds.has(item.id || item._id)) {
+      return false;
+    } else {
+      seenIds.add(item.id || item._id);
+      return true;
+    }
   });
 }
+
+export const sortQuestionsByMarks = (questions?: TQuestion[]) => {
+  if (!questions) return [];
+  return questions.sort((a, b) => (a.mark || 0) - (b.mark || 0));
+};
