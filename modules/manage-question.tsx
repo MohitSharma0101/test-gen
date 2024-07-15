@@ -8,7 +8,7 @@ import useChapters from "@/hooks/useChapters";
 import useQuestions from "@/hooks/useQuestions";
 import type { TChapter } from "@/models/Chapter";
 import type { TQuestion } from "@/models/Question";
-import { startTransition, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   CheckCheckIcon,
@@ -20,32 +20,19 @@ import {
 import {
   cn,
   getRandomItems,
-  getTotalMarks,
   getUniqueElementsById,
   isArrayIncluded,
   removeElementsById,
 } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
-import PaperFrame from "@/components/ui/paper-frame";
 import Pagination from "@/components/ui/pagination";
 import TimesUsed from "@/components/ui/times-used";
 import RandomInput from "@/components/ui/random-input";
 import Markdown from "@/components/ui/markdown";
 import useBooks from "@/hooks/useBooks";
-import SavePaperButton from "@/components/ui/save-paper-button";
-import PreviewButton from "@/components/ui/preview-button";
-import { TPaper } from "@/models/Paper";
+import DeleteButton from "@/components/ui/delete-button";
 
-type TCreatePaperProps = {
-  mode?: "create" | "update";
-  defaultPaper?: TPaper;
-};
-
-export default function CreatePaper({
-  mode = "create",
-  defaultPaper,
-}: TCreatePaperProps) {
+export default function ManageQuestion() {
   const [course, setCourse] = useState(COURSES[5]);
   const [subject, setSubject] = useState("");
   const [marks, setMarks] = useState("");
@@ -64,13 +51,11 @@ export default function CreatePaper({
     lastIndex,
     totalPages,
     totalQuestions,
+    deleteQuestions,
     refresh,
-    updateUsage,
   } = useQuestions(selectedChapter?._id, marks);
 
-  const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>(
-    defaultPaper?.questions || []
-  );
+  const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>([]);
 
   const [twoColumn, setTwoColumn] = useState(true);
   const allSelected = isArrayIncluded(questions ?? [], selectedQuestions);
@@ -88,7 +73,7 @@ export default function CreatePaper({
           <SelectCompact
             label="Class"
             placeholder="Select a class"
-            className="md:w-[300px] "
+            className="md:w-[300px]"
             value={course}
             onChange={setCourse}
             options={COURSES.map((c) => ({
@@ -140,41 +125,16 @@ export default function CreatePaper({
               Selected Questions:{" "}
               <strong>{selectedQuestions?.length || 0}</strong>
             </p>
-            <p>
-              Total Marks: <strong>{getTotalMarks(selectedQuestions)}</strong>
-            </p>
           </div>
           <div className="flex gap-2">
-            <SavePaperButton
-              id={defaultPaper?._id}
-              defaultTitle={defaultPaper?.title}
-              questions={selectedQuestions}
-            />
-            <PreviewButton
-              questions={selectedQuestions}
-              onPrint={() => updateUsage(selectedQuestions)}
-              defaultTwoColumn={twoColumn}
-            />
-            <Print>
-              <PrintTrigger
-                className="px-6"
-                onClick={async () => {
-                  startTransition(() => {
-                    updateUsage(selectedQuestions);
-                  });
-                }}
-              >
-                Print
-              </PrintTrigger>
-              <PrintContent>
-                <PaperFrame
-                  questions={selectedQuestions}
-                  twoColumn={twoColumn}
-                  course={course}
-                  subject={subject}
-                />
-              </PrintContent>
-            </Print>
+            <DeleteButton
+              size={"default"}
+              onDelete={(closeDialog) =>
+                deleteQuestions(selectedQuestions, closeDialog)
+              }
+            >
+              Delete
+            </DeleteButton>
           </div>
         </div>
       </div>

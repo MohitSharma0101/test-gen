@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactNode, useState } from "react";
 import {
   Dialog,
   DialogClose,
@@ -8,22 +8,34 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "./button";
+import { Button, ButtonProps } from "./button";
 import { Trash2Icon } from "lucide-react";
 
 type Props = {
   className?: string;
-  onDelete?: () => void;
+  onDelete?: (closeModel: () => void) => void;
   title?: string;
   description?: string;
+  size?: ButtonProps["size"];
+  children?: ReactNode;
 };
 
-const DeleteButton = ({ title, description, className, onDelete }: Props) => {
+const DeleteButton = ({
+  title,
+  description,
+  className,
+  children,
+  onDelete,
+  size = "icon",
+}: Props) => {
+  const [open, setOpen] = useState(false);
+  const closeDialog = () => setOpen(false);
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={"destructive"} size={"icon"} className={className}>
+        <Button variant={"destructive"} size={size} className={className}>
           <Trash2Icon className="w-4 h-4 text-destructive-foreground" />
+          {children}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -37,7 +49,10 @@ const DeleteButton = ({ title, description, className, onDelete }: Props) => {
           <DialogClose asChild>
             <Button variant={"outline"}>Cancel</Button>
           </DialogClose>
-          <Button variant={"destructive"} onClick={onDelete}>
+          <Button
+            variant={"destructive"}
+            onClick={() => onDelete?.(closeDialog)}
+          >
             <Trash2Icon className="w-4 h-4 mr-2" />
             Delete
           </Button>

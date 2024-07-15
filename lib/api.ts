@@ -1,7 +1,7 @@
 import axios from "axios"
 
 export const ENDPOINT = {
-    bulkUploadQuestion: 'bulk/question',
+    bulkQuestion: 'bulk/question',
     questions: 'question',
     chapters: 'chapter',
     books: 'books', 

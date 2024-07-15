@@ -44,7 +44,13 @@ export const fetchChapters = async (
 };
 
 export const uploadQuestionsInBatch = async (questions: TQuestion[]) => {
-  return await api.post(ENDPOINT.bulkUploadQuestion, {
+  return await api.post(ENDPOINT.bulkQuestion, {
+    questions: questions,
+  });
+};
+
+export const deleteQuestionsInBatch = async (questions: TQuestion[]) => {
+  return await api.patch(ENDPOINT.bulkQuestion, {
     questions: questions,
   });
 };

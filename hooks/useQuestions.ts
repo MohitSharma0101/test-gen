@@ -1,8 +1,13 @@
 "use client";
 
+import { toast } from "@/components/ui/use-toast";
 import { ENDPOINT } from "@/lib/api";
 import type { TQuestion } from "@/models/Question";
-import { fetchQuestions, postUpdateUsage } from "@/service/core.service";
+import {
+  deleteQuestionsInBatch,
+  fetchQuestions,
+  postUpdateUsage,
+} from "@/service/core.service";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
@@ -10,7 +15,9 @@ const useQuestions = (chapter?: string, marks?: string) => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page") || 1);
   const limit = Number(searchParams.get("limit") || 50);
-  const cache = !chapter ? null : ENDPOINT.questions + chapter + page + limit + marks;
+  const cache = !chapter
+    ? null
+    : ENDPOINT.questions + chapter + page + limit + marks;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
@@ -24,7 +31,7 @@ const useQuestions = (chapter?: string, marks?: string) => {
       keepPreviousData: true,
     }
   );
-  const questions = (data?.questions as TQuestion[]);
+  const questions = data?.questions as TQuestion[];
   const loading = isLoading || isValidating;
   const refresh = () => mutate();
   const totalQuestions = data?.totalQuestions;
@@ -41,6 +48,28 @@ const useQuestions = (chapter?: string, marks?: string) => {
     }
   };
 
+  const deleteQuestions = async (
+    questions: TQuestion[],
+    onSuccess?: () => void
+  ) => {
+    if (questions.length === 0) return;
+    try {
+      await deleteQuestionsInBatch(questions);
+      refresh();
+      onSuccess?.();
+      toast({
+        title: "Successfully deleted questions",
+        variant: "success",
+      });
+    } catch (err) {
+      console.log(err);
+      toast({
+        title: (err as any).message || "something went wrong",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     questions,
     loading,
@@ -52,6 +81,7 @@ const useQuestions = (chapter?: string, marks?: string) => {
     totalPages,
     refresh,
     updateUsage,
+    deleteQuestions,
   };
 };
 
