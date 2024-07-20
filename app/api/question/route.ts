@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
 import Question, { TQuestion } from "@/models/Question";
-import '@/models/Chapter';
+import "@/models/Chapter";
 
 export const GET = async (request: NextRequest) => {
   try {
@@ -73,6 +73,41 @@ export const POST = async (request: NextRequest) => {
 
     return NextResponse.json(
       { status: "success", question: newQuestion },
+      { status: 201 }
+    );
+  } catch (err: any) {
+    return NextResponse.json(
+      { status: "error", error: err.message ?? "Something went wrong" },
+      { status: 500 }
+    );
+  }
+};
+
+export const PUT = async (request: NextRequest) => {
+  try {
+    const { id, ans, mark, text } = await request.json();
+
+    if (!id) {
+      return NextResponse.json(
+        {
+          status: "error",
+          error: "question id is required.",
+        },
+        { status: 500 }
+      );
+    }
+
+    await dbConnect();
+
+    const questionObj: TQuestion = {};
+    if (ans) questionObj.ans = ans;
+    if (text) questionObj.text = text;
+    if (mark) questionObj.mark = mark;
+
+    const question = await Question.findByIdAndUpdate(id, questionObj);
+
+    return NextResponse.json(
+      { status: "success", question: question },
       { status: 201 }
     );
   } catch (err: any) {

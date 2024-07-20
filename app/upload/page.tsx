@@ -15,6 +15,7 @@ import { uploadQuestionsInBatch } from "@/service/core.service";
 import { toast } from "@/components/ui/use-toast";
 import Markdown from "@/components/ui/markdown";
 import { Button } from "@/components/ui/button";
+import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
 
 type Props = {};
 
@@ -106,6 +107,7 @@ const DashboardPage = (props: Props) => {
               accept=".md"
               onChange={onQuestionChange}
             />
+            <EditMarkdownSheet />
           </label>
           <label
             htmlFor="answer-input"

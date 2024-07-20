@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { TChapter } from "./Chapter";
 
 export type TQuestion = {
+  id?: string;
   _id?: string;
   text?: string;
   ans?: string;

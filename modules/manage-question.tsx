@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   CheckCheckIcon,
+  CheckIcon,
   Columns2Icon,
   InboxIcon,
   MenuIcon,
@@ -31,6 +32,7 @@ import RandomInput from "@/components/ui/random-input";
 import Markdown from "@/components/ui/markdown";
 import useBooks from "@/hooks/useBooks";
 import DeleteButton from "@/components/ui/delete-button";
+import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
 
 export default function ManageQuestion() {
   const [course, setCourse] = useState(COURSES[5]);
@@ -53,6 +55,7 @@ export default function ManageQuestion() {
     totalQuestions,
     deleteQuestions,
     refresh,
+    updateQuestion,
   } = useQuestions(selectedChapter?._id, marks);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>([]);
@@ -132,6 +135,7 @@ export default function ManageQuestion() {
               onDelete={(closeDialog) =>
                 deleteQuestions(selectedQuestions, closeDialog)
               }
+              className="gap-1"
             >
               Delete
             </DeleteButton>
@@ -248,13 +252,6 @@ export default function ManageQuestion() {
             )}
 
             {totalPages ? <Pagination totalPages={totalPages} /> : null}
-            {questions?.length > 0 && (
-              <RandomInput
-                onSubmit={(random) => {
-                  setSelectedQuestions(getRandomItems(questions, random));
-                }}
-              />
-            )}
             <Button size={"sm"} variant={"outline"} onClick={refresh}>
               <RefreshCcw className="w-4 h-4" />
             </Button>
@@ -325,6 +322,15 @@ export default function ManageQuestion() {
                           }}
                         />
                         <TimesUsed count={q.timesUsed} />
+                        <EditMarkdownSheet
+                          text={q.text}
+                          onSave={(text) => {
+                            updateQuestion({
+                              id: q._id,
+                              text: text,
+                            });
+                          }}
+                        />
                       </div>
                     </div>
                     <span className="pt-[10px] px-2">
@@ -333,11 +339,35 @@ export default function ManageQuestion() {
                     <div>
                       <Markdown text={q.text ?? ""} />
                       <div className="flex gap-2 items-start [&_#preview]:!py-0">
-                        <strong>Ans:</strong> <Markdown text={q.ans || ""} />
+                        <strong className="flex flex-col">
+                          Ans:
+                          <EditMarkdownSheet
+                            text={q.ans}
+                            onSave={(text) => {
+                              updateQuestion({
+                                id: q._id,
+                                ans: text,
+                              });
+                            }}
+                          />
+                        </strong>{" "}
+                        <Markdown text={q.ans || ""} />
                       </div>
                     </div>
                     <span className="pt-[10px] px-2 font-medium ml-auto">
-                      [{q.mark}]
+                      <RandomInput
+                        defaultValue={q.mark}
+                        onSubmit={(num) => {
+                          updateQuestion({
+                            id: q._id,
+                            mark: num,
+                          });
+                        }}
+                        disabledOnSame
+                        icon={(
+                          <CheckIcon className="w-4 h-4" />
+                        )}
+                      />
                     </span>
                   </label>
                 ))

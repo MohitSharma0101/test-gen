@@ -76,13 +76,17 @@ export const fetchPapers = async (id?: string | null) => {
   ).data.papers;
 };
 
-export const savePaper = async (title: string, questions: TQuestion[], id?: string) => {
+export const savePaper = async (
+  title: string,
+  questions: TQuestion[],
+  id?: string
+) => {
   if (questions.length === 0) return;
   try {
     await api.post(ENDPOINT.papers, {
       title,
       questions,
-      id
+      id,
     });
     toast({
       title: "💾 Question Paper saved!",
@@ -100,5 +104,12 @@ export const savePaper = async (title: string, questions: TQuestion[], id?: stri
 export const postUpdateUsage = async (questions: TQuestion[]) => {
   return await api.post(ENDPOINT.questionsUsed, {
     questions,
+  });
+};
+
+export const putUpdateQuestion = async (question: TQuestion) => {
+  return await api.put(ENDPOINT.questions, {
+    id: question._id,
+    ...question,
   });
 };

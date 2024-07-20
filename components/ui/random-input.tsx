@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   defaultValue?: number;
+  disabledOnSame?: boolean;
   onSubmit?: (random: number) => void;
   icon?: ReactNode;
   className?: string;
@@ -13,6 +14,7 @@ type Props = {
 const RandomInput = ({
   onSubmit,
   defaultValue = 5,
+  disabledOnSame,
   icon,
   className,
 }: Props) => {
@@ -31,6 +33,7 @@ const RandomInput = ({
       />
       <Button
         size={"icon"}
+        disabled={disabledOnSame && defaultValue == value}
         className="rounded-l-none h-8"
         onClick={() => onSubmit?.(value)}
       >

@@ -7,6 +7,7 @@ import {
   deleteQuestionsInBatch,
   fetchQuestions,
   postUpdateUsage,
+  putUpdateQuestion,
 } from "@/service/core.service";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
@@ -70,6 +71,24 @@ const useQuestions = (chapter?: string, marks?: string) => {
     }
   };
 
+  const updateQuestion = async (q: TQuestion) => {
+    if (questions.length === 0) return;
+    try {
+      await putUpdateQuestion(q);
+      refresh();
+      toast({
+        title: "Successfully updated question",
+        variant: "success",
+      });
+    } catch (err) {
+      console.log(err);
+      toast({
+        title: (err as any).message || "something went wrong",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     questions,
     loading,
@@ -82,6 +101,7 @@ const useQuestions = (chapter?: string, marks?: string) => {
     refresh,
     updateUsage,
     deleteQuestions,
+    updateQuestion,
   };
 };
 
