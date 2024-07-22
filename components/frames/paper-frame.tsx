@@ -3,8 +3,8 @@
 import { cn, getTotalMarks, segregateQuestionsBySubject, sortQuestionsByMarks } from "@/lib/utils";
 import type { TQuestion } from "@/models/Question";
 import React, { Fragment } from "react";
-import EducationPlusFrame from "../frames/education-plus-frame";
-import Markdown from "./markdown";
+import EducationPlusFrame from "./education-plus-frame";
+import Markdown from "../ui/markdown";
 import type { TChapter } from "@/models/Chapter";
 
 type Props = JSX.IntrinsicElements["ol"] & {

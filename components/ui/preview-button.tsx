@@ -2,10 +2,11 @@ import React, { startTransition, useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "./sheet";
 import { Button } from "./button";
 import { Print, PrintContent, PrintTrigger } from "./print";
-import PaperFrame from "./paper-frame";
+import PaperFrame from "../frames/paper-frame";
 import type { TQuestion } from "@/models/Question";
 import { Columns2Icon } from "lucide-react";
 import MCQAnsFrame from "../frames/mcq-ans-frame";
+import TeachersCopiesFrame from "../frames/teachers-copies-frame";
 
 type Props = {
   questions: TQuestion[];
@@ -68,6 +69,15 @@ const PreviewButton = ({
               <PrintTrigger>Print MCQ Answer</PrintTrigger>
               <PrintContent>
                 <MCQAnsFrame questions={questions} />
+              </PrintContent>
+            </Print>
+            <Print>
+              <PrintTrigger>Print Teachers Copy</PrintTrigger>
+              <PrintContent>
+                <TeachersCopiesFrame
+                  questions={questions}
+                  twoColumn={twoColumn}
+                />
               </PrintContent>
             </Print>
           </div>

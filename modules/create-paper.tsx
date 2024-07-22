@@ -27,7 +27,7 @@ import {
 } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
-import PaperFrame from "@/components/ui/paper-frame";
+import PaperFrame from "@/components/frames/paper-frame";
 import Pagination from "@/components/ui/pagination";
 import TimesUsed from "@/components/ui/times-used";
 import RandomInput from "@/components/ui/random-input";

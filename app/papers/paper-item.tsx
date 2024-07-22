@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import PaperFrame from "@/components/ui/paper-frame";
+import PaperFrame from "@/components/frames/paper-frame";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/use-toast";

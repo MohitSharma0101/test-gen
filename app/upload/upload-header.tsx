@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Loader2Icon } from "lucide-react";
 import useBooks from "@/hooks/useBooks";
 import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
-import PaperFrame from "@/components/ui/paper-frame";
+import PaperFrame from "@/components/frames/paper-frame";
 import type { TQuestion } from "@/models/Question";
 import PreviewButton from "@/components/ui/preview-button";
 
