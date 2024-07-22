@@ -1,10 +1,11 @@
 "use client";
 
-import React, { ChangeEvent, useState } from "react";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import UploadHeader from "./upload-header";
 import type { TQuestion } from "@/models/Question";
 import {
   Columns2Icon,
+  Edit2Icon,
   EyeIcon,
   FileCheckIcon,
   FileQuestion,
@@ -22,19 +23,44 @@ type Props = {};
 const DashboardPage = (props: Props) => {
   const [questions, setQuestions] = useState<TQuestion[]>([]);
   const [twoColumn, setTwoColumn] = useState(true);
+  const [questionContent, setQuestionContent] = useState("");
+  const [ansContent, setAnsContent] = useState("");
+
+  useEffect(() => {
+    if (questionContent) {
+      const items = extractItemsArray(questionContent);
+      const ques: TQuestion[] = [];
+      for (let i = 0; i < items.length; i++) {
+        ques.push({
+          text: items[i],
+        });
+      }
+      setQuestions(ques);
+    }
+    if (ansContent) {
+      const items = extractItemsArray(ansContent);
+      let ques = questions;
+      ques = ques.map((q, index) => ({
+        ...q,
+        ans: items[index],
+      }));
+      setQuestions([...ques]);
+    }
+  }, [questionContent, ansContent]);
 
   const onQuestionChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       readFile(file, (content) => {
-        const items = extractItemsArray(content);
-        const ques: TQuestion[] = [];
-        for (let i = 0; i < items.length; i++) {
-          ques.push({
-            text: items[i],
-          });
-        }
-        setQuestions(ques);
+        setQuestionContent(content);
+        // const items = extractItemsArray(content);
+        // const ques: TQuestion[] = [];
+        // for (let i = 0; i < items.length; i++) {
+        //   ques.push({
+        //     text: items[i],
+        //   });
+        // }
+        // setQuestions(ques);
       });
     }
   };
@@ -43,13 +69,14 @@ const DashboardPage = (props: Props) => {
     const file = e.target.files?.[0];
     if (file) {
       readFile(file, (content) => {
-        const items = extractItemsArray(content);
-        let ques = questions;
-        ques = ques.map((q, index) => ({
-          ...q,
-          ans: items[index],
-        }));
-        setQuestions([...ques]);
+        setAnsContent(content);
+        // const items = extractItemsArray(content);
+        // let ques = questions;
+        // ques = ques.map((q, index) => ({
+        //   ...q,
+        //   ans: items[index],
+        // }));
+        // setQuestions([...ques]);
       });
     }
   };
@@ -68,14 +95,15 @@ const DashboardPage = (props: Props) => {
           title: `🎉 Successfully Uploaded ${questions.length} questions.`,
           variant: "success",
         });
+        setQuestions([]);
+        setQuestionContent("");
+        setAnsContent("");
       } else {
         toast({
           title: `Please add questions!`,
           variant: "destructive",
         });
       }
-
-      setQuestions([]);
     } catch (err) {
       toast({
         title: `Uploaded failed.`,
@@ -107,7 +135,14 @@ const DashboardPage = (props: Props) => {
               accept=".md"
               onChange={onQuestionChange}
             />
-            <EditMarkdownSheet />
+            <EditMarkdownSheet
+              text={questionContent}
+              onSave={setQuestionContent}
+            >
+              <Button variant={"outline"} size={"icon"}>
+                <Edit2Icon className="w-4 h-4" />
+              </Button>
+            </EditMarkdownSheet>
           </label>
           <label
             htmlFor="answer-input"
@@ -122,6 +157,11 @@ const DashboardPage = (props: Props) => {
               accept=".md"
               onChange={onAnswerChange}
             />
+            <EditMarkdownSheet text={ansContent} onSave={setAnsContent}>
+              <Button variant={"outline"} size={"icon"}>
+                <Edit2Icon className="w-4 h-4" />
+              </Button>
+            </EditMarkdownSheet>
           </label>
         </div>
 
