@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 import { useAuth } from "@/context/auth-context";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, Settings2Icon } from "lucide-react";
+import Link from "next/link";
 
 type Props = {};
 
@@ -24,6 +25,12 @@ const UserMenu = (props: Props) => {
       <DropdownMenuContent align="end" className="mx-2 p-2 min-w-[160px]">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href={"/account"}>
+            <Settings2Icon className="w-4 h-4 mr-2" />
+            Settings
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={logout}
           className="focus:bg-red-400 hover:bg-red-400 focus:text-white"

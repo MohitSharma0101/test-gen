@@ -21,11 +21,7 @@ import {
 import { Button } from "./button";
 import UserMenu from "./user-menu";
 
-type Props = {
-  active: "create" | "upload" | "chapter" | "book";
-};
-
-const Header = ({ active }: Props) => {
+const Header = () => {
   return (
     <div className="bg-white w-full px-3 md:px-6 py-2 flex justify-between gap-4 text-sm font-bold">
       <div className="flex items-center justify-center gap-2 font-bold text-xl">

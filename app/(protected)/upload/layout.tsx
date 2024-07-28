@@ -1,9 +1,7 @@
-import Header from "@/components/ui/header";
 import dynamic from "next/dynamic";
 
 const DynamicMathpixProvider = dynamic(
-  () => import(
-   "@/provider/MathpixProvider"),
+  () => import("@/provider/MathpixProvider"),
   { ssr: false }
 );
 
@@ -14,7 +12,6 @@ export default function RootLayout({
 }>) {
   return (
     <>
-      <Header active="upload" />
       {children}
       <DynamicMathpixProvider />
     </>

@@ -1,3 +1,4 @@
+import Header from "@/components/ui/header";
 import { AuthProvider } from "@/context/auth-context";
 import { getUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -10,7 +11,12 @@ const ProtectedLayout = async ({
 }>) => {
   const user = await getUser();
   if (!user) redirect("/login");
-  return <AuthProvider user={user}>{children}</AuthProvider>;
+  return (
+    <AuthProvider user={user}>
+      <Header />
+      {children}
+    </AuthProvider>
+  );
 };
 
 export default ProtectedLayout;

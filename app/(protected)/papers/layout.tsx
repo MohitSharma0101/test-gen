@@ -1,4 +1,3 @@
-import Header from "@/components/ui/header";
 import dynamic from "next/dynamic";
 
 const DynamicMathpixProvider = dynamic(
@@ -15,7 +14,6 @@ export default function RootLayout({
 
   return (
     <>
-      <Header active="book" />
       {children}
       <DynamicMathpixProvider />
     </>

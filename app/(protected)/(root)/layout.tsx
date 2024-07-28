@@ -1,4 +1,3 @@
-import Header from "@/components/ui/header";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 
@@ -15,7 +14,6 @@ export default async function RootLayout({
 
   return (
     <>
-      <Header active="create" />
       <Suspense>{children}</Suspense>
       <DynamicMathpixProvider />
     </>
