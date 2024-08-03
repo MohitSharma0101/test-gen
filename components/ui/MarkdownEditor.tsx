@@ -27,7 +27,7 @@ const MarkdownEditor = ({ defaultText, onSave }: Props) => {
           </Button>
         </h5>
         <Textarea
-          className="resize-none rounded-none text-base h-full max-h-[618px]"
+          className="resize-none rounded-none text-base h-full"
           placeholder="Enter your text here..."
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -36,7 +36,7 @@ const MarkdownEditor = ({ defaultText, onSave }: Props) => {
       <ResizableHandle withHandle />
       <ResizablePanel className="[&_ol]:list-decimal [&_ol]:list-outside [&_ol]:ml-4">
         <h5 className="w-full p-4 border-b font-bold flex items-center h-[60px]">Preview</h5>
-        <div className="h-[618px] overflow-y-scroll">
+        <div className="overflow-y-scroll">
           <Markdown text={text} />
         </div>
       </ResizablePanel>
