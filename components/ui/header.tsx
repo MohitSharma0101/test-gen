@@ -40,7 +40,6 @@ const Header = () => {
         </div>
       </div>
       <div className="flex items-center justify-center gap-2">
-        <UserMenu />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant={"outline"}>
@@ -88,6 +87,7 @@ const Header = () => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <UserMenu />
       </div>
     </div>
   );

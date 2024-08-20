@@ -7,42 +7,42 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
-import {
-  TGeneralSettingFormSchema,
-  useGeneralSettingForm,
-} from "./account-form.schema";
 import { useAuth } from "@/context/auth-context";
-import { updateProfile } from "@/service/auth.service";
+import { resetPassword } from "@/service/auth.service";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
+import {
+  TResetPasswordFormSchema,
+  useResetPasswordForm,
+} from "./reset-password-form.schema";
+import PasswordInput from "@/components/ui/password-input";
 
-const AccountForm = () => {
+const ResetPasswordForm = () => {
   const { user } = useAuth();
   const router = useRouter();
-  const form = useGeneralSettingForm(user);
+  const form = useResetPasswordForm();
   const { isSubmitting: isLoading } = form.formState;
 
-  const onSubmit = async (values: TGeneralSettingFormSchema) => {
+  const onSubmit = async (values: TResetPasswordFormSchema) => {
     try {
-      await updateProfile(values);
+      await resetPassword(values);
       toast({
-        title: "Profile Updated!",
+        title: "Password Reset!",
         variant: "success",
       });
       router.refresh();
-    } catch (er) {
+    } catch (err: any) {
+      console.log("err: ", err);
       toast({
-        title: (er as any)?.message || "Something went wrong!",
+        title: err?.message || "Something went wrong!",
         variant: "destructive",
       });
     }
   };
-  
+
   return (
     <Form {...form}>
       <form
@@ -54,12 +54,15 @@ const AccountForm = () => {
         </div>
         <FormField
           control={form.control}
-          name="name"
+          name="currentPassword"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter your first name" {...field} />
+                <PasswordInput
+                  label="Current Password"
+                  placeholder="Enter your first name"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -67,12 +70,31 @@ const AccountForm = () => {
         />
         <FormField
           control={form.control}
-          name="email"
+          name="newPassword"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="Enter your email" {...field} />
+                <PasswordInput
+                  label="New Password"
+                  placeholder="Enter your first name"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="confirmNewPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <PasswordInput
+                  label="Confirm Password"
+                  placeholder="Enter your first name"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -85,11 +107,11 @@ const AccountForm = () => {
           type="submit"
         >
           {isLoading && <Loader2 className="animate-spin w-4 h-4" />}
-          Update
+          Reset
         </Button>
       </form>
     </Form>
   );
 };
 
-export default AccountForm;
+export default ResetPasswordForm;

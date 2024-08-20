@@ -31,7 +31,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, Props>(
           </Button>
         </FormLabel>
         <Input
-          type={showPassword ? "password" : "text"}
+          type={showPassword ? "text" : "password"}
           placeholder="Enter your password"
           ref={ref}
           {...props}

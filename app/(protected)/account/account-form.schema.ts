@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-export const generalSettingFormSchema = z.object({
+export const GeneralSettingFormSchema = z.object({
   name: z
     .string()
     .min(2, { message: "Name should have at least 2 characters" })
@@ -11,11 +11,11 @@ export const generalSettingFormSchema = z.object({
   email: z.string().email(),
 });
 
-export type GeneralSettingFormSchema = z.infer<typeof generalSettingFormSchema>;
+export type TGeneralSettingFormSchema = z.infer<typeof GeneralSettingFormSchema>;
 
 export const useGeneralSettingForm = (user: TUser | null) =>
-  useForm<GeneralSettingFormSchema>({
-    resolver: zodResolver(generalSettingFormSchema),
+  useForm<TGeneralSettingFormSchema>({
+    resolver: zodResolver(GeneralSettingFormSchema),
     defaultValues: {
       name: user?.name,
       email: user?.email,

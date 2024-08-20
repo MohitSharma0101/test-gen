@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 import { useAuth } from "@/context/auth-context";
-import { LogOutIcon, Settings2Icon } from "lucide-react";
+import { LockIcon, LogOutIcon, User2Icon } from "lucide-react";
 import Link from "next/link";
 
 type Props = {};
@@ -19,7 +19,7 @@ const UserMenu = (props: Props) => {
   const { user, logout } = useAuth();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="outline-primary w-10 h-10 rounded-full bg-slate-400 flex items-center justify-center text-white">
+      <DropdownMenuTrigger className="outline-primary w-8 h-8 rounded-full bg-slate-400 flex items-center justify-center text-white">
         {user?.name.slice(0, 1)}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="mx-2 p-2 min-w-[160px]">
@@ -27,8 +27,14 @@ const UserMenu = (props: Props) => {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href={"/account"}>
-            <Settings2Icon className="w-4 h-4 mr-2" />
-            Settings
+            <User2Icon className="w-4 h-4 mr-2" />
+            Profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={"/reset-password"}>
+            <LockIcon className="w-4 h-4 mr-2" />
+            Reset Password
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem
