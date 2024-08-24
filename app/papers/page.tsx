@@ -47,10 +47,10 @@ const PapersPage = (props: Props) => {
               <TableRow className="divide-x divide-slate-300 border-b border-slate-300">
                 <TableHead className="min-w-[200px]">Title</TableHead>
                 <TableHead className="w-[150px] text-right">
-                  Total Marks
+                  Total Questions
                 </TableHead>
                 <TableHead className="w-[150px] text-right">
-                  Total Questions
+                  Total Marks
                 </TableHead>
                 <TableHead className="w-[150px] text-right">
                   Created At
