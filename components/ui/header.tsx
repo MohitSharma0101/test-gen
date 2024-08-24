@@ -6,6 +6,7 @@ import {
   FileUpIcon,
   MenuIcon,
   NewspaperIcon,
+  User2Icon,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -83,6 +84,15 @@ const Header = () => {
               <Link href={"/questions"} className="cursor-pointer">
                 <FileQuestion className="w-5 h-5 mr-2" strokeWidth={2} />
                 Question
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem asChild>
+              <Link href={"/admin/manage-users"} className="cursor-pointer bg-amber-400/60">
+                <User2Icon className="w-5 h-5 mr-2" strokeWidth={2} />
+                Manage Users
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
