@@ -21,7 +21,7 @@ const EditMarkdownSheet = ({ text, onSave, children }: Props) => {
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent side={"bottom"} className="max-h-[80dvh]">
+      <SheetContent side={"bottom"} className="max-h-[80dvh] pb-10">
         <MarkdownEditor
           defaultText={text}
           onSave={(text) => {

@@ -7,6 +7,7 @@ import type { TQuestion } from "@/models/Question";
 import { Columns2Icon } from "lucide-react";
 import MCQAnsFrame from "../frames/mcq-ans-frame";
 import TeachersCopiesFrame from "../frames/teachers-copies-frame";
+import CopyQuestionsMd from "./copy--questions-md";
 
 type Props = {
   questions: TQuestion[];
@@ -80,6 +81,7 @@ const PreviewButton = ({
                 />
               </PrintContent>
             </Print>
+            <CopyQuestionsMd questions={questions} />
           </div>
 
           <PrintContent className="block">

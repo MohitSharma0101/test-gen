@@ -184,7 +184,7 @@ export default function CreatePaper({
           <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">
             CHAPTERS
           </div>
-          <ol className=" max-h-full list-decimal flex flex-col overflow-scroll scrollbar-hide py-4">
+          <ol className="h-full max-h-[100vh] list-decimal flex flex-col overflow-scroll pt-4 pb-[200px]">
             {chaptersLoading ? (
               <>
                 <Skeleton className="h-[30px] mx-4 my-1" />

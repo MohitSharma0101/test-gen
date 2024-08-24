@@ -7,7 +7,7 @@ import {
   sortQuestionsByMarks,
 } from "@/lib/utils";
 import type { TQuestion } from "@/models/Question";
-import React, { Fragment } from "react";
+import React from "react";
 import EducationPlusFrame from "./education-plus-frame";
 import Markdown from "../ui/markdown";
 import type { TChapter } from "@/models/Chapter";
@@ -61,6 +61,7 @@ const TeachersCopiesFrame = ({
                 <span
                   className="pr-2 font-medium ml-auto focus-visible:outline-none"
                   contentEditable
+                  suppressContentEditableWarning={true}
                 >
                   [{q.mark}]
                 </span>

@@ -51,6 +51,7 @@ const PaperFrame = ({
                 <span
                   className="pt-[10px] pr-2 font-medium ml-auto focus-visible:outline-none"
                   contentEditable
+                  suppressContentEditableWarning={true}
                 >
                   [{q.mark}]
                 </span>

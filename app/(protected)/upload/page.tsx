@@ -1,22 +1,22 @@
 "use client";
 
-import React, { ChangeEvent, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import UploadHeader from "./upload-header";
 import type { TQuestion } from "@/models/Question";
 import {
   Columns2Icon,
-  Edit2Icon,
   EyeIcon,
   FileCheckIcon,
+  FileDigitIcon,
   FileQuestion,
 } from "lucide-react";
-import { cn, readFile } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { extractItemsArray } from "@/lib/mdUtils";
 import { uploadQuestionsInBatch } from "@/service/core.service";
 import { toast } from "@/components/ui/use-toast";
 import Markdown from "@/components/ui/markdown";
 import { Button } from "@/components/ui/button";
-import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
+import UploadInput from "./upload-input";
 
 type Props = {};
 
@@ -25,6 +25,7 @@ const DashboardPage = (props: Props) => {
   const [twoColumn, setTwoColumn] = useState(true);
   const [questionContent, setQuestionContent] = useState("");
   const [ansContent, setAnsContent] = useState("");
+  const [questionAnsContent, setQuestionAnsContent] = useState("");
 
   useEffect(() => {
     if (questionContent) {
@@ -37,6 +38,9 @@ const DashboardPage = (props: Props) => {
       }
       setQuestions(ques);
     }
+  }, [questionContent]);
+
+  useEffect(() => {
     if (ansContent) {
       const items = extractItemsArray(ansContent);
       let ques = questions;
@@ -46,40 +50,22 @@ const DashboardPage = (props: Props) => {
       }));
       setQuestions([...ques]);
     }
-  }, [questionContent, ansContent]);
+  }, [ansContent]);
 
-  const onQuestionChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      readFile(file, (content) => {
-        setQuestionContent(content);
-        // const items = extractItemsArray(content);
-        // const ques: TQuestion[] = [];
-        // for (let i = 0; i < items.length; i++) {
-        //   ques.push({
-        //     text: items[i],
-        //   });
-        // }
-        // setQuestions(ques);
-      });
+  useEffect(() => {
+    if (questionAnsContent) {
+      const items = extractItemsArray(questionAnsContent);
+      const ques: TQuestion[] = [];
+      for (let i = 0; i < items.length; i++) {
+        ques.push({
+          text: items[i],
+          ans: items?.[i + 1],
+        });
+        i++;
+      }
+      setQuestions(ques);
     }
-  };
-
-  const onAnswerChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      readFile(file, (content) => {
-        setAnsContent(content);
-        // const items = extractItemsArray(content);
-        // let ques = questions;
-        // ques = ques.map((q, index) => ({
-        //   ...q,
-        //   ans: items[index],
-        // }));
-        // setQuestions([...ques]);
-      });
-    }
-  };
+  }, [questionAnsContent]);
 
   const onUpload = async (chapter: string, mark: string) => {
     try {
@@ -122,47 +108,33 @@ const DashboardPage = (props: Props) => {
       />
       <div className="mt-4 border border-slate-200 w-full h-full">
         <div className="flex">
-          <label
-            htmlFor="question-input"
-            className="w-1/2 p-10 cursor-pointer hover:bg-slate-200 border border-slate-200 flex gap-4 flex-col items-center justify-center text-slate-600 font-medium"
-          >
-            <FileQuestion className="w-[100px] h-[100px]" strokeWidth={1} />
-            <p>Upload Question Set</p>
-            <input
-              id="question-input"
-              className="hidden"
-              type="file"
-              accept=".md"
-              onChange={onQuestionChange}
-            />
-            <EditMarkdownSheet
-              text={questionContent}
-              onSave={setQuestionContent}
-            >
-              <Button variant={"outline"} size={"icon"}>
-                <Edit2Icon className="w-4 h-4" />
-              </Button>
-            </EditMarkdownSheet>
-          </label>
-          <label
-            htmlFor="answer-input"
-            className="w-1/2 p-10 cursor-pointer hover:bg-slate-200 border border-slate-200 flex gap-4 flex-col items-center justify-center text-slate-600 font-medium"
-          >
-            <FileCheckIcon className="w-[100px] h-[100px]" strokeWidth={1} />
-            <p>Upload Answer Set</p>
-            <input
-              id="answer-input"
-              className="hidden"
-              type="file"
-              accept=".md"
-              onChange={onAnswerChange}
-            />
-            <EditMarkdownSheet text={ansContent} onSave={setAnsContent}>
-              <Button variant={"outline"} size={"icon"}>
-                <Edit2Icon className="w-4 h-4" />
-              </Button>
-            </EditMarkdownSheet>
-          </label>
+          <UploadInput
+            id="question-input"
+            label="Upload Question Set"
+            icon={
+              <FileQuestion className="w-[100px] h-[100px]" strokeWidth={1} />
+            }
+            text={questionContent}
+            onChange={setQuestionContent}
+          />
+          <UploadInput
+            id="ans-input"
+            label="Upload Answer Set"
+            icon={
+              <FileCheckIcon className="w-[100px] h-[100px]" strokeWidth={1} />
+            }
+            text={ansContent}
+            onChange={setAnsContent}
+          />
+          <UploadInput
+            id="question-ans-input"
+            label="Upload Questions & Answer Set"
+            icon={
+              <FileDigitIcon className="w-[100px] h-[100px]" strokeWidth={1} />
+            }
+            text={questionAnsContent}
+            onChange={setQuestionAnsContent}
+          />
         </div>
 
         <div className="scrollbar-hide overflow-scroll border border-slate-200 text-slate-600 font-medium">

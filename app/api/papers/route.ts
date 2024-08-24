@@ -12,13 +12,15 @@ export const GET = async (request: NextRequest) => {
     if (id) query._id = id;
 
     await dbConnect();
-    const papers = await Paper.find(query).populate({
-      path: "questions",
-      populate: {
-        path: "chapter",
-        model: "Chapter",
-      },
-    });
+    const papers = await Paper.find(query)
+      .sort({ createdAt: -1, _id: -1 })
+      .populate({
+        path: "questions",
+        populate: {
+          path: "chapter",
+          model: "Chapter",
+        },
+      });
 
     return NextResponse.json(
       { status: "success", papers: papers },

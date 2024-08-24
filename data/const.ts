@@ -9,8 +9,8 @@ export const BOARDS_SUBJECTS = [
   "Social Studies",
 ];
 export const STREAM_SUBJECTS = ["Physics", "Maths", "Chemistry", "Bio"];
-export const JEE_SUBJECTS = ["Physics", "Maths", "Chemistry"];
-export const NEET_SUBJECTS = ["Physics", "Chemistry", "Bio"];
+export const JEE_SUBJECTS = ["Physics", "Maths", "Chemistry", "JEE Test"];
+export const NEET_SUBJECTS = ["Physics", "Chemistry", "Bio", "NEET Test"];
 
 type TSubjectMap = {
   [key: string]: string[];

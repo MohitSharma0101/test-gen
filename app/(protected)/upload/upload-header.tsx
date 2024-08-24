@@ -112,7 +112,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
           Total Marks: <strong>{questions?.length * Number(marks)}</strong>
         </p>
         <Button
-          disabled={loading}
+          disabled={questions.length === 0 || loading}
           onClick={async () => {
             if (chapter) {
               setLoading(true);
@@ -132,7 +132,9 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         </Button>
         <PreviewButton questions={questions} defaultTwoColumn={twoColumn} />
         <Print>
-          <PrintTrigger className="px-6">Print</PrintTrigger>
+          <PrintTrigger disabled={questions.length === 0 || loading} className="px-6">
+            Print
+          </PrintTrigger>
           <PrintContent>
             <PaperFrame
               questions={questions.map((q) => ({
