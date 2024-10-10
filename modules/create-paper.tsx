@@ -291,7 +291,12 @@ export default function CreatePaper({
             {questions?.length > 0 && (
               <RandomInput
                 onSubmit={(random) => {
-                  setSelectedQuestions(getRandomItems(questions, random));
+                  setSelectedQuestions((prev) =>
+                    getUniqueElementsById([
+                      ...prev,
+                      ...getRandomItems(questions, random),
+                    ])
+                  );
                 }}
               />
             )}
