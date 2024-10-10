@@ -31,7 +31,7 @@ export const getUser = async ({ includePassword }: TGetUserProps = {}) => {
     _id: userObj?._id?.toString(),
     email: userObj.email,
     name: userObj.name,
-    roles: userObj.roles,
+    role: userObj.role,
   } as TUser;
   if (includePassword) {
     res.password = userObj.password;
@@ -41,7 +41,7 @@ export const getUser = async ({ includePassword }: TGetUserProps = {}) => {
 
 export const generateToken = (user: Partial<TUser>) => {
   return jwt.sign(
-    { email: user.email, roles: user.roles, id: user._id },
+    { email: user.email, roles: user.role, id: user._id },
     process.env.AUTH_SECRET as string,
     {
       expiresIn: "24h",

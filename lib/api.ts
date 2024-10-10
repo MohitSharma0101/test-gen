@@ -14,6 +14,9 @@ export const ENDPOINT = {
   register: "auth/register",
   user: "auth/user",
   resetPassword: "auth/user/reset-password",
+
+  //admin
+  users: "admin/users",
 };
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH;

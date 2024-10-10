@@ -6,7 +6,8 @@ import { nextError } from "@/lib/nextUtils";
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { name, email, password, confirmPassword } = await request.json();
+    const { name, email, role, password, confirmPassword } =
+      await request.json();
 
     if (!name || !email || !password) {
       return nextError("All fields are required.");
@@ -19,7 +20,12 @@ export const POST = async (request: NextRequest) => {
     await dbConnect();
     const encryptedPassword = await bcrypt.hash(password, 11);
 
-    const newUser = new User({ name, email, password: encryptedPassword });
+    const newUser = new User({
+      name,
+      email,
+      password: encryptedPassword,
+      role,
+    });
     await newUser.save();
 
     return NextResponse.json(
@@ -27,6 +33,6 @@ export const POST = async (request: NextRequest) => {
       { status: 201 }
     );
   } catch (err: any) {
-    return nextError();
+    return nextError(err.message);
   }
 };

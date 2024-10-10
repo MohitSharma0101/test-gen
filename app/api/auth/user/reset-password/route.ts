@@ -36,7 +36,7 @@ export const PUT = async (request: NextRequest) => {
       user: {
         _id: newUser._id,
         email: newUser.email,
-        roles: newUser.roles,
+        role: newUser.role,
       },
       token: token,
     });

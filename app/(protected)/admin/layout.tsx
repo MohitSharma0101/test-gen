@@ -8,7 +8,8 @@ const AdminLayout = async ({
   children: React.ReactNode;
 }>) => {
   const user = await getUser();
-  if (!user || !user.roles.includes("admin")) redirect("/");
+  if (!user || user.role != 'admin') redirect("/");
+  
   return <>{children}</>;
 };
 

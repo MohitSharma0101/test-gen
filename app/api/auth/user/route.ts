@@ -23,7 +23,7 @@ export const PUT = async (request: NextRequest) => {
     const newUserObj = {} as TUser;
     if (name) newUserObj.name = name;
     if (email) newUserObj.email = email;
-    if (role) newUserObj.roles = [role];
+    if (role) newUserObj.role = role;
     const newUser = await User.findByIdAndUpdate(user._id, newUserObj);
 
     return nextSuccess({ user: newUser }, 201);

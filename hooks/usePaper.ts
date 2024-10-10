@@ -69,7 +69,7 @@ const usePaper = ({ id }: config = {}) => {
       });
     } catch (err) {
       toast({
-        title: (err as any)?.message || "Unable to add paper!",
+        title: (err as any)?.message || "Unable to delete paper!",
         variant: "destructive",
       });
       console.log("err", err);

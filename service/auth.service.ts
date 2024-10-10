@@ -1,6 +1,7 @@
 import { LoginFormSchema } from "@/app/(auth)/login/login-form.schema";
 import type { TGeneralSettingFormSchema } from "@/app/(protected)/account/account-form.schema";
 import type { TResetPasswordFormSchema } from "@/app/(protected)/reset-password/reset-password-form.schema";
+import { TRegisterUserSchema } from "@/components/forms/RegisterUserForm";
 import { api, ENDPOINT, setUserToken } from "@/lib/api";
 
 export async function login(values: LoginFormSchema) {
@@ -8,6 +9,11 @@ export async function login(values: LoginFormSchema) {
   if (res) {
     setUserToken(res?.token);
   }
+  return res;
+}
+
+export async function registerUser(values: TRegisterUserSchema) {
+  const res = (await api.post(ENDPOINT.register, values)).data;
   return res;
 }
 
