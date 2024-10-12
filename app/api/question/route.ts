@@ -10,6 +10,7 @@ export const GET = async (request: NextRequest) => {
     const limit = Number(searchParams.get("limit") || 10);
     const page = Number(searchParams.get("page") || 1);
     const marks = Number(searchParams.get("marks"));
+    const questionId = searchParams.get("questionId");
 
     const query: any = {
       chapter: chapter,
@@ -18,6 +19,26 @@ export const GET = async (request: NextRequest) => {
     // if (chapter) query.chapter = chapter;
 
     await dbConnect();
+
+    if (questionId) {
+      const question = await Question.findById(questionId)
+        .populate("chapter", {
+          subject: 1,
+          course: 1,
+          title: 1,
+        })
+        .exec();
+      return NextResponse.json(
+        {
+          status: "success",
+          questions: [question],
+          totalPages: 1,
+          totalQuestions: 1,
+          currentPage: 1,
+        },
+        { status: 200 }
+      );
+    }
 
     const questions = await Question.find(query)
       .sort({ createdAt: -1, _id: -1 })

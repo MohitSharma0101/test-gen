@@ -57,6 +57,9 @@ const TeachersCopiesFrame = ({
                   <div className="flex gap-1 items-start">
                     <strong>Ans:</strong> <Markdown text={q.ans || ""} />
                   </div>
+                  <code className="text-[10px] bg-slate-100 rounded p-1 w-fit h-fit">
+                    Q{q.index} ID: {q._id}
+                  </code>
                 </div>
                 <span
                   className="pr-2 font-medium ml-auto focus-visible:outline-none"

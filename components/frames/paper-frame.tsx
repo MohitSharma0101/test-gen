@@ -1,6 +1,11 @@
 "use client";
 
-import { cn, getTotalMarks, segregateQuestionsBySubject, sortQuestionsByMarks } from "@/lib/utils";
+import {
+  cn,
+  getTotalMarks,
+  segregateQuestionsBySubject,
+  sortQuestionsByMarks,
+} from "@/lib/utils";
 import type { TQuestion } from "@/models/Question";
 import React, { Fragment } from "react";
 import EducationPlusFrame from "./education-plus-frame";
@@ -47,7 +52,13 @@ const PaperFrame = ({
             {q?.map((q, index) => (
               <label key={index} className="flex rounded p-1">
                 <span className="pt-[10px] px-2">{q.index || 0}.</span>
-                <Markdown text={q.text ?? ""} />
+                <div>
+                  <Markdown text={q.text ?? ""} />
+                  <code className="text-[10px] bg-slate-100 rounded p-1 w-fit h-fit print:hidden">
+                    Q{q.index} ID: {q._id}
+                  </code>
+                </div>
+
                 <span
                   className="pt-[10px] pr-2 font-medium ml-auto focus-visible:outline-none"
                   contentEditable

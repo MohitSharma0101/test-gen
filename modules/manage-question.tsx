@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import {
   cn,
-  getRandomItems,
   getUniqueElementsById,
   isArrayIncluded,
   removeElementsById,
@@ -33,6 +32,7 @@ import Markdown from "@/components/ui/markdown";
 import useBooks from "@/hooks/useBooks";
 import DeleteButton from "@/components/ui/delete-button";
 import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
+import SearchForm from "@/components/ui/SearchForm";
 
 export default function ManageQuestion() {
   const [course, setCourse] = useState(COURSES[5]);
@@ -40,6 +40,7 @@ export default function ManageQuestion() {
   const [marks, setMarks] = useState("");
   const [book, setBook] = useState("");
   const { books, loading: booksLoading } = useBooks(subject, course);
+  const [queryQuestionId, setQueryQuestionId] = useState("");
 
   const { chapters, loading: chaptersLoading } = useChapters(
     subject,
@@ -56,7 +57,7 @@ export default function ManageQuestion() {
     deleteQuestions,
     refresh,
     updateQuestion,
-  } = useQuestions(selectedChapter?._id, marks);
+  } = useQuestions(selectedChapter?._id, marks, queryQuestionId);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>([]);
 
@@ -267,6 +268,10 @@ export default function ManageQuestion() {
               <Columns2Icon className="w-4 h-4" />
             </Button>
           </div>
+          <SearchForm
+            className="my-2 mx-4"
+            onSubmit={(q) => setQueryQuestionId(q)}
+          />
           {loading ? (
             <ol
               className={cn(

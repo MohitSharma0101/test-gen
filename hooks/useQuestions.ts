@@ -5,6 +5,7 @@ import { ENDPOINT } from "@/lib/api";
 import type { TQuestion } from "@/models/Question";
 import {
   deleteQuestionsInBatch,
+  fetchQuestion,
   fetchQuestions,
   postUpdateUsage,
   putUpdateQuestion,
@@ -12,18 +13,26 @@ import {
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
-const useQuestions = (chapter?: string, marks?: string) => {
+const useQuestions = (
+  chapter?: string,
+  marks?: string,
+  questionId?: string
+) => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page") || 1);
   const limit = Number(searchParams.get("limit") || 50);
-  const cache = !chapter
+  const cache = questionId
+    ? questionId
+    : !chapter
     ? null
-    : ENDPOINT.questions + chapter + page + limit + marks;
+    : ENDPOINT.questions + (questionId || `${chapter + page + limit + marks}`);
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
-      if (!chapter) return;
-      return await fetchQuestions(chapter, page, limit, marks);
+      if (questionId) return await fetchQuestion(questionId);
+      else if (!chapter) return null;
+
+      return await fetchQuestions(chapter, page, limit, marks, questionId);
     },
     {
       revalidateIfStale: false,

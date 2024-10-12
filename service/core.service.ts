@@ -9,11 +9,22 @@ type TFetchQuestionsResponse = {
   currentPage: Number;
 };
 
+export const fetchQuestion = async (questionId: string) => {
+  return (
+    await api.get(ENDPOINT.questions, {
+      params: {
+        questionId: questionId,
+      },
+    })
+  ).data as TFetchQuestionsResponse;
+}
+
 export const fetchQuestions = async (
   chapter?: string,
   page?: number | null,
   limit?: number | null,
-  marks?: string
+  marks?: string,
+  questionId?: string
 ) => {
   return (
     await api.get(ENDPOINT.questions, {
@@ -22,6 +33,7 @@ export const fetchQuestions = async (
         page: page || 1,
         limit: limit,
         marks: marks,
+        questionId: questionId,
       },
     })
   ).data as TFetchQuestionsResponse;
