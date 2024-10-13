@@ -8,14 +8,15 @@ import useSWR from "swr";
 
 type TUsePaperProps = {
   author?: string;
+  course?: string;
 };
 
-const usePapers = ({ author }: TUsePaperProps = {}) => {
-  const cache = ENDPOINT.papers + author;
+const usePapers = ({ author, course }: TUsePaperProps = {}) => {
+  const cache = ENDPOINT.papers + author + course;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
-      return await fetchPapers(null, author);
+      return await fetchPapers(null, author, course);
     },
     {
       revalidateIfStale: false,

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import usePapers from "@/hooks/usePapers";
 import {
   Table,
@@ -21,12 +21,24 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import SelectCompact from "@/components/ui/select-compact";
 import { AUTHORS } from "@/models/Author";
 import { useAuthorStore } from "@/stores/authorStore";
+import { COURSES } from "@/data/const";
 
 type Props = {};
 
 const PapersPage = (props: Props) => {
   const { author, updateAuthor } = useAuthorStore();
-  const { papers, loading, deletePaper, refresh } = usePapers({ author });
+  const [course, setCourse] = useState("");
+  const { papers, loading, deletePaper, refresh } = usePapers({
+    author,
+    course,
+  });
+
+  const isFilterApplied = author || course;
+
+  const onClearFilter = () => {
+    if (author) updateAuthor();
+    if (course) setCourse("");
+  };
 
   return (
     <div className="p-6">
@@ -38,20 +50,29 @@ const PapersPage = (props: Props) => {
             Refresh
           </Button>
         </div>
-        <div className="flex gap-4 items-center mt-1">
+        <div className="flex gap-4 items-center mt-3">
           <SelectCompact
             options={AUTHORS.map((a) => ({ label: a, value: a }))}
             placeholder="Author"
             value={author}
             onChange={updateAuthor}
             className="w-[200px]"
+            canUnselect
           />
-          {author && (
+          <SelectCompact
+            options={COURSES.map((a) => ({ label: a, value: a }))}
+            placeholder="Class"
+            value={course}
+            onChange={setCourse}
+            className="w-[200px]"
+            canUnselect
+          />
+          {isFilterApplied && (
             <Button
               size={"sm"}
               variant={"ghost"}
               className="underline px-1 hover:font-bold"
-              onClick={() => updateAuthor?.("")}
+              onClick={onClearFilter}
             >
               Clear Filters
             </Button>
@@ -59,25 +80,26 @@ const PapersPage = (props: Props) => {
         </div>
 
         {loading ? (
-          <div className="w-full flex flex-col gap-2 mt-4">
+          <div className="w-full flex flex-col gap-2 mt-2">
             <Skeleton className="w-full h-[60px]" />
             <Skeleton className="w-full h-[60px]" />
             <Skeleton className="w-full h-[60px]" />
             <Skeleton className="w-full h-[60px]" />
           </div>
         ) : (
-          <Table className="mt-4">
+          <Table className="mt-2">
             <TableHeader className="border border-slate-300">
               <TableRow className="divide-x divide-slate-300 border-b border-slate-300">
                 <TableHead className="min-w-[200px]">Title</TableHead>
-                <TableHead className="w-[150px] text-right">
+                <TableHead className="w-[130px] text-right">
                   Total Questions
                 </TableHead>
-                <TableHead className="w-[150px] text-right">Author</TableHead>
-                <TableHead className="w-[150px] text-right">
+                <TableHead className="w-[120px] text-right">Author</TableHead>
+                <TableHead className="w-[120px] text-right">Class</TableHead>
+                <TableHead className="w-[120px] text-right">
                   Total Marks
                 </TableHead>
-                <TableHead className="w-[150px] text-right">
+                <TableHead className="w-[130px] text-right">
                   Created At
                 </TableHead>
                 <TableHead className="w-[150px] text-right">
@@ -87,7 +109,7 @@ const PapersPage = (props: Props) => {
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-slate-300 border border-slate-300">
-              {papers?.map((paper) => (
+              {papers.map((paper) => (
                 <TableRow
                   key={paper._id}
                   className="divide-x divide-slate-300 border-slate-300"
@@ -106,6 +128,9 @@ const PapersPage = (props: Props) => {
                   </TableCell>
                   <TableCell className="text-right">
                     {paper.author || "-"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {paper.course || "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     {getTotalMarks(paper.questions)}

@@ -78,12 +78,17 @@ export const fetchBooks = async (subject?: string, course?: string) => {
   ).data.books;
 };
 
-export const fetchPapers = async (id?: string | null, author?: string) => {
+export const fetchPapers = async (
+  id?: string | null,
+  author?: string,
+  course?: string
+) => {
   return (
     await api.get(ENDPOINT.papers, {
       params: {
         id: id,
         author: author,
+        course: course,
       },
     })
   ).data.papers;

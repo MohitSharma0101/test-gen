@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -38,6 +38,7 @@ const SelectCompact = ({
   triggerClassName,
   canUnselect,
 }: TSelectCompactProps) => {
+  const [open, setOpen] = useState(false);
   return (
     <div className={className}>
       {label && (
@@ -57,7 +58,12 @@ const SelectCompact = ({
         </>
       )}
 
-      <Select value={value} onValueChange={onChange}>
+      <Select
+        value={value}
+        onValueChange={onChange}
+        open={open}
+        onOpenChange={setOpen}
+      >
         <SelectTrigger className={triggerClassName}>
           <SelectValue placeholder={placeholder || "Select a value"} />
         </SelectTrigger>
@@ -77,6 +83,18 @@ const SelectCompact = ({
                 {option.label}
               </SelectItem>
             ))
+          )}
+          {canUnselect && value && (
+            <Button
+              variant={"ghost"}
+              className="w-full py-1 underline "
+              onClick={() => {
+                onChange?.("");
+                setOpen(false);
+              }}
+            >
+              Clear Selection
+            </Button>
           )}
         </SelectContent>
       </Select>

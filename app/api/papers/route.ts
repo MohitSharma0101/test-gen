@@ -3,15 +3,18 @@ import Paper, { TPaper } from "@/models/Paper";
 import { NextRequest, NextResponse } from "next/server";
 import "@/models/Chapter";
 import "@/models/Question";
+import { TChapter } from "@/models/Chapter";
 
 export const GET = async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get("id");
     const author = searchParams.get("author");
+    const course = searchParams.get("course");
     const query: any = {};
     if (id) query._id = id;
-    if(author) query.author = author;
+    if (author) query.author = author;
+    if (course) query.course = course;
 
     await dbConnect();
     const papers = await Paper.find(query)
@@ -51,11 +54,10 @@ export const POST = async (request: NextRequest) => {
     }
 
     await dbConnect();
-
+    const course = (questions?.[0]?.chapter as TChapter)?.course;
     const questionsIds = questions.map((q) => q._id);
 
-    const paperObj = { title, questions: questionsIds, author: author };
-    console.log("paperObj", paperObj);
+    const paperObj = { title, questions: questionsIds, author, course };
 
     if (id) {
       const paper = await Paper.findByIdAndUpdate(id, paperObj);

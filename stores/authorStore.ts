@@ -4,7 +4,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 
 export type TAuthorStore = {
   author?: (typeof AUTHORS)[number] | string;
-  updateAuthor?: (author?: string) => void;
+  updateAuthor: (author?: string) => void;
 };
 
 export const useAuthorStore = create<TAuthorStore>()(

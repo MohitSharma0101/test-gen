@@ -7,8 +7,9 @@ export type TPaper = {
   title: string;
   author: string;
   questions: TQuestion[];
-  createdAt: string,
-  updatedAt: string,
+  course?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export const PaperSchema = new mongoose.Schema(
@@ -21,12 +22,16 @@ export const PaperSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    course: {
+      type: String,
+      required: false,
+    },
     questions: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Question",
         required: true,
-      }
+      },
     ],
   },
   { timestamps: true }
