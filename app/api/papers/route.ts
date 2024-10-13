@@ -8,8 +8,10 @@ export const GET = async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get("id");
+    const author = searchParams.get("author");
     const query: any = {};
     if (id) query._id = id;
+    if(author) query.author = author;
 
     await dbConnect();
     const papers = await Paper.find(query)
@@ -36,7 +38,7 @@ export const GET = async (request: NextRequest) => {
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { id, title, questions } = (await request.json()) as TPaper;
+    const { id, title, questions, author } = (await request.json()) as TPaper;
 
     if (!title || !questions || !questions.length) {
       return NextResponse.json(
@@ -52,7 +54,8 @@ export const POST = async (request: NextRequest) => {
 
     const questionsIds = questions.map((q) => q._id);
 
-    const paperObj = { title, questions: questionsIds };
+    const paperObj = { title, questions: questionsIds, author: author };
+    console.log("paperObj", paperObj);
 
     if (id) {
       const paper = await Paper.findByIdAndUpdate(id, paperObj);

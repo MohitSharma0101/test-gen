@@ -12,15 +12,24 @@ import { CloudUploadIcon } from "lucide-react";
 import { Input } from "./input";
 import type { TQuestion } from "@/models/Question";
 import { savePaper } from "@/service/core.service";
+import SelectCompact from "./select-compact";
+import { AUTHORS } from "@/models/Author";
 
 type Props = {
   id?: string;
   defaultTitle?: string;
+  defaultAuthor?: string;
   questions: TQuestion[];
 };
 
-const SavePaperButton = ({ questions, defaultTitle = "" , id}: Props) => {
+const SavePaperButton = ({
+  questions,
+  defaultTitle = "",
+  defaultAuthor,
+  id,
+}: Props) => {
   const [title, setTitle] = useState(defaultTitle);
+  const [author, setAuthor] = useState(defaultAuthor);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
   return (
@@ -46,6 +55,13 @@ const SavePaperButton = ({ questions, defaultTitle = "" , id}: Props) => {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter title of your paper..."
           />
+          <label className="text-xs font-medium pb-1 mt-4">Author</label>
+          <SelectCompact
+            options={AUTHORS.map((a) => ({ label: a, value: a }))}
+            placeholder="Select Author"
+            value={author}
+            onChange={setAuthor}
+          />
           {error && (
             <p className="text-destructive text-xs pt-0.5 font-medium">
               {error}
@@ -68,7 +84,7 @@ const SavePaperButton = ({ questions, defaultTitle = "" , id}: Props) => {
           disabled={questions.length === 0}
           onClick={async () => {
             if (title) {
-              await savePaper(title, questions, id);
+              await savePaper(title, questions, id, author);
               setOpen(false);
               setTitle("");
             } else {

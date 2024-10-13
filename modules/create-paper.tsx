@@ -36,6 +36,7 @@ import useBooks from "@/hooks/useBooks";
 import SavePaperButton from "@/components/ui/save-paper-button";
 import PreviewButton from "@/components/ui/preview-button";
 import { TPaper } from "@/models/Paper";
+import { useAuthorStore } from "@/stores/authorStore";
 
 type TCreatePaperProps = {
   mode?: "create" | "update";
@@ -51,6 +52,7 @@ export default function CreatePaper({
   const [marks, setMarks] = useState("");
   const [book, setBook] = useState("");
   const { books, loading: booksLoading } = useBooks(subject, course);
+  const { author } = useAuthorStore();
 
   const { chapters, loading: chaptersLoading } = useChapters(
     subject,
@@ -148,6 +150,7 @@ export default function CreatePaper({
             <SavePaperButton
               id={defaultPaper?._id}
               defaultTitle={defaultPaper?.title}
+              defaultAuthor={defaultPaper?.author || author}
               questions={selectedQuestions}
             />
             <PreviewButton

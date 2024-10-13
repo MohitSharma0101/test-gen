@@ -17,7 +17,7 @@ export const fetchQuestion = async (questionId: string) => {
       },
     })
   ).data as TFetchQuestionsResponse;
-}
+};
 
 export const fetchQuestions = async (
   chapter?: string,
@@ -78,11 +78,12 @@ export const fetchBooks = async (subject?: string, course?: string) => {
   ).data.books;
 };
 
-export const fetchPapers = async (id?: string | null) => {
+export const fetchPapers = async (id?: string | null, author?: string) => {
   return (
     await api.get(ENDPOINT.papers, {
       params: {
         id: id,
+        author: author,
       },
     })
   ).data.papers;
@@ -91,7 +92,8 @@ export const fetchPapers = async (id?: string | null) => {
 export const savePaper = async (
   title: string,
   questions: TQuestion[],
-  id?: string
+  id?: string,
+  author?: string
 ) => {
   if (questions.length === 0) return;
   try {
@@ -99,6 +101,7 @@ export const savePaper = async (
       title,
       questions,
       id,
+      author,
     });
     toast({
       title: "💾 Question Paper saved!",

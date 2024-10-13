@@ -18,11 +18,15 @@ import DeleteButton from "@/components/ui/delete-button";
 import Link from "next/link";
 import { Edit2Icon, RefreshCcw } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import SelectCompact from "@/components/ui/select-compact";
+import { AUTHORS } from "@/models/Author";
+import { useAuthorStore } from "@/stores/authorStore";
 
 type Props = {};
 
 const PapersPage = (props: Props) => {
-  const { papers, loading, deletePaper, refresh } = usePapers();
+  const { author, updateAuthor } = useAuthorStore();
+  const { papers, loading, deletePaper, refresh } = usePapers({ author });
 
   return (
     <div className="p-6">
@@ -34,6 +38,26 @@ const PapersPage = (props: Props) => {
             Refresh
           </Button>
         </div>
+        <div className="flex gap-4 items-center mt-1">
+          <SelectCompact
+            options={AUTHORS.map((a) => ({ label: a, value: a }))}
+            placeholder="Author"
+            value={author}
+            onChange={updateAuthor}
+            className="w-[200px]"
+          />
+          {author && (
+            <Button
+              size={"sm"}
+              variant={"ghost"}
+              className="underline px-1 hover:font-bold"
+              onClick={() => updateAuthor?.("")}
+            >
+              Clear Filters
+            </Button>
+          )}
+        </div>
+
         {loading ? (
           <div className="w-full flex flex-col gap-2 mt-4">
             <Skeleton className="w-full h-[60px]" />
@@ -49,6 +73,7 @@ const PapersPage = (props: Props) => {
                 <TableHead className="w-[150px] text-right">
                   Total Questions
                 </TableHead>
+                <TableHead className="w-[150px] text-right">Author</TableHead>
                 <TableHead className="w-[150px] text-right">
                   Total Marks
                 </TableHead>
@@ -78,6 +103,9 @@ const PapersPage = (props: Props) => {
                   </TableCell>
                   <TableCell className="text-right">
                     {paper.questions.length}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {paper.author || "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     {getTotalMarks(paper.questions)}

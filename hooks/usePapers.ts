@@ -6,12 +6,16 @@ import type { TPaper } from "@/models/Paper";
 import { fetchPapers } from "@/service/core.service";
 import useSWR from "swr";
 
-const usePapers = () => {
-  const cache = ENDPOINT.papers;
+type TUsePaperProps = {
+  author?: string;
+};
+
+const usePapers = ({ author }: TUsePaperProps = {}) => {
+  const cache = ENDPOINT.papers + author;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
-      return await fetchPapers();
+      return await fetchPapers(null, author);
     },
     {
       revalidateIfStale: false,
@@ -22,7 +26,6 @@ const usePapers = () => {
   const papers = (data || []) as TPaper[];
   const loading = isLoading || isValidating;
   const refresh = () => mutate();
-
 
   const updatePaper = async (id: string, title: string) => {
     try {

@@ -5,6 +5,7 @@ export type TPaper = {
   id: string;
   _id: string;
   title: string;
+  author: string;
   questions: TQuestion[];
   createdAt: string,
   updatedAt: string,
@@ -15,6 +16,10 @@ export const PaperSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
+    },
+    author: {
+      type: String,
+      required: false,
     },
     questions: [
       {
