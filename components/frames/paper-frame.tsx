@@ -89,12 +89,31 @@ const PaperFrame = ({
               {...rest}
             >
               {q?.map((q, index) => (
-                <label
-                  key={index}
-                  className={`flex items-baseline rounded p-1`}
-                >
-                  <span className="pt-[10px] pr-2">{q.index || 0}.</span>
-                  <Markdown text={q.ans ?? ""} />
+                // <label
+                //   key={index}
+                //   className={`flex items-baseline rounded p-1`}
+                // >
+                //   <span className="pt-[10px] pr-2">{q.index || 0}.</span>
+                //   <Markdown text={q.ans ?? ""} />
+                // </label>
+                <label key={index} className="flex rounded p-1">
+                  <span className="px-2">{q.index || 0}.</span>
+                  <div className="[&_#preview]:!pt-0">
+                    <Markdown text={q.text ?? ""} />
+                    <div className="flex gap-1 items-start">
+                      <strong>Ans:</strong> <Markdown text={q.ans || ""} />
+                    </div>
+                    <code className="text-[10px] bg-slate-100 rounded p-1 w-fit h-fit">
+                      Q{q.index} ID: {q._id}
+                    </code>
+                  </div>
+                  <span
+                    className="pr-2 font-medium ml-auto focus-visible:outline-none"
+                    contentEditable
+                    suppressContentEditableWarning={true}
+                  >
+                    [{q.mark}]
+                  </span>
                 </label>
               ))}
             </ol>
