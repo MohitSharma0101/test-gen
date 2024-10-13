@@ -1,1 +1,10 @@
-export const AUTHORS = ["Admin", "Manoj", "Nishant", "Deepak"] as const;
+export const AUTHORS = [
+  "Manoj Sharma",
+  "Nishant Shrivastava",
+  "Deepak Bhagtani",
+  "Vartika Soni",
+  "Piyush Kumawat",
+  "Protyusha Das",
+  "Ravi Shankar Sharma",
+  "Admin",
+] as const;
