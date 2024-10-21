@@ -16,8 +16,16 @@ type Props = {
 };
 
 const CopyQuestionsMd = ({ questions }: Props) => {
-  const getQuestionsOnly = () => questions.map((q, index) => `${index + 1}. ${q.text}`).join("\n\n");
-  const getAnswerOnly = () => questions.map((q, index) => `${index + 1}. ${q.ans}`).join("\n\n");
+  const getQuestionsOnly = () =>
+    questions.map((q, index) => `${index + 1}. ${q.text}`).join("\n\n");
+  const getAnswerOnly = () =>
+    questions.map((q, index) => `${index + 1}. ${q.ans}`).join("\n\n");
+  const getQuestionAndAns = () =>
+    questions
+      .map(
+        (q, index) => `${index + 1}. ${q.text}\n\n${index + 1}. ${q.ans}`
+      )
+      .join("\n\n");
 
   const copy = (value: string) => {
     try {
@@ -50,6 +58,10 @@ const CopyQuestionsMd = ({ questions }: Props) => {
           onClick={() => copy(getAnswerOnly())}
           className="cursor-pointer"
         >{`Copy Answers (.md)`}</DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => copy(getQuestionAndAns())}
+          className="cursor-pointer"
+        >{`Copy Question & Answers (.md)`}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
