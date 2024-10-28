@@ -45,15 +45,6 @@ const SelectCompact = ({
         <>
           <label className="font-medium ml-1 mb-1 text-sm flex gap-2 items-center">
             {label}
-            {canUnselect && value && (
-              <Button
-                className="w-min h-min p-0"
-                variant={"ghost"}
-                onClick={() => onChange?.("")}
-              >
-                <XIcon className="w-4 h-4" />
-              </Button>
-            )}
           </label>
         </>
       )}
@@ -86,8 +77,8 @@ const SelectCompact = ({
           )}
           {canUnselect && value && (
             <Button
-              variant={"ghost"}
-              className="w-full py-1 underline "
+              variant={"destructive"}
+              className="w-full py-1 underline text-sm"
               onClick={() => {
                 onChange?.("");
                 setOpen(false);

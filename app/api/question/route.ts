@@ -11,11 +11,13 @@ export const GET = async (request: NextRequest) => {
     const page = Number(searchParams.get("page") || 1);
     const marks = Number(searchParams.get("marks"));
     const questionId = searchParams.get("questionId");
+    const tag = searchParams.get("tag");
 
     const query: any = {
       chapter: chapter,
     };
     if (marks) query.mark = marks;
+    if (tag) query.tags = tag;
     // if (chapter) query.chapter = chapter;
 
     await dbConnect();
@@ -106,7 +108,7 @@ export const POST = async (request: NextRequest) => {
 
 export const PUT = async (request: NextRequest) => {
   try {
-    const { id, ans, mark, text } = await request.json();
+    const { id, ans, mark, text, tags } = await request.json();
 
     if (!id) {
       return NextResponse.json(
@@ -124,6 +126,7 @@ export const PUT = async (request: NextRequest) => {
     if (ans) questionObj.ans = ans;
     if (text) questionObj.text = text;
     if (mark) questionObj.mark = mark;
+    if (tags) questionObj.tags = tags;
 
     const question = await Question.findByIdAndUpdate(id, questionObj);
 

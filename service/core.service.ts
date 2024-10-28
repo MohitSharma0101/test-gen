@@ -24,7 +24,8 @@ export const fetchQuestions = async (
   page?: number | null,
   limit?: number | null,
   marks?: string,
-  questionId?: string
+  questionId?: string,
+  tag?: string
 ) => {
   return (
     await api.get(ENDPOINT.questions, {
@@ -34,6 +35,7 @@ export const fetchQuestions = async (
         limit: limit,
         marks: marks,
         questionId: questionId,
+        tag: tag
       },
     })
   ).data as TFetchQuestionsResponse;

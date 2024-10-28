@@ -37,6 +37,7 @@ import SavePaperButton from "@/components/ui/save-paper-button";
 import PreviewButton from "@/components/ui/preview-button";
 import { TPaper } from "@/models/Paper";
 import { useAuthorStore } from "@/stores/authorStore";
+import AddTagSheet, { TAGS } from "@/components/sheets/add-tag-sheet";
 
 type TCreatePaperProps = {
   mode?: "create" | "update";
@@ -53,6 +54,7 @@ export default function CreatePaper({
   const [book, setBook] = useState("");
   const { books, loading: booksLoading } = useBooks(subject, course);
   const { author } = useAuthorStore();
+  const [selectedTag, setSelectedTag] = useState("");
 
   const { chapters, loading: chaptersLoading } = useChapters(
     subject,
@@ -68,7 +70,7 @@ export default function CreatePaper({
     totalQuestions,
     refresh,
     updateUsage,
-  } = useQuestions(selectedChapter?._id, marks);
+  } = useQuestions(selectedChapter?._id, marks, undefined, selectedTag);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>(
     defaultPaper?.questions || []
@@ -90,7 +92,7 @@ export default function CreatePaper({
           <SelectCompact
             label="Class"
             placeholder="Select a class"
-            className="md:w-[300px] "
+            className="md:w-[250px] "
             value={course}
             onChange={setCourse}
             options={COURSES.map((c) => ({
@@ -101,7 +103,7 @@ export default function CreatePaper({
           <SelectCompact
             label="Subject"
             placeholder="Select a subject"
-            className="md:w-[300px]"
+            className="md:w-[250px]"
             emptyState="Select a Class first"
             value={subject}
             onChange={setSubject}
@@ -113,7 +115,7 @@ export default function CreatePaper({
           <SelectCompact
             label="Book"
             placeholder="Select a book"
-            className="md:w-[300px]"
+            className="md:w-[250px]"
             value={book}
             onChange={setBook}
             options={books.map((b) => ({
@@ -131,6 +133,18 @@ export default function CreatePaper({
             options={MARKS.map((mark) => ({
               label: mark + " mark",
               value: (mark || 1).toString(),
+            }))}
+            canUnselect
+          />
+          <SelectCompact
+            label="Tags"
+            className="w-fit"
+            value={selectedTag}
+            onChange={setSelectedTag}
+            placeholder="Filter by tags"
+            options={TAGS.map((tag) => ({
+              label: tag,
+              value: tag,
             }))}
             canUnselect
           />
@@ -373,6 +387,7 @@ export default function CreatePaper({
                           }}
                         />
                         <TimesUsed count={q.timesUsed} />
+                        <AddTagSheet questionId={q._id} tags={q.tags} />
                       </div>
                     </div>
                     <span className="pt-[10px] px-2">

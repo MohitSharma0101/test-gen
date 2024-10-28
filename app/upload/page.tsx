@@ -67,7 +67,7 @@ const DashboardPage = (props: Props) => {
     }
   }, [questionAnsContent]);
 
-  const onUpload = async (chapter: string, mark: string) => {
+  const onUpload = async (chapter: string, mark: string, tags?: string[]) => {
     try {
       if (questions.length > 0) {
         await uploadQuestionsInBatch(
@@ -75,6 +75,7 @@ const DashboardPage = (props: Props) => {
             ...q,
             chapter: chapter,
             mark: Number(mark),
+            tags: tags
           }))
         );
         toast({

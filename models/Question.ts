@@ -10,6 +10,7 @@ export type TQuestion = {
   mark?: number;
   timesUsed?: number;
   index?: number;
+  tags?: string[];
 };
 
 export type SubjectQuestions = {
@@ -37,6 +38,10 @@ export const QuestionSchema = new mongoose.Schema(
       required: false,
       default: 1,
     },
+    tags: [{
+      type: String,
+      required: false,
+    }],
     timesUsed: {
       type: Number,
       required: false,

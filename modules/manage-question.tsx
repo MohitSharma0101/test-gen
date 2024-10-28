@@ -33,6 +33,7 @@ import useBooks from "@/hooks/useBooks";
 import DeleteButton from "@/components/ui/delete-button";
 import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
 import SearchForm from "@/components/ui/SearchForm";
+import AddTagSheet, { TAGS } from "@/components/sheets/add-tag-sheet";
 
 export default function ManageQuestion() {
   const [course, setCourse] = useState(COURSES[5]);
@@ -41,6 +42,7 @@ export default function ManageQuestion() {
   const [book, setBook] = useState("");
   const { books, loading: booksLoading } = useBooks(subject, course);
   const [queryQuestionId, setQueryQuestionId] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
 
   const { chapters, loading: chaptersLoading } = useChapters(
     subject,
@@ -57,7 +59,7 @@ export default function ManageQuestion() {
     deleteQuestions,
     refresh,
     updateQuestion,
-  } = useQuestions(selectedChapter?._id, marks, queryQuestionId);
+  } = useQuestions(selectedChapter?._id, marks, queryQuestionId, selectedTag);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>([]);
 
@@ -118,6 +120,18 @@ export default function ManageQuestion() {
             options={MARKS.map((mark) => ({
               label: mark + " mark",
               value: (mark || 1).toString(),
+            }))}
+            canUnselect
+          />
+          <SelectCompact
+            label="Tags"
+            className="w-fit"
+            value={selectedTag}
+            onChange={setSelectedTag}
+            placeholder="Filter by tags"
+            options={TAGS.map((tag) => ({
+              label: tag,
+              value: tag,
             }))}
             canUnselect
           />
@@ -336,6 +350,7 @@ export default function ManageQuestion() {
                             });
                           }}
                         />
+                        <AddTagSheet questionId={q._id} tags={q.tags} />
                       </div>
                     </div>
                     <span className="pt-[10px] px-2">

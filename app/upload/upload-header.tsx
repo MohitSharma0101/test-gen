@@ -13,9 +13,10 @@ import { Print, PrintContent, PrintTrigger } from "@/components/ui/print";
 import PaperFrame from "@/components/frames/paper-frame";
 import type { TQuestion } from "@/models/Question";
 import PreviewButton from "@/components/ui/preview-button";
+import { TAGS } from "@/components/sheets/add-tag-sheet";
 
 type Props = {
-  onUpload?: (chapter: string, marks: string) => Promise<void>;
+  onUpload?: (chapter: string, marks: string, tags?: string[]) => Promise<void>;
   questions: TQuestion[];
   twoColumn?: boolean;
 };
@@ -33,6 +34,8 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
   const [chapter, setChapter] = useState("");
   const [marks, setMarks] = useState("1");
   const [loading, setLoading] = useState(false);
+  const [selectedTag, setSelectedTag] = useState("");
+
   return (
     <div className="px-6 py-3 flex flex-col lg:flex-row gap-8 items-center">
       <div className="flex flex-wrap gap-4 items-center flex-grow">
@@ -99,6 +102,18 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
             })) ?? []
           }
         />
+        <SelectCompact
+          label="Tags"
+          className="w-fit"
+          value={selectedTag}
+          onChange={setSelectedTag}
+          placeholder="Select tag"
+          options={TAGS.map((tag) => ({
+            label: tag,
+            value: tag,
+          }))}
+          canUnselect
+        />
       </div>
       <div className="flex gap-4 ml-auto items-center whitespace-nowrap">
         <p>
@@ -116,7 +131,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
           onClick={async () => {
             if (chapter) {
               setLoading(true);
-              await onUpload?.(chapter, marks);
+              await onUpload?.(chapter, marks, [selectedTag]);
               setLoading(false);
             } else {
               toast({
@@ -132,7 +147,10 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         </Button>
         <PreviewButton questions={questions} defaultTwoColumn={twoColumn} />
         <Print>
-          <PrintTrigger disabled={questions.length === 0 || loading} className="px-6">
+          <PrintTrigger
+            disabled={questions.length === 0 || loading}
+            className="px-6"
+          >
             Print
           </PrintTrigger>
           <PrintContent>
