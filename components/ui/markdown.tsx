@@ -1,3 +1,5 @@
+'use client';
+
 import { MathpixMarkdownProps } from "mathpix-markdown-it/lib/components/mathpix-markdown";
 import dynamic from "next/dynamic";
 import React, { memo } from "react";

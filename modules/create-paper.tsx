@@ -38,6 +38,7 @@ import PreviewButton from "@/components/ui/preview-button";
 import { TPaper } from "@/models/Paper";
 import { useAuthorStore } from "@/stores/authorStore";
 import AddTagSheet, { TAGS } from "@/components/sheets/add-tag-sheet";
+import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
 
 type TCreatePaperProps = {
   mode?: "create" | "update";
@@ -70,6 +71,7 @@ export default function CreatePaper({
     totalQuestions,
     refresh,
     updateUsage,
+    updateQuestion,
   } = useQuestions(selectedChapter?._id, marks, undefined, selectedTag);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>(
@@ -387,6 +389,15 @@ export default function CreatePaper({
                           }}
                         />
                         <TimesUsed count={q.timesUsed} />
+                        <EditMarkdownSheet
+                          text={q.text}
+                          onSave={(text) => {
+                            updateQuestion({
+                              id: q._id,
+                              text: text,
+                            });
+                          }}
+                        />
                         <AddTagSheet questionId={q._id} tags={q.tags} />
                       </div>
                     </div>
@@ -396,7 +407,17 @@ export default function CreatePaper({
                     <div>
                       <Markdown text={q.text ?? ""} />
                       <div className="flex gap-2 items-start [&_#preview]:!py-0">
-                        <strong>Ans:</strong> <Markdown text={q.ans || ""} />
+                        <strong>Ans:
+                          <EditMarkdownSheet
+                            text={q.ans}
+                            onSave={(text) => {
+                              updateQuestion({
+                                id: q._id,
+                                ans: text,
+                              });
+                            }}
+                          />
+                        </strong> <Markdown text={q.ans || ""} />
                       </div>
                     </div>
                     <span className="pt-[10px] px-2 font-medium ml-auto">
