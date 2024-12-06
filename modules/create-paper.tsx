@@ -49,10 +49,12 @@ export default function CreatePaper({
   mode = "create",
   defaultPaper,
 }: TCreatePaperProps) {
-  const [course, setCourse] = useState(COURSES[5]);
-  const [subject, setSubject] = useState("");
+  const defaultChapter = defaultPaper?.questions?.[0]?.chapter as TChapter | null;
+
+  const [course, setCourse] = useState(defaultPaper?.course || COURSES[5]);
+  const [subject, setSubject] = useState(defaultChapter?.subject || "");
   const [marks, setMarks] = useState("");
-  const [book, setBook] = useState("");
+  const [book, setBook] = useState(defaultChapter?.book || "");
   const { books, loading: booksLoading } = useBooks(subject, course);
   const { author } = useAuthorStore();
   const [selectedTag, setSelectedTag] = useState("");
@@ -83,7 +85,7 @@ export default function CreatePaper({
 
   useEffect(() => {
     if (chapters) {
-      setSelectedChapter(chapters?.[0]);
+      setSelectedChapter(defaultChapter || chapters?.[0]);
     }
   }, [chapters]);
 
