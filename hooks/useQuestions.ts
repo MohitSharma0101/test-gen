@@ -18,6 +18,7 @@ const useQuestions = (
   marks?: string,
   questionId?: string,
   tag?: string,
+  timesUsed?: number
 ) => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page") || 1);
@@ -26,14 +27,14 @@ const useQuestions = (
     ? questionId
     : !chapter
     ? null
-    : ENDPOINT.questions + (questionId || `${chapter + page + limit + marks + tag}`);
+    : ENDPOINT.questions + (questionId || `${chapter + page + limit + marks + tag + timesUsed}`);
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
       if (questionId) return await fetchQuestion(questionId);
       else if (!chapter) return null;
 
-      return await fetchQuestions(chapter, page, limit, marks, questionId, tag);
+      return await fetchQuestions(chapter, page, limit, marks, questionId, tag, timesUsed);
     },
     {
       revalidateIfStale: false,

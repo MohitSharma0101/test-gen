@@ -9,7 +9,7 @@ import useQuestions from "@/hooks/useQuestions";
 import type { TChapter } from "@/models/Chapter";
 import type { TQuestion } from "@/models/Question";
 import { startTransition, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   CheckCheckIcon,
   Columns2Icon,
@@ -46,7 +46,6 @@ type TCreatePaperProps = {
 };
 
 export default function CreatePaper({
-  mode = "create",
   defaultPaper,
 }: TCreatePaperProps) {
   const defaultChapter = defaultPaper?.questions?.[0]?.chapter as TChapter | null;
@@ -58,6 +57,7 @@ export default function CreatePaper({
   const { books, loading: booksLoading } = useBooks(subject, course);
   const { author } = useAuthorStore();
   const [selectedTag, setSelectedTag] = useState("");
+  const [hideUsed, setHideUsed] = useState(false);
 
   const { chapters, loading: chaptersLoading } = useChapters(
     subject,
@@ -74,7 +74,7 @@ export default function CreatePaper({
     refresh,
     updateUsage,
     updateQuestion,
-  } = useQuestions(selectedChapter?._id, marks, undefined, selectedTag);
+  } = useQuestions(selectedChapter?._id, marks, undefined, selectedTag, hideUsed ? 0 : undefined);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>(
     defaultPaper?.questions || []
@@ -152,6 +152,10 @@ export default function CreatePaper({
             }))}
             canUnselect
           />
+          <label className={cn(buttonVariants({ variant: 'outline' }), 'gap-2 mt-auto cursor-pointer')}>
+            <Checkbox checked={hideUsed} onCheckedChange={(_checked: boolean) => setHideUsed(_checked)} />
+            Hide Used
+          </label>
         </div>
 
         <div className="flex flex-wrap gap-4 ml-auto justify-end items-center whitespace-nowrap">

@@ -12,12 +12,14 @@ export const GET = async (request: NextRequest) => {
     const marks = Number(searchParams.get("marks"));
     const questionId = searchParams.get("questionId");
     const tag = searchParams.get("tag");
+    const timesUsed = searchParams.get("timesUsed");
 
     const query: any = {
       chapter: chapter,
     };
     if (marks) query.mark = marks;
     if (tag) query.tags = tag;
+    if (timesUsed != undefined) query.timesUsed = timesUsed
     // if (chapter) query.chapter = chapter;
 
     await dbConnect();
