@@ -57,7 +57,7 @@ const PreviewButton = ({
               className="px-6"
               onClick={() => {
                 startTransition(() => {
-                  // onPrint?.();
+                  onPrint?.();
                 });
               }}
               disabled={questions.length === 0}
