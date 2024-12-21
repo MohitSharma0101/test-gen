@@ -13,7 +13,7 @@ const useChapters = (subject?: string, course?: string, book?: string) => {
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
-      return await fetchChapters(subject, course, book);
+      return await fetchChapters(book);
     },
     {
       revalidateIfStale: false,

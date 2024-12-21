@@ -44,15 +44,11 @@ export const fetchQuestions = async (
 };
 
 export const fetchChapters = async (
-  subject?: string,
-  course?: string,
   book?: string
 ) => {
   return (
     await api.get(ENDPOINT.chapters, {
       params: {
-        subject,
-        course,
         book,
       },
     })
