@@ -1,5 +1,6 @@
 import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
+import { TChapter } from "@/models/Chapter";
 import { TQuestion } from "@/models/Question";
 
 type TFetchQuestionsResponse = {
@@ -52,7 +53,7 @@ export const fetchChapters = async (
         book,
       },
     })
-  ).data.chapters;
+  ).data.chapters as TChapter[];
 };
 
 export const uploadQuestionsInBatch = async (questions: TQuestion[]) => {
@@ -133,3 +134,10 @@ export const putUpdateQuestion = async (question: TQuestion) => {
     ...question,
   });
 };
+
+export const moveChapter = async (chapterIds: string[], bookId: string) => {
+  return api.put(ENDPOINT.moveChapters, {
+    ids: chapterIds,
+    book: bookId
+  })
+}

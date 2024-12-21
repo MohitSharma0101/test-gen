@@ -8,9 +8,11 @@ import { COURSES, SUBJECT_MAP } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import { TChapter } from "@/models/Chapter";
 import { InboxIcon } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ChapterItem from "./chapter-item";
 import useBooks from "@/hooks/useBooks";
+import MoveChaptersDailog from "@/components/sheets/move-chapter-dailog";
+import { RefreshCcw } from "lucide-react";
 
 type Props = {};
 
@@ -25,8 +27,18 @@ const ChaptersPage = (props: Props) => {
     addChapter,
     deleteChapter,
     updateChapter,
+    refresh,
   } = useChapters(subject, course, book);
   const [chapterTitle, setChapterTitle] = useState("");
+  const [selectedChapters, setSelectedChapters] = useState<TChapter[]>([])
+
+  useEffect(() => {
+    if (books && books.length > 0) {
+      setBook(books?.[0]._id)
+    } else {
+      setBook("");
+    }
+  }, [books])
 
   const onAddChapter = async () => {
     await addChapter(chapterTitle, book);
@@ -97,8 +109,20 @@ const ChaptersPage = (props: Props) => {
           </div>
         </div>
         <div className="flex-1 rounded">
-          <div className="rounded h-[52px] px-4 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center ">
+          <div className="rounded h-[52px] px-4 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center">
             CHAPTERS
+            {chapters && chapters?.length > 0 && (
+              <>
+                <Button className="ml-auto mr-2" variant={'secondary'} size={'sm'} onClick={refresh}>
+                  <RefreshCcw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+                <MoveChaptersDailog chapters={selectedChapters} onSuccess={() => {
+                  refresh();
+                  setSelectedChapters([]);
+                }} />
+              </>
+            )}
           </div>
           <ol className="rounded mt-1 max-h-full flex flex-col scrollbar-hide overflow-scroll py-2  sticky top-0 bg-slate-200">
             {chaptersLoading ? (
@@ -121,6 +145,14 @@ const ChaptersPage = (props: Props) => {
                   index={index}
                   onDelete={onDeleteChapter}
                   onUpdate={updateChapter}
+                  selected={Boolean(selectedChapters.find(c => c._id === chapter._id))}
+                  onSelectChange={(selected) => {
+                    if (selected) {
+                      setSelectedChapters(prev => [...prev, chapter])
+                    } else {
+                      setSelectedChapters(prev => prev.filter(c => c._id !== chapter._id))
+                    }
+                  }}
                 />
               ))
             )}

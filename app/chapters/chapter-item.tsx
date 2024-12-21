@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -24,11 +25,13 @@ import React, { useRef, useState } from "react";
 type Props = {
   index: number;
   chapter: TChapter;
+  selected?: boolean;
   onDelete: (id: string) => void;
   onUpdate: (id: string, title: string, order?: number) => void;
+  onSelectChange?: (selected: boolean) => void;
 };
 
-const ChapterItem = ({ index, chapter, onDelete, onUpdate }: Props) => {
+const ChapterItem = ({ index, selected, chapter, onDelete, onUpdate, onSelectChange }: Props) => {
   const [title, setTitle] = useState(chapter.title);
   const [editMode, setEditMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +57,11 @@ const ChapterItem = ({ index, chapter, onDelete, onUpdate }: Props) => {
 
   return (
     <div className="text-start p-4 justify-start items-center rounded-none border-b last:border-none border-slate-300 flex ">
+      <Checkbox
+        checked={selected}
+        onCheckedChange={onSelectChange}
+        className="mr-2"
+      />
       <span>{index + 1}.</span>
       <Input
         value={title}

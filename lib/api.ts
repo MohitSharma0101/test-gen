@@ -4,6 +4,7 @@ export const ENDPOINT = {
     bulkQuestion: 'bulk/question',
     questions: 'question',
     chapters: 'chapter',
+    moveChapters: 'chapter/move',
     books: 'books', 
     papers: 'papers',
     questionsUsed: 'questions/used'
