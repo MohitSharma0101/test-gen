@@ -1,4 +1,5 @@
 import { dbConnect } from "@/lib/dbUtils";
+import Book, { TBook } from "@/models/Book";
 import Chapter from "@/models/Chapter";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -17,9 +18,18 @@ export const PUT = async (request: NextRequest) => {
         }
         await dbConnect();
 
+        const bookDetails = await Book.findById(book) as TBook;
+
         const result = await Chapter.updateMany(
             { _id: { $in: ids } }, // Find chapters with IDs in the provided list
-            { $set: { book: book } } // Update the book field to newBookId
+            {
+                $set: {
+                    book: bookDetails._id,
+                    subject: bookDetails.subject,
+                    course: bookDetails.course
+                }
+            } // Update book details
+
         );
 
         return NextResponse.json(
