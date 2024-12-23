@@ -1,8 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-  useTransition,
-} from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "./sheet";
 import { Button } from "./button";
 import { Print, PrintContent, PrintTrigger } from "./print";
@@ -18,6 +14,8 @@ type Props = {
   onPrint?: () => void;
   defaultTwoColumn?: boolean;
   className?: string;
+  onQuestionRemove?: (question: TQuestion) => void;
+  editable?: boolean;
 };
 
 const PreviewButton = ({
@@ -25,6 +23,8 @@ const PreviewButton = ({
   onPrint,
   defaultTwoColumn,
   className,
+  onQuestionRemove,
+  editable,
 }: Props) => {
   const [twoColumn, setTwoColumn] = useState(defaultTwoColumn);
   const [loadPreview, setLoadPreview] = useState(false);
@@ -96,7 +96,12 @@ const PreviewButton = ({
           </Button>
         </div>
         {loadPreview ? (
-          <PaperFrame questions={questions} twoColumn={twoColumn} />
+          <PaperFrame
+            questions={questions}
+            twoColumn={twoColumn}
+            editable={editable}
+            onQuestionRemove={onQuestionRemove}
+          />
         ) : (
           <Button
             disabled={isPending}

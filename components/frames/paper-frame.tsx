@@ -11,12 +11,15 @@ import React, { Fragment } from "react";
 import EducationPlusFrame from "./education-plus-frame";
 import Markdown from "../ui/markdown";
 import type { TChapter } from "@/models/Chapter";
+import DeleteButton from "../ui/delete-button";
 
 type Props = JSX.IntrinsicElements["ol"] & {
   questions: TQuestion[];
   twoColumn?: boolean;
   course?: string;
   subject?: string;
+  editable?: boolean
+  onQuestionRemove?: (question: TQuestion) => void;
 };
 
 const PaperFrame = ({
@@ -25,6 +28,8 @@ const PaperFrame = ({
   className,
   course,
   subject,
+  editable,
+  onQuestionRemove,
   ...rest
 }: Props) => {
   const sortedQuestion = sortQuestionsByMarks(questions);
@@ -50,7 +55,21 @@ const PaperFrame = ({
             {...rest}
           >
             {q?.map((q, index) => (
-              <label key={index} className="flex rounded p-1">
+              <div key={index} className="flex rounded p-1">
+                {
+                  editable && (
+                    <DeleteButton
+                      onDelete={(closeDailog) => {
+                        onQuestionRemove?.(q);
+                        closeDailog();
+                      }}
+                      className="mt-2 print:hidden p-2 h-fit"
+                      title="Remove question from selection"
+                      description="This will remove this question from selection"
+                      confirmText="Remove"
+                    />
+                  )
+                }
                 <span className="pt-[10px] px-2">{q.index || 0}.</span>
                 <div>
                   <Markdown text={q.text ?? ""} />
@@ -66,7 +85,7 @@ const PaperFrame = ({
                 >
                   [{q.mark}]
                 </span>
-              </label>
+              </div>
             ))}
           </ol>
         </EducationPlusFrame>
@@ -89,13 +108,6 @@ const PaperFrame = ({
               {...rest}
             >
               {q?.map((q, index) => (
-                // <label
-                //   key={index}
-                //   className={`flex items-baseline rounded p-1`}
-                // >
-                //   <span className="pt-[10px] pr-2">{q.index || 0}.</span>
-                //   <Markdown text={q.ans ?? ""} />
-                // </label>
                 <label key={index} className="flex rounded p-1">
                   <span className="px-2">{q.index || 0}.</span>
                   <div className="[&_#preview]:!pt-0">

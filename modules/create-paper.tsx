@@ -179,6 +179,8 @@ export default function CreatePaper({
               questions={selectedQuestions}
               onPrint={() => updateUsage(selectedQuestions)}
               defaultTwoColumn={twoColumn}
+              onQuestionRemove={(q) => setSelectedQuestions(prev => prev.filter(ques => ques._id !== q._id))}
+              editable
             />
             <Print>
               <PrintTrigger

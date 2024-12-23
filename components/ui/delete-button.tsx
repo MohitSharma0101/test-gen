@@ -18,6 +18,7 @@ type Props = {
   description?: string;
   size?: ButtonProps["size"];
   children?: ReactNode;
+  confirmText?: string;
 };
 
 const DeleteButton = ({
@@ -26,6 +27,7 @@ const DeleteButton = ({
   className,
   children,
   onDelete,
+  confirmText,
   size = "icon",
 }: Props) => {
   const [open, setOpen] = useState(false);
@@ -54,7 +56,7 @@ const DeleteButton = ({
             onClick={() => onDelete?.(closeDialog)}
           >
             <Trash2Icon className="w-4 h-4 mr-2" />
-            Delete
+            {confirmText || "Delete"}
           </Button>
         </div>
       </DialogContent>
