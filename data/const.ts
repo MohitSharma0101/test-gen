@@ -26,3 +26,5 @@ export const SUBJECT_MAP: TSubjectMap = {
 };
 
 export const MARKS = [1, 2, 3, 4, 5, 6];
+
+export const QUESTION_PAGE_LIMITS = [10, 20, 25, 30, 45, 50, 75, 90, 180, 300];
