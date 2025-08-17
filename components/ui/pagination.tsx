@@ -6,6 +6,7 @@ import {
   ChevronRightIcon,
 } from "lucide-react";
 import SelectCompact from "./select-compact";
+import { QUESTION_PAGE_LIMITS } from "@/data/const";
 
 type Props = {
   totalPages?: Number;
@@ -52,7 +53,7 @@ const Pagination = ({ totalPages }: Props) => {
         className="w-fit"
         value={limit.toString()}
         placeholder=""
-        options={[10, 30, 50, 100, 150, 200, 500, 1000].map((item) => ({
+        options={QUESTION_PAGE_LIMITS.map((item) => ({
           label: item + " item",
           value: item.toString(),
         }))}
