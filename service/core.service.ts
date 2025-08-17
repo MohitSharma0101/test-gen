@@ -1,5 +1,6 @@
 import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
+import { TAttendance } from "@/models/Attendance";
 import { TChapter } from "@/models/Chapter";
 import { TQuestion } from "@/models/Question";
 
@@ -38,15 +39,13 @@ export const fetchQuestions = async (
         marks: marks,
         questionId: questionId,
         tag: tag,
-        timesUsed: timesUsed
+        timesUsed: timesUsed,
       },
     })
   ).data as TFetchQuestionsResponse;
 };
 
-export const fetchChapters = async (
-  book?: string
-) => {
+export const fetchChapters = async (book?: string) => {
   return (
     await api.get(ENDPOINT.chapters, {
       params: {
@@ -138,6 +137,16 @@ export const putUpdateQuestion = async (question: TQuestion) => {
 export const moveChapter = async (chapterIds: string[], bookId: string) => {
   return api.put(ENDPOINT.moveChapters, {
     ids: chapterIds,
-    book: bookId
-  })
-}
+    book: bookId,
+  });
+};
+
+export const fetchAttendance = async (batchId?: string, date?: string) => {
+  if (!batchId || !date) return null;
+  return api.get<{ attendance: TAttendance }>(ENDPOINT.attendance, {
+    params: {
+      batchId,
+      date,
+    },
+  });
+};

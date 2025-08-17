@@ -7,7 +7,10 @@ export const ENDPOINT = {
     moveChapters: 'chapter/move',
     books: 'books', 
     papers: 'papers',
-    questionsUsed: 'questions/used'
+    questionsUsed: 'questions/used',
+    users: 'users',
+    batches: 'batches',
+    attendance: 'attendance'
 }
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH

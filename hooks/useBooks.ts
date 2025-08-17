@@ -46,7 +46,6 @@ const useBooks = (subject?: string, course?: string) => {
         title: (err as any)?.message || "Unable to add book!",
         variant: "destructive",
       });
-      console.log("err", err);
     }
   };
 

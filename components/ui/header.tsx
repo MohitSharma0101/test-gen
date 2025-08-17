@@ -19,10 +19,61 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "./button";
+import { Users2 } from "lucide-react";
+import { GraduationCap } from "lucide-react";
+import { Edit3Icon } from "lucide-react";
 
 type Props = {
-  active: "create" | "upload" | "chapter" | "book";
+  active?: "create" | "upload" | "chapter" | "book";
 };
+
+const navItems = [
+  {
+    label: "Create Paper",
+    href: "/",
+    icon: <FilePenLineIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+  {
+    label: "Upload Paper",
+    href: "/upload",
+    icon: <FileUpIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+  {
+    label: "Chapters",
+    href: "/chapters",
+    icon: <BookOpenTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+  {
+    label: "Books",
+    href: "/books",
+    icon: <BookTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+  {
+    label: "Papers",
+    href: "/papers",
+    icon: <NewspaperIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+  {
+    label: "Questions",
+    href: "/questions",
+    icon: <FileQuestion className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+  {
+    label: "Users",
+    href: "/users",
+    icon: <Users2 className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+  {
+    label: "Batches",
+    href: "/batch",
+    icon: <GraduationCap className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+  {
+    label: "Attendance",
+    href: "/attendance",
+    icon: <Edit3Icon className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+];
 
 const Header = ({ active }: Props) => {
   return (
@@ -36,8 +87,10 @@ const Header = ({ active }: Props) => {
           className="w-[50px] object-contain aspect-square -mt-2"
         />
         <div className="flex flex-col leading-4">
-          Education+ 
-          <span className="text-sky-500 text-[10px] font-medium">Believe in Results</span>
+          Education+
+          <span className="text-sky-500 text-[10px] font-medium">
+            Believe in Results
+          </span>
         </div>
       </div>
 
@@ -50,42 +103,14 @@ const Header = ({ active }: Props) => {
         <DropdownMenuContent side="bottom" align="end" className="p-1">
           <DropdownMenuLabel>Quick links</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link href={"/"} className="cursor-pointer">
-              <FilePenLineIcon className="w-5 h-5 mr-2" strokeWidth={2} />
-              Create Paper
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href={"/upload"} className="cursor-pointer">
-              <FileUpIcon className="w-5 h-5 mr-2" strokeWidth={2} />
-              Upload Questions
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href={"/chapters"} className="cursor-pointer">
-              <BookOpenTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />
-              Chapters
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href={"/books"} className="cursor-pointer">
-              <BookTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />
-              Books
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href={"/papers"} className="cursor-pointer">
-              <NewspaperIcon className="w-5 h-5 mr-2" strokeWidth={2} />
-              Papers
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href={"/questions"} className="cursor-pointer">
-              <FileQuestion className="w-5 h-5 mr-2" strokeWidth={2} />
-              Question
-            </Link>
-          </DropdownMenuItem>
+          {navItems.map((item) => (
+            <DropdownMenuItem asChild key={item.href}>
+              <Link href={item.href} className="cursor-pointer">
+                {item.icon}
+                {item.label}
+              </Link>
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

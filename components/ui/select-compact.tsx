@@ -8,7 +8,6 @@ import {
 } from "./select";
 import { Skeleton } from "./skeleton";
 import { Button } from "./button";
-import { XIcon } from "lucide-react";
 
 export type TSelectCompactProps = {
   placeholder?: string;
