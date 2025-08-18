@@ -104,8 +104,8 @@ const Header = ({ active }: Props) => {
           <DropdownMenuLabel>Quick links</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {navItems.map((item) => (
-            <DropdownMenuItem asChild key={item.href}>
-              <Link href={item.href} className="cursor-pointer">
+            <DropdownMenuItem asChild key={item.href} className="w-[180px]">
+              <Link href={item.href} className="cursor-pointer py-2">
                 {item.icon}
                 {item.label}
               </Link>
