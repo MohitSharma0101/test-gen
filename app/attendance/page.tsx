@@ -3,9 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SelectCompact from "@/components/ui/select-compact";
+import { WA_MSG } from "@/data/wa-msg";
 import useAttendance from "@/hooks/useAttendance";
 import useBatches from "@/hooks/useBatches";
 import Clock from "@/lib/clock";
+import { redirectToWhatsapp } from "@/lib/utils";
 import { TUser } from "@/models/User";
 import { Loader2Icon } from "lucide-react";
 import { SquareMousePointerIcon } from "lucide-react";
@@ -106,6 +108,17 @@ const AttendancePage = (props: Props) => {
                               ? absentUsers.filter((id) => id !== user._id)
                               : [...absentUsers, user._id]
                           );
+                          if (user.parentPhone && !isAbsent) {
+                            // here we need to take inverse of isAbsent because the value is yet to be set in the state
+                            redirectToWhatsapp(
+                              user.parentPhone,
+                              WA_MSG.absent(
+                                user.name,
+                                Clock.getDateInFormat(),
+                                selectedBatch.name
+                              )
+                            );
+                          }
                         }}
                       >
                         Absent

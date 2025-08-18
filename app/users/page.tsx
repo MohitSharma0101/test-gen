@@ -13,19 +13,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import WAButton from "@/components/ui/wa-button";
-import { WA_MSG } from "@/data/wa-msg";
 import useUsers from "@/hooks/useUsers";
-import Clock from "@/lib/clock";
 import { getDateFromISO } from "@/lib/utils";
 import React, { useState } from "react";
 
 const UserPage = () => {
   const [query, setQuery] = useState("");
   const { users, loading, refreshUsers } = useUsers();
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(query.toLowerCase()) ||
-    user.userId.toLowerCase().includes(query.toLowerCase()) ||
-    user.phone.toLowerCase().includes(query.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(query.toLowerCase()) ||
+      user.userId.toLowerCase().includes(query.toLowerCase()) ||
+      user.phone.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
@@ -97,10 +96,7 @@ const UserPage = () => {
                   <TableCell className=" h-full">
                     <div className="flex items-center gap-2">
                       {user.parentPhone}
-                      <WAButton
-                        phone={user.parentPhone}
-                        message={WA_MSG.absent(user.name, Clock.getDateInFormat())}
-                      />
+                      <WAButton phone={user.parentPhone} />
                       <CallButton phoneNumber={user.parentPhone} />
                     </div>
                   </TableCell>

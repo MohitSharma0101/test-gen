@@ -133,3 +133,15 @@ export const sortQuestionsByMarks = (questions?: TQuestion[]) => {
   if (!questions) return [];
   return questions.sort((a, b) => (a.mark || 0) - (b.mark || 0));
 };
+
+export const getWhatsappURL = (phone?: string, message?: string) => {
+  if (!phone) return "";
+  const encodedMessage = encodeURIComponent(message || "");
+  return `https://wa.me/91${phone}?text=${encodedMessage}`;
+};
+
+export const redirectToWhatsapp = (phone?: string, message?: string) => {
+  if (!phone) return;
+  const url = getWhatsappURL(phone, message);
+  window.open(url, "_blank", "noopener,noreferrer");
+};

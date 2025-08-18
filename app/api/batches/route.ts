@@ -72,7 +72,7 @@ export const GET = async (request: NextRequest) => {
       batchesReq.populate({
         path: "userIds",
         model: User,
-        select: "name phone dob",
+        select: "name phone dob parentPhone",
       });
     }
     const batches = await batchesReq;
