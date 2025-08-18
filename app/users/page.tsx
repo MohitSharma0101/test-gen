@@ -94,7 +94,7 @@ const UserPage = () => {
                     {user.motherName}
                   </TableCell>
                   <TableCell className=" h-full">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-end gap-2">
                       {user.parentPhone}
                       <WAButton phone={user.parentPhone} />
                       <CallButton phoneNumber={user.parentPhone} />
