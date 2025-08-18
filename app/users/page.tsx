@@ -1,7 +1,8 @@
 "use client";
 
 import AddUserSheet from "@/components/sheets/add-user-sheet";
-import DataTable from "@/components/ui/data-table";
+import CallButton from "@/components/ui/call-button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -11,12 +12,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import WAButton from "@/components/ui/wa-button";
+import { WA_MSG } from "@/data/wa-msg";
 import useUsers from "@/hooks/useUsers";
+import Clock from "@/lib/clock";
 import { getDateFromISO } from "@/lib/utils";
-import React from "react";
+import React, { useState } from "react";
 
 const UserPage = () => {
+  const [query, setQuery] = useState("");
   const { users, loading, refreshUsers } = useUsers();
+  const filteredUsers = users.filter((user) =>
+    user.name.toLowerCase().includes(query.toLowerCase()) ||
+    user.userId.toLowerCase().includes(query.toLowerCase()) ||
+    user.phone.toLowerCase().includes(query.toLowerCase())
+  );
 
   return (
     <div className="flex-1 rounded">
@@ -24,7 +34,15 @@ const UserPage = () => {
         USERS
         <AddUserSheet onSuccess={refreshUsers} />
       </div>
+
       <div className="px-6 py-3">
+        <div className="py-2">
+          <Input
+            placeholder={"Search by name, number or Id"}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
         {loading ? (
           <div className="w-full flex flex-col gap-2 mt-2">
             <Skeleton className="w-full h-[60px]" />
@@ -40,14 +58,14 @@ const UserPage = () => {
                 <TableHead className="min-w-[120px]">Name</TableHead>
                 <TableHead className="w-[130px] text-right">Email</TableHead>
                 <TableHead className="w-[120px] text-right">Phone</TableHead>
-                <TableHead className="w-[160px] text-right">DOB</TableHead>
-                <TableHead className="w-[160px] text-right">
+                <TableHead className="min-w-[110px] text-right">DOB</TableHead>
+                <TableHead className="min-w-[100px] text-right">
                   Father Name
                 </TableHead>
-                <TableHead className="w-[160px] text-right">
+                <TableHead className="min-w-[100px] text-right">
                   Mother Name
                 </TableHead>
-                <TableHead className="w-[160px] text-right">
+                <TableHead className="min-w-[120px] text-right">
                   Parent Phone
                 </TableHead>
                 <TableHead className="w-[120px] text-right">School</TableHead>
@@ -60,7 +78,7 @@ const UserPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-slate-300 border border-slate-300">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow
                   key={user._id}
                   className="divide-x divide-slate-300 border-slate-300"
@@ -76,8 +94,15 @@ const UserPage = () => {
                   <TableCell className="text-right">
                     {user.motherName}
                   </TableCell>
-                  <TableCell className="text-right">
-                    {user.parentPhone}
+                  <TableCell className=" h-full">
+                    <div className="flex items-center gap-2">
+                      {user.parentPhone}
+                      <WAButton
+                        phone={user.parentPhone}
+                        message={WA_MSG.absent(user.name, Clock.getDateInFormat())}
+                      />
+                      <CallButton phoneNumber={user.parentPhone} />
+                    </div>
                   </TableCell>
                   <TableCell className="w-[120px] text-right truncate max-w-[400px]">
                     {user.school}
