@@ -73,6 +73,7 @@ export const GET = async (request: NextRequest) => {
         path: "userIds",
         model: User,
         select: "name phone dob parentPhone",
+        options: { sort: { name: 1 } }, // Sort users by name ascending
       });
     }
     const batches = await batchesReq;

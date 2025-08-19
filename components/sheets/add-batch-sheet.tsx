@@ -73,7 +73,7 @@ const AddBatchSheet = ({
         className="p-0 flex flex-col gap-2 max-h-screen"
       >
         <div className="text-base font-medium px-2 py-3 bg-gray-200">
-          Add Batch
+          {editMode ? "Edit Batch" : "Add Batch"}
         </div>
         <div className="flex flex-col gap-2 px-3 flex-grow overflow-auto">
           <LabelInput
@@ -102,7 +102,10 @@ const AddBatchSheet = ({
                 className="rounded-b-none rounded-t-md"
               />
               {filteredUsers.map((user) => (
-                <label key={user.userId} className="flex items-center py-2 px-2 gap-2 border-b last:border-b-none border-slate-200 cursor-pointer hover:bg-slate-100">
+                <label
+                  key={user.userId}
+                  className="flex items-center py-2 px-2 gap-2 border-b last:border-b-none border-slate-200 cursor-pointer hover:bg-slate-100"
+                >
                   <Checkbox
                     id={user._id}
                     checked={selectedUsers.includes(user._id)}
