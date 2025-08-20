@@ -10,6 +10,7 @@ import useUsers from "@/hooks/useUsers";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
 import { TBatch } from "@/models/Batch";
+import { TUser } from "@/models/User";
 
 type Props = {
   defaultBatch?: TBatch;
@@ -27,9 +28,10 @@ const AddBatchSheet = ({
   const [name, setName] = useState(defaultBatch?.name ?? "");
   const { users } = useUsers();
   const [query, setQuery] = useState("");
-  const [selectedUsers, setSelectedUsers] = useState<string[]>(
-    (defaultBatch?.userIds ?? []) as string[]
+  const defaultSelectedUserIds = ((defaultBatch?.userIds ?? []) as TUser[]).map(
+    (user) => user?._id
   );
+  const [selectedUsers, setSelectedUsers] = useState(defaultSelectedUserIds);
   const editMode = !!defaultBatch;
 
   const filteredUsers = (users ?? []).filter((user) =>

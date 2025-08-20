@@ -8,13 +8,17 @@ import { Button } from "@/components/ui/button";
 import { PencilIcon } from "lucide-react";
 import { PlusIcon } from "lucide-react";
 import { TBatch } from "@/models/Batch";
+import ViewBatchSheet from "@/components/sheets/view-batch-sheet";
 
 type Props = {};
 
 const BatchPage = (props: Props) => {
-  const { batches, loading, refreshBatches } = useBatches();
+  const { batches, loading, refreshBatches } = useBatches({
+    populateUsers: true,
+  });
   const [selectedBatch, setSelectedBatch] = useState<TBatch>();
   const [openAddBatchSheet, setOpenAddBatchSheet] = useState(false);
+  const [openViewBatchSheet, setOpenViewBatchSheet] = useState(false);
 
   return (
     <div className="flex-1 rounded">
@@ -40,10 +44,10 @@ const BatchPage = (props: Props) => {
             {batches.map((batch) => (
               <div
                 key={batch.name}
-                className="p-4 rounded-lg border border-slate-200 bg-white flex items-center justify-between w-[300px] cursor-pointer hover:border-slate-500"
+                className="w-full md:w-[300px] p-4 rounded-lg border border-slate-200 bg-white flex items-center justify-between cursor-pointer hover:border-slate-500"
                 onClick={() => {
                   setSelectedBatch(batch);
-                  setOpenAddBatchSheet(true);
+                  setOpenViewBatchSheet(true);
                 }}
               >
                 <div>
@@ -65,7 +69,22 @@ const BatchPage = (props: Props) => {
           onSuccess={refreshBatches}
           defaultBatch={selectedBatch}
           open={openAddBatchSheet}
-          onOpenChange={setOpenAddBatchSheet}
+          onOpenChange={(open) => {
+            setOpenAddBatchSheet(open);
+            if (!open) {
+              setOpenViewBatchSheet(false);
+            }
+          }}
+        />
+      )}
+      {openViewBatchSheet && (
+        <ViewBatchSheet
+          batch={selectedBatch}
+          open={openViewBatchSheet}
+          onOpenChange={setOpenViewBatchSheet}
+          onEdit={() => {
+            setOpenAddBatchSheet(true);
+          }}
         />
       )}
     </div>
