@@ -135,19 +135,24 @@ export default function SendMessagePage() {
           {selectedTemplateMeta.preview && (
             <>
               <p className="font-bold text-xs my-2">PREVIEW</p>
-              <Textarea disabled value={selectedTemplateMeta.preview} rows={10} className="disabled:opacity-100 disabled:cursor-pointer" />
+              <Textarea
+                disabled
+                value={selectedTemplateMeta.preview}
+                rows={10}
+                className="disabled:opacity-100 disabled:cursor-pointer"
+              />
             </>
           )}
         </div>
       </div>
       <div className="max-w-[700px] mx-auto my-3 px-2">
-        {!selectedBatchId || !selectedTemplate ? (
+        {!usersToShow ? (
           <div className="py-10 px-3 text-slate-400 text-sm md:text-base font-medium h-full flex gap-4 flex-col items-center justify-center">
             <SquareMousePointerIcon
               className="w-[100px] h-[100px]"
               strokeWidth={1.5}
             />
-            Select a template and source to send message
+            Select a source to send message
           </div>
         ) : (
           <div className="my-3 bg-white rounded-lg border border-slate-200 divide-y divide-slate-200">
