@@ -134,7 +134,7 @@ export default function SendMessagePage() {
           {renderExtraFields()}
           {selectedTemplateMeta.preview && (
             <>
-              <p className="font-bold text-xs mb-2">PREVIEW</p>
+              <p className="font-bold text-xs my-2">PREVIEW</p>
               <Textarea disabled value={selectedTemplateMeta.preview} rows={10} className="disabled:opacity-100 disabled:cursor-pointer" />
             </>
           )}

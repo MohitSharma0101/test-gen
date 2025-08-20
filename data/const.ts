@@ -51,7 +51,7 @@ export const MSG_TEMPLATES_META = {
     preview: WA_MSG.absent("<NAME>", "<DATE>", "<BATCH>"),
   },
   [MSG_TEMPLATE.EXTRA_CLASS]: {
-    extraFields: [],
+    extraFields: [INPUT_FIELD.DATE],
     preview: WA_MSG.extraClass("<NAME>", "<DATE>"),
   },
 };

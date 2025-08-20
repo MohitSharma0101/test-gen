@@ -34,7 +34,7 @@ const UserPage = () => {
         <AddUserSheet onSuccess={refreshUsers} />
       </div>
 
-      <div className="px-6 py-3">
+      <div className="px-2 lg:px-6 py-3">
         <div className="py-2">
           <Input
             placeholder={"Search by name, number or Id"}
