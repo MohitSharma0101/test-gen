@@ -1,6 +1,8 @@
 "use client";
 
 import AddUserSheet from "@/components/sheets/add-user-sheet";
+import EditUserSheet from "@/components/sheets/edit-user-sheet";
+import { Button } from "@/components/ui/button";
 import CallButton from "@/components/ui/call-button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +17,8 @@ import {
 import WAButton from "@/components/ui/wa-button";
 import useUsers from "@/hooks/useUsers";
 import { getDateFromISO } from "@/lib/utils";
+import { TUser } from "@/models/User";
+import { Edit2Icon } from "lucide-react";
 import React, { useState } from "react";
 
 const UserPage = () => {
@@ -26,6 +30,8 @@ const UserPage = () => {
       user.userId.toLowerCase().includes(query.toLowerCase()) ||
       user.phone.toLowerCase().includes(query.toLowerCase())
   );
+
+  const [selectedUser, setSelectedUser] = useState<TUser>();
 
   return (
     <div className="flex-1 rounded">
@@ -53,9 +59,9 @@ const UserPage = () => {
           <Table className="mt-2">
             <TableHeader className="border border-slate-300 bg-slate-300">
               <TableRow className="divide-x divide-slate-300 border-b border-slate-300">
+                <TableHead>Edit</TableHead>
                 <TableHead>Id</TableHead>
-                <TableHead className="min-w-[120px]">Name</TableHead>
-                <TableHead className="w-[130px] text-right">Email</TableHead>
+                <TableHead className="min-w-[140px]">Name</TableHead>
                 <TableHead className="w-[120px] text-right">Phone</TableHead>
                 <TableHead className="min-w-[110px] text-right">DOB</TableHead>
                 <TableHead className="min-w-[100px] text-right">
@@ -68,6 +74,7 @@ const UserPage = () => {
                   Parent Phone
                 </TableHead>
                 <TableHead className="w-[120px] text-right">School</TableHead>
+                <TableHead className="w-[130px] text-right">Email</TableHead>
                 <TableHead className="w-[140px] text-right">
                   Created At
                 </TableHead>
@@ -82,9 +89,17 @@ const UserPage = () => {
                   key={user._id}
                   className="divide-x divide-slate-300 border-slate-300"
                 >
+                  <TableCell>
+                    <Button
+                      variant={"outline"}
+                      size={"icon"}
+                      onClick={() => setSelectedUser(user)}
+                    >
+                      <Edit2Icon className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
                   <TableCell className="font-medium">{user.userId}</TableCell>
                   <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell className="text-right">{user.email}</TableCell>
                   <TableCell className="text-right">{user.phone}</TableCell>
                   <TableCell className="text-right">{user.dob}</TableCell>
                   <TableCell className="text-right">
@@ -103,6 +118,7 @@ const UserPage = () => {
                   <TableCell className="w-[120px] text-right truncate max-w-[400px]">
                     {user.school}
                   </TableCell>
+                  <TableCell className="text-right">{user.email}</TableCell>
                   <TableCell className="w-fit text-right">
                     {getDateFromISO(user.createdAt ?? "")}
                   </TableCell>
@@ -115,6 +131,15 @@ const UserPage = () => {
           </Table>
         )}
       </div>
+      {selectedUser && (
+        <EditUserSheet
+          open={!!selectedUser}
+          onOpenChange={(_open) => {
+            if (!_open) setSelectedUser(undefined);
+          }}
+          defaultUser={selectedUser}
+        />
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
-import User from "@/models/User";
+import User, { TUser } from "@/models/User";
 import Batch from "@/models/Batch"; // Assuming you have this model
 import { parse } from "csv-parse/sync";
 import Counter from "@/models/Counter";
@@ -96,6 +96,35 @@ export const GET = async () => {
     await dbConnect();
     const users = await User.find().sort({ userId: -1 });
     return NextResponse.json({ users }, { status: 200 });
+  } catch (err: any) {
+    return NextResponse.json(
+      { status: "error", error: err.message ?? "Something went wrong" },
+      { status: 500 }
+    );
+  }
+};
+
+export const PUT = async (request: NextRequest) => {
+  try {
+    const { _id, ...user } = (await request.json()) as TUser;
+
+    if (!_id) {
+      return NextResponse.json(
+        { status: "error", error: "user id is required." },
+        { status: 500 }
+      );
+    }
+
+    await dbConnect();
+
+    console.log("user", user);
+
+    const result = await User.updateOne({ _id }, { ...user });
+
+    return NextResponse.json(
+      { status: "success", user: result },
+      { status: 200 }
+    );
   } catch (err: any) {
     return NextResponse.json(
       { status: "error", error: err.message ?? "Something went wrong" },
