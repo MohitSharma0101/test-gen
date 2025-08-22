@@ -1,20 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
 import Attendance, { TAttendance } from "@/models/Attendance";
+import { nextError, nextSuccess } from "@/lib/nextUtils";
 
 export const POST = async (request: NextRequest) => {
   try {
     const { _id, batch, absentUsers, date } =
       (await request.json()) as TAttendance;
 
-    if (!batch || absentUsers?.length <= 0 || !date) {
-      return NextResponse.json(
-        {
-          status: "error",
-          error: "Batch, date and absent users are required.",
-        },
-        { status: 500 }
-      );
+    if (!batch || !absentUsers?.length || !date) {
+      return nextError("Batch, date and absent users are required.", 400);
     }
 
     await dbConnect();
@@ -30,15 +25,9 @@ export const POST = async (request: NextRequest) => {
       result = await Attendance.create({ batch, absentUsers, date });
     }
 
-    return NextResponse.json(
-      { status: "success", attendance: result },
-      { status: 200 }
-    );
+    return nextSuccess({ attendance: result }, 200);
   } catch (err: any) {
-    return NextResponse.json(
-      { status: "error", error: err.message ?? "Something went wrong" },
-      { status: 500 }
-    );
+    return nextError(err.message);
   }
 };
 
@@ -49,10 +38,7 @@ export const GET = async (request: NextRequest) => {
     const date = searchParams.get("date");
 
     if (!batchId || !date) {
-      return NextResponse.json(
-        { status: "error", error: "Batch ID and date are required" },
-        { status: 400 }
-      );
+      return nextError("Batch ID and date are required", 400);
     }
 
     await dbConnect();
@@ -60,11 +46,9 @@ export const GET = async (request: NextRequest) => {
       batch: batchId,
       date: date,
     });
-    return NextResponse.json({ attendance: attendance?.[0] }, { status: 200 });
+
+    return nextSuccess({ attendance: attendance?.[0] }, 200);
   } catch (err: any) {
-    return NextResponse.json(
-      { status: "error", error: err.message ?? "Something went wrong" },
-      { status: 500 }
-    );
+    return nextError(err.message);
   }
 };

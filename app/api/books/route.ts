@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
 import Book, { TBook } from "@/models/Book";
+import { nextError, nextSuccess } from "@/lib/nextUtils";
 
 export const GET = async (request: NextRequest) => {
   try {
@@ -15,15 +16,9 @@ export const GET = async (request: NextRequest) => {
     await dbConnect();
     const books = await Book.find(query);
 
-    return NextResponse.json(
-      { status: "success", books: books },
-      { status: 200 }
-    );
+    return nextSuccess({ books }, 200);
   } catch (err: any) {
-    return NextResponse.json(
-      { status: "error", error: err.message ?? "Something went wrong" },
-      { status: 500 }
-    );
+    return nextError(err.message);
   }
 };
 
@@ -32,30 +27,16 @@ export const POST = async (request: NextRequest) => {
     const { title, course, subject } = (await request.json()) as TBook;
 
     if (!course || !subject || !title) {
-      return NextResponse.json(
-        {
-          status: "error",
-          error: "All fields are required.",
-        },
-        { status: 500 }
-      );
+      return nextError("All fields are required.", 400);
     }
 
     await dbConnect();
 
-    const newBook = new Book({ title, subject, course });
+    const newBook = await Book.create({ title, subject, course });
 
-    await newBook.save();
-
-    return NextResponse.json(
-      { status: "success", book: newBook },
-      { status: 201 }
-    );
+    return nextSuccess({ book: newBook }, 201);
   } catch (err: any) {
-    return NextResponse.json(
-      { status: "error", error: err.message ?? "Something went wrong" },
-      { status: 500 }
-    );
+    return nextError(err.message);
   }
 };
 
@@ -64,28 +45,15 @@ export const PUT = async (request: NextRequest) => {
     const { id, title } = await request.json();
 
     if (!id || !title) {
-      return NextResponse.json(
-        {
-          status: "error",
-          error: "All fields are required.",
-        },
-        { status: 500 }
-      );
+      return nextError("All fields are required.", 400);
     }
 
     await dbConnect();
+    const updatedBook = await Book.findByIdAndUpdate(id, { title }, { new: true });
 
-    const newBook = await Book.findByIdAndUpdate(id, { title: title });
-
-    return NextResponse.json(
-      { status: "success", book: newBook },
-      { status: 201 }
-    );
+    return nextSuccess({ book: updatedBook }, 200);
   } catch (err: any) {
-    return NextResponse.json(
-      { status: "error", error: err.message ?? "Something went wrong" },
-      { status: 500 }
-    );
+    return nextError(err.message);
   }
 };
 
@@ -95,23 +63,14 @@ export const DELETE = async (request: NextRequest) => {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json(
-        {
-          status: "error",
-          error: "id is required.",
-        },
-        { status: 500 }
-      );
+      return nextError("id is required.", 400);
     }
 
     await dbConnect();
     await Book.deleteOne({ _id: id });
 
-    return NextResponse.json({ status: "success" }, { status: 200 });
+    return nextSuccess(null, 200);
   } catch (err: any) {
-    return NextResponse.json(
-      { status: "error", error: err.message ?? "Something went wrong" },
-      { status: 500 }
-    );
+    return nextError(err.message);
   }
 };
