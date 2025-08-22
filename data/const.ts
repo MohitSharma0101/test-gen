@@ -61,7 +61,8 @@ export const MSG_TEMPLATES_META = {
     preview: WA_MSG.result({
       name: "NAME",
       date: "DATE",
-      marks: "MARKS",
+      marks_obtained: "OBTAINED MARKS",
+      total_marks: "TOTAL",
       subject: "SUBJECT",
     }),
   },

@@ -49,7 +49,8 @@ export default function SendMessagePage() {
         return WA_MSG.result({
           name: data.name,
           date: selectedDate,
-          marks: `${data.marks_obtained}/${data.total_marks}`,
+          marks_obtained: data.marks_obtained,
+          total_marks: data.total_marks,
           subject: data.subject,
         });
     }
