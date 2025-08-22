@@ -34,6 +34,7 @@ export const QUESTION_PAGE_LIMITS = [10, 20, 25, 30, 45, 50, 75, 90, 180, 300];
 export enum MSG_TEMPLATE {
   EXTRA_CLASS = "EXTRA_CLASS",
   ABSENT = "ABSENT",
+  RESULT = "RESULT",
 }
 
 export enum INPUT_FIELD {
@@ -43,6 +44,7 @@ export enum INPUT_FIELD {
 export const MSG_TEMPLATES_OPTIONS = [
   { label: "Extra Class Template", value: MSG_TEMPLATE.EXTRA_CLASS },
   { label: "Absent Template", value: MSG_TEMPLATE.ABSENT },
+  { label: "Result Template", value: MSG_TEMPLATE.RESULT },
 ];
 
 export const MSG_TEMPLATES_META = {
@@ -53,5 +55,14 @@ export const MSG_TEMPLATES_META = {
   [MSG_TEMPLATE.EXTRA_CLASS]: {
     extraFields: [INPUT_FIELD.DATE],
     preview: WA_MSG.extraClass("<NAME>", "<DATE>"),
+  },
+  [MSG_TEMPLATE.RESULT]: {
+    extraFields: [INPUT_FIELD.DATE],
+    preview: WA_MSG.result({
+      name: "NAME",
+      date: "DATE",
+      marks: "MARKS",
+      subject: "SUBJECT",
+    }),
   },
 };

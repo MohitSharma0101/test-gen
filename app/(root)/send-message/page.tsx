@@ -45,6 +45,13 @@ export default function SendMessagePage() {
           selectedDate,
           selectedBatch?.name || ""
         );
+      case MSG_TEMPLATE.RESULT:
+        return WA_MSG.result({
+          name: data.name,
+          date: selectedDate,
+          marks: `${data.marks_obtained}/${data.total_marks}`,
+          subject: data.subject,
+        });
     }
   };
 
@@ -93,6 +100,7 @@ export default function SendMessagePage() {
       school: row.school,
       email: row.email,
       dob: row.dob,
+      ...row,
     }));
 
     setUploadedUser(users);

@@ -13,4 +13,16 @@ Kindly make necessary arrangements for pickup accordingly.
 
 Regards,  
 Team Education+`,
+  result: (props: {
+    name: string;
+    date: string;
+    subject: string;
+    marks: string;
+  }) => `Dear Parent,  
+We wish to inform you that your ward, *${props.name}*, has secured *${props.marks}* marks in *${props.subject}* examination held on _${props.date}_.  
+
+We encourage you to review the performance with your ward and support them for further improvement.  
+
+Regards,  
+Team Education+ `,
 };
