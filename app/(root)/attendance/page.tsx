@@ -22,6 +22,8 @@ const AttendancePage = (props: Props) => {
   const [absentUsers, setAbsentUsers] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(Clock.getDate());
 
+  const isDisabled = selectedDate != Clock.getDate();
+
   const { attendance, loading, refresh, markAttendance } = useAttendance({
     batchId: selectedBatchId,
     date: selectedDate,
@@ -30,6 +32,12 @@ const AttendancePage = (props: Props) => {
   useEffect(() => {
     setAbsentUsers((attendance?.absentUsers as string[]) || []);
   }, [attendance]);
+
+  const onSubmit = async () => {
+    await markAttendance(absentUsers);
+    setSelectedBatchId("");
+    setAbsentUsers([]);
+  };
 
   return (
     <div>
@@ -63,7 +71,7 @@ const AttendancePage = (props: Props) => {
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
-          <Button size="sm" onClick={() => markAttendance(absentUsers)}>
+          <Button size="sm" onClick={onSubmit} disabled={isDisabled}>
             Submit
           </Button>
         </div>
@@ -99,6 +107,7 @@ const AttendancePage = (props: Props) => {
                         </p>
                       </div>
                       <Button
+                        disabled={isDisabled}
                         variant={isAbsent ? "destructive" : "outline"}
                         size="sm"
                         className="rounded-full text-xs gap-1"

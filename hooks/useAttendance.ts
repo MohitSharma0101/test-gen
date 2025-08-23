@@ -47,7 +47,6 @@ const useAttendance = ({ batchId, date, _id }: config = {}) => {
         title: "Attendance marked successfully",
         variant: "success",
       });
-      getAttendance();
     } catch (err) {
       console.log(err);
       toast({

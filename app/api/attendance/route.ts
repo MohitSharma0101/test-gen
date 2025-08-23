@@ -7,7 +7,7 @@ export const POST = async (request: NextRequest) => {
     const { _id, batch, absentUsers, date } =
       (await request.json()) as TAttendance;
 
-    if (!batch || absentUsers?.length <= 0 || !date) {
+    if (!batch || !date) {
       return NextResponse.json(
         {
           status: "error",
