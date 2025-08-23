@@ -19,12 +19,12 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await AuthService.login({ username, password });
-      router.push("/");
+      await AuthService.login({ username, password });
     } catch (err) {
       setError("Something went wrong.");
     } finally {
       setLoading(false);
+      router.refresh();
     }
   };
 

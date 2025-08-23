@@ -14,7 +14,7 @@ export default async function RootLayout({
   if (!user) redirect("/login");
   return (
     <AuthProvider account={user}>
-      <Header active="create" />
+      <Header />
       <Suspense>{children}</Suspense>
       <MathpixProvider />
     </AuthProvider>
