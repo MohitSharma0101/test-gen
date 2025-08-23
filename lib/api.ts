@@ -14,7 +14,7 @@ export const ENDPOINT = {
   attendance: "attendance",
 
   //auth
-  login: "auth/login",
+  login: "login",
   user: "auth/user",
 };
 
