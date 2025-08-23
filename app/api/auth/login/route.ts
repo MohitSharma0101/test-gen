@@ -3,8 +3,7 @@ import Account, { TAccount } from "@/models/Account";
 import { NextRequest } from "next/server";
 import bcrypt from "bcrypt";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
-import jwt from "jsonwebtoken";
-import { generateToken } from "@/lib/auth";
+import { generateToken } from "@/lib/tokenUtils";
 
 export const POST = async (request: NextRequest) => {
   try {
@@ -26,7 +25,7 @@ export const POST = async (request: NextRequest) => {
       return nextError("Invalid credentials.", 401);
     }
 
-    const token = generateToken(account);
+    const token = await generateToken(account);
 
     return nextSuccess(
       {

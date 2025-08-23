@@ -117,8 +117,6 @@ export const PUT = async (request: NextRequest) => {
 
     await dbConnect();
 
-    console.log("user", user);
-
     const result = await User.updateOne({ _id }, { ...user });
 
     return NextResponse.json(

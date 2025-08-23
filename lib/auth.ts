@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
 import Account, { TAccount } from "@/models/Account";
 import { cookies, headers } from "next/headers";
 import { dbConnect } from "./dbUtils";
 import { AUTH_TOKEN_KEY } from "./api";
+import { verifyToken } from "./tokenUtils";
 
 type TGetAccountProps = {
   includePassword?: boolean;
@@ -21,11 +21,7 @@ export const getAccount = async ({
       return null;
     }
 
-    const accountFromToken = jwt.verify(
-      token,
-      process.env.AUTH_SECRET as string
-    ) as TAccount;
-
+    const accountFromToken = await verifyToken(token);
     if (!accountFromToken) return null;
 
     await dbConnect();
@@ -50,16 +46,4 @@ export const getAccount = async ({
   } catch (err) {
     return null;
   }
-};
-
-export const generateToken = (account: Partial<TAccount>) => {
-  return jwt.sign(
-    {
-      id: account._id,
-      username: account.username,
-      role: account.role,
-    },
-    process.env.AUTH_SECRET as string,
-    { expiresIn: "24h" }
-  );
 };
