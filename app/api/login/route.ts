@@ -1,7 +1,7 @@
 import { dbConnect } from "@/lib/dbUtils";
 import Account, { TAccount } from "@/models/Account";
 import { NextRequest } from "next/server";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
 import { generateToken } from "@/lib/tokenUtils";
 

@@ -1,7 +1,7 @@
 import { dbConnect } from "@/lib/dbUtils";
 import Account, { TAccount, Role } from "@/models/Account";
 import { NextRequest } from "next/server";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
 
 export const POST = async (request: NextRequest) => {
