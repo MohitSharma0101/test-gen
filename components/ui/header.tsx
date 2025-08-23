@@ -23,6 +23,7 @@ import { Users2 } from "lucide-react";
 import { GraduationCap } from "lucide-react";
 import { Edit3Icon } from "lucide-react";
 import { MessageCircleIcon } from "lucide-react";
+import AccountMenu from "./account-menu";
 
 type Props = {
   active?: "create" | "upload" | "chapter" | "book";
@@ -83,7 +84,7 @@ const navItems = [
 
 const Header = ({ active }: Props) => {
   return (
-    <div className="bg-white w-full px-3 md:px-6 py-2 flex justify-between gap-4 text-sm font-bold">
+    <div className="bg-white w-full px-3 md:px-6 py-2 items-center flex gap-4 text-sm font-bold">
       <div className="flex items-center justify-center gap-2 font-bold text-xl">
         <Image
           src={"/eplus-logo-min.png"}
@@ -99,7 +100,7 @@ const Header = ({ active }: Props) => {
           </span>
         </div>
       </div>
-
+      <AccountMenu className="ml-auto" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant={"outline"}>

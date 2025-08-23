@@ -1,17 +1,22 @@
 import Header from "@/components/ui/header";
+import { AuthProvider } from "@/context/auth-context";
+import { getAccount } from "@/lib/auth";
 import MathpixProvider from "@/provider/MathpixProvider";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getAccount();
+  if (!user) redirect("/login");
   return (
-    <>
+    <AuthProvider account={user}>
       <Header active="create" />
       <Suspense>{children}</Suspense>
       <MathpixProvider />
-    </>
+    </AuthProvider>
   );
 }
