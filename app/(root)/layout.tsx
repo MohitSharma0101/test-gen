@@ -11,7 +11,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getAccount();
-  if (!user) redirect("/login");
+  if (!user) redirect("/signin");
   return (
     <AuthProvider account={user}>
       <Header />
