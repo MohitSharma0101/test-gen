@@ -63,11 +63,12 @@ export default function SendMessagePage() {
     return (
       <>
         <p className="font-bold text-xs">ADDITIONAL DATA</p>
-        {extraFields.map((field) => {
+        {extraFields.map((field, index) => {
           switch (field) {
             case INPUT_FIELD.DATE:
               return (
                 <Input
+                  key={field + index}
                   type="date"
                   className="w-fit mt-2"
                   value={selectedDate}
