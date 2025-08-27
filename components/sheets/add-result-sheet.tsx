@@ -16,6 +16,7 @@ type Props = {
   date: string;
   open: boolean;
   onOpenChange?: (open: boolean) => void;
+  onSubmit?: () => void;
 };
 
 export const AddResultSheet = ({
@@ -24,6 +25,7 @@ export const AddResultSheet = ({
   batch,
   date,
   defaultExamResult,
+  onSubmit,
 }: Props) => {
   const [totalMarks, setTotalMarks] = useState(
     defaultExamResult?.totalMarks ?? 100
@@ -57,7 +59,7 @@ export const AddResultSheet = ({
     }
   };
 
-  const onSubmit = async () => {
+  const handleSubmit = async () => {
     if (viewMode) return;
     try {
       setIsSubmitting(true);
@@ -78,6 +80,7 @@ export const AddResultSheet = ({
         variant: "success",
         description: "Result added successfully",
       });
+      onSubmit?.();
     } catch (err: any) {
       toast({
         title: "Error",
@@ -166,7 +169,7 @@ export const AddResultSheet = ({
                       value={results[user._id]}
                       onChange={(e) => {
                         const marks = Math.min(
-                          parseInt(e.target.value),
+                          Math.max(0, parseInt(e.target.value)),
                           totalMarks
                         );
                         setResults((prev) => ({
@@ -184,7 +187,7 @@ export const AddResultSheet = ({
         <Button
           disabled={viewMode || isSubmitting}
           className="mb-2 mx-2"
-          onClick={onSubmit}
+          onClick={handleSubmit}
         >
           Submit
         </Button>

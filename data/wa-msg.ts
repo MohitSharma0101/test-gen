@@ -26,4 +26,15 @@ We encourage you to review the performance with your ward and support them for f
 
 Regards,  
 Team Education+ `,
+  resultAbsent: (props: {
+    name: string;
+    date: string;
+    subject: string;
+  }) => `Dear Parent,
+We wish to inform you that your ward, *${props.name}*, was marked *ABSENT* in the *${props.subject}* examination held on _${props.date}_.
+
+Kindly ensure necessary guidance and support to avoid such occurrences in the future.
+
+Regards,
+Team Education+`,
 };

@@ -20,17 +20,21 @@ const ExamResultsPage = (props: Props) => {
   const { batches } = useBatches({ populateUsers: true });
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
   const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
-  const [selectedDate, setSelectedDate] = useState<string>(Clock.getDate());
+  const [selectedDate, setSelectedDate] = useState<string>();
   const [openResultSheet, setOpenResultSheet] = useState(false);
   const [selectedResult, setSelectedResult] = useState<TExamResult | null>();
 
   const { examResults, loading, fetchExamResults } = useExamResults();
 
-  const onSubmit = async () => {
+  const onSearch = async () => {
     fetchExamResults({
       batchId: selectedBatchId,
       date: selectedDate,
     });
+  };
+  const closeSheet = () => {
+    setOpenResultSheet(false);
+    setSelectedResult(null);
   };
 
   return (
@@ -39,11 +43,14 @@ const ExamResultsPage = (props: Props) => {
         <h1 className="py-2 text-sm font-bold flex items-center gap-x-2">
           RESULTS
         </h1>
-        {selectedBatch && selectedDate && (
-          <Button onClick={() => setOpenResultSheet(true)}>
+        {
+          <Button
+            disabled={!selectedBatchId || !selectedDate}
+            onClick={() => setOpenResultSheet(true)}
+          >
             Add <PlusIcon className="size-4 ml-2" />
           </Button>
-        )}
+        }
       </div>
 
       <div className="max-w-[700px] mx-auto my-3 px-2">
@@ -67,7 +74,7 @@ const ExamResultsPage = (props: Props) => {
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
-          <Button size="sm" onClick={onSubmit} disabled={loading}>
+          <Button size="sm" onClick={onSearch} disabled={loading}>
             Search
           </Button>
         </div>
@@ -82,9 +89,13 @@ const ExamResultsPage = (props: Props) => {
                   setOpenResultSheet(true);
                   setSelectedResult(result);
                 }}
-                className="p-4 flex items-center justify-between cursor-pointer border-b last:border-none hover:bg-slate-50"
+                className="p-4 flex items-center cursor-pointer border-b last:border-none hover:bg-slate-50"
               >
-                {result.name} <ChevronRightIcon className="size-4" />
+                {result.name}
+                <span className="text-slate-600 text-sm ml-2">
+                  {Clock.getDateInFormat(result.date)} | {result.subject}
+                </span>
+                <ChevronRightIcon className="size-4 ml-auto" />
               </div>
             ))
           ) : (
@@ -98,16 +109,17 @@ const ExamResultsPage = (props: Props) => {
           )}
         </div>
       </div>
-      {selectedBatch && openResultSheet && (
+      {selectedBatch && selectedDate && openResultSheet && (
         <AddResultSheet
           open={openResultSheet}
-          onOpenChange={() => {
-            setOpenResultSheet(false);
-            setSelectedResult(null);
-          }}
+          onOpenChange={() => closeSheet()}
           batch={selectedBatch}
           date={selectedDate}
           defaultExamResult={selectedResult}
+          onSubmit={() => {
+            closeSheet();
+            onSearch();
+          }}
         />
       )}
     </div>

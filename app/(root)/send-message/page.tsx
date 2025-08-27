@@ -14,8 +14,7 @@ import useBatches from "@/hooks/useBatches";
 import Clock from "@/lib/clock";
 import { TUser } from "@/models/User";
 import { SquareMousePointerIcon } from "lucide-react";
-import { ChangeEvent, useEffect, useState } from "react";
-import { parse } from "csv-parse/sync";
+import { useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import useExamResults from "@/hooks/useExamResult";
 
@@ -29,7 +28,6 @@ export default function SendMessagePage() {
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
   const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
   const [selectedDate, setSelectedDate] = useState<string>(Clock.getDate());
-  const [uploadedUsers, setUploadedUser] = useState<any[]>();
 
   const selectedTemplateMeta = MSG_TEMPLATES_META[selectedTemplate];
   const { examResults, fetchExamResults } = useExamResults();
@@ -38,16 +36,17 @@ export default function SendMessagePage() {
     (res) => res._id === selectedResultId
   );
 
-  const usersToShow = (uploadedUsers ?? selectedBatch?.userIds) as TUser[];
+  const usersToShow = selectedBatch?.userIds as TUser[];
 
   useEffect(() => {
     if (selectedTemplate === MSG_TEMPLATE.RESULT) {
+      setSelectedResultId("");
       fetchExamResults({
         batchId: selectedBatchId,
         date: selectedDate,
       });
     }
-  }, [selectedTemplate]);
+  }, [selectedTemplate, selectedDate, selectedBatchId]);
 
   const getWAMsg = (data: Record<string, string>) => {
     switch (selectedTemplate) {
@@ -63,13 +62,20 @@ export default function SendMessagePage() {
       case MSG_TEMPLATE.RESULT:
         const userMarks = selectedResult?.results?.find(
           (res) => res.userId === data._id
-        );
+        )?.marks;
+        if (!userMarks) {
+          return WA_MSG.resultAbsent({
+            name: data.name,
+            date: Clock.getDateInFormat(selectedResult?.date),
+            subject: selectedResult?.subject ?? data.subject,
+          });
+        }
         return WA_MSG.result({
           name: data.name,
-          date: Clock.getDateInFormat(selectedResult?.date) ?? selectedDate,
-          marks_obtained: userMarks?.marks ?? data.marks_obtained,
-          total_marks: selectedResult?.totalMarks ?? data.total_marks,
-          subject: selectedResult?.subject ?? data.subject,
+          date: Clock.getDateInFormat(selectedResult?.date),
+          marks_obtained: userMarks,
+          total_marks: selectedResult?.totalMarks,
+          subject: selectedResult?.subject,
         });
     }
   };
@@ -114,33 +120,6 @@ export default function SendMessagePage() {
     );
   };
 
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const csvText = await file.text();
-
-    const records = parse(csvText, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true,
-    });
-
-    const users = records.map((row: any) => ({
-      name: row.name,
-      phone: row.phone,
-      fatherName: row.father_name,
-      motherName: row.mother_name,
-      parentPhone: row.parent_phone,
-      school: row.school,
-      email: row.email,
-      dob: row.dob,
-      ...row,
-    }));
-
-    setUploadedUser(users);
-  };
-
   return (
     <div>
       <div>
@@ -172,7 +151,6 @@ export default function SendMessagePage() {
               className="flex-grow lg:w-[300px]"
               placeholder="Select a batch"
             />
-            <Input type="file" accept=".csv" onChange={handleFileChange} />
           </div>
           {renderExtraFields()}
           {selectedTemplateMeta.preview && (
