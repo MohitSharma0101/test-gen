@@ -17,8 +17,8 @@ Team Education+`,
     name: string;
     date: string;
     subject: string;
-    marks_obtained: string;
-    total_marks: string;
+    marks_obtained: string | number;
+    total_marks: string | number;
   }) => `Dear Parent,  
 We wish to inform you that your ward, *${props.name}*, has secured *${props.marks_obtained}* out of *${props.total_marks}* marks in *${props.subject}* examination held on _${props.date}_.  
 

@@ -14,9 +14,10 @@ import useBatches from "@/hooks/useBatches";
 import Clock from "@/lib/clock";
 import { TUser } from "@/models/User";
 import { SquareMousePointerIcon } from "lucide-react";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { parse } from "csv-parse/sync";
 import { Textarea } from "@/components/ui/textarea";
+import useExamResults from "@/hooks/useExamResult";
 
 type TMSG_TEMPLATE = keyof typeof MSG_TEMPLATE;
 
@@ -31,8 +32,22 @@ export default function SendMessagePage() {
   const [uploadedUsers, setUploadedUser] = useState<any[]>();
 
   const selectedTemplateMeta = MSG_TEMPLATES_META[selectedTemplate];
+  const { examResults, fetchExamResults } = useExamResults();
+  const [selectedResultId, setSelectedResultId] = useState("");
+  const selectedResult = examResults.find(
+    (res) => res._id === selectedResultId
+  );
 
   const usersToShow = (uploadedUsers ?? selectedBatch?.userIds) as TUser[];
+
+  useEffect(() => {
+    if (selectedTemplate === MSG_TEMPLATE.RESULT) {
+      fetchExamResults({
+        batchId: selectedBatchId,
+        date: selectedDate,
+      });
+    }
+  }, [selectedTemplate]);
 
   const getWAMsg = (data: Record<string, string>) => {
     switch (selectedTemplate) {
@@ -46,12 +61,15 @@ export default function SendMessagePage() {
           selectedBatch?.name || ""
         );
       case MSG_TEMPLATE.RESULT:
+        const userMarks = selectedResult?.results?.find(
+          (res) => res.userId === data._id
+        );
         return WA_MSG.result({
           name: data.name,
-          date: selectedDate,
-          marks_obtained: data.marks_obtained,
-          total_marks: data.total_marks,
-          subject: data.subject,
+          date: Clock.getDateInFormat(selectedResult?.date) ?? selectedDate,
+          marks_obtained: userMarks?.marks ?? data.marks_obtained,
+          total_marks: selectedResult?.totalMarks ?? data.total_marks,
+          subject: selectedResult?.subject ?? data.subject,
         });
     }
   };
@@ -63,20 +81,35 @@ export default function SendMessagePage() {
     return (
       <>
         <p className="font-bold text-xs">ADDITIONAL DATA</p>
-        {extraFields.map((field, index) => {
-          switch (field) {
-            case INPUT_FIELD.DATE:
-              return (
-                <Input
-                  key={field + index}
-                  type="date"
-                  className="w-fit mt-2"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-              );
-          }
-        })}
+        <div className="flex flex-wrap gap-2 items-center mt-2">
+          {extraFields.map((field, index) => {
+            switch (field) {
+              case INPUT_FIELD.DATE:
+                return (
+                  <Input
+                    key={field + index}
+                    type="date"
+                    className="w-fit"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                  />
+                );
+              case INPUT_FIELD.RESULT_NAME:
+                return (
+                  <SelectCompact
+                    options={examResults?.map((r) => ({
+                      label: r.name,
+                      value: r._id,
+                    }))}
+                    className="w-[250px]"
+                    placeholder="Select result"
+                    value={selectedResultId}
+                    onChange={setSelectedResultId}
+                  />
+                );
+            }
+          })}
+        </div>
       </>
     );
   };
@@ -171,9 +204,6 @@ export default function SendMessagePage() {
                 {index + 1}.
                 <div className="flex-1">
                   <p className="text-sm font-medium">{user.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {user.phone} | {user.dob}
-                  </p>
                 </div>
                 <WAButton phone={user.parentPhone} message={getWAMsg(user)} />
               </div>

@@ -72,7 +72,7 @@ export const GET = async (request: NextRequest) => {
       batchesReq.populate({
         path: "userIds",
         model: User,
-        select: "name phone dob parentPhone",
+        select: "name parentPhone",
         options: { sort: { name: 1 } }, // Sort users by name ascending
       });
     }

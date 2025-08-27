@@ -39,6 +39,7 @@ export enum MSG_TEMPLATE {
 
 export enum INPUT_FIELD {
   DATE = "DATE",
+  RESULT_NAME = "RESULT_NAME",
 }
 
 export const MSG_TEMPLATES_OPTIONS = [
@@ -57,7 +58,7 @@ export const MSG_TEMPLATES_META = {
     preview: WA_MSG.extraClass("<NAME>", "<DATE>"),
   },
   [MSG_TEMPLATE.RESULT]: {
-    extraFields: [INPUT_FIELD.DATE],
+    extraFields: [INPUT_FIELD.DATE, INPUT_FIELD.RESULT_NAME],
     preview: WA_MSG.result({
       name: "NAME",
       date: "DATE",

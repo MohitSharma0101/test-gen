@@ -12,6 +12,7 @@ export const ENDPOINT = {
   users: "users",
   batches: "batches",
   attendance: "attendance",
+  examResults: "exam-results",
 
   //auth
   login: "auth/login",

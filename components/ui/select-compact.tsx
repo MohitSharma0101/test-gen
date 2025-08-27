@@ -23,6 +23,7 @@ export type TSelectCompactProps = {
   loading?: boolean;
   triggerClassName?: string;
   canUnselect?: boolean;
+  disabled?: boolean;
 };
 
 const SelectCompact = ({
@@ -36,6 +37,7 @@ const SelectCompact = ({
   loading,
   triggerClassName,
   canUnselect,
+  disabled,
 }: TSelectCompactProps) => {
   const [open, setOpen] = useState(false);
   return (
@@ -53,6 +55,7 @@ const SelectCompact = ({
         onValueChange={onChange}
         open={open}
         onOpenChange={setOpen}
+        disabled={disabled}
       >
         <SelectTrigger className={triggerClassName}>
           <SelectValue placeholder={placeholder || "Select a value"} />
