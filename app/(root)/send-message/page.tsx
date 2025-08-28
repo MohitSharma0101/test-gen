@@ -1,6 +1,5 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import SelectCompact from "@/components/ui/select-compact";
 import WAButton from "@/components/ui/wa-button";
 import {
@@ -17,6 +16,7 @@ import { SquareMousePointerIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import useExamResults from "@/hooks/useExamResult";
+import LabelInput from "@/components/ui/label-input";
 
 type TMSG_TEMPLATE = keyof typeof MSG_TEMPLATE;
 
@@ -28,6 +28,8 @@ export default function SendMessagePage() {
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
   const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
   const [selectedDate, setSelectedDate] = useState<string>(Clock.getDate());
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   const selectedTemplateMeta = MSG_TEMPLATES_META[selectedTemplate];
   const { examResults, fetchExamResults } = useExamResults();
@@ -51,7 +53,12 @@ export default function SendMessagePage() {
   const getWAMsg = (data: Record<string, string>) => {
     switch (selectedTemplate) {
       case MSG_TEMPLATE.EXTRA_CLASS:
-        return WA_MSG.extraClass(data.name, selectedDate);
+        return WA_MSG.extraClass({
+          name: data.name,
+          date: selectedDate,
+          startTime,
+          endTime,
+        });
 
       case MSG_TEMPLATE.ABSENT:
         return WA_MSG.absent(
@@ -77,6 +84,15 @@ export default function SendMessagePage() {
           total_marks: selectedResult?.totalMarks,
           subject: selectedResult?.subject,
         });
+      case MSG_TEMPLATE.PTM:
+        return WA_MSG.ptm({
+          name: data.name,
+          date: selectedDate,
+          startTime,
+          endTime,
+        });
+      case MSG_TEMPLATE.FEE_REMINDER:
+        return WA_MSG.feesReminder(data.name);
     }
   };
 
@@ -92,7 +108,8 @@ export default function SendMessagePage() {
             switch (field) {
               case INPUT_FIELD.DATE:
                 return (
-                  <Input
+                  <LabelInput
+                    label="Date"
                     key={field + index}
                     type="date"
                     className="w-fit"
@@ -109,9 +126,27 @@ export default function SendMessagePage() {
                     }))}
                     className="w-[250px]"
                     placeholder="Select result"
+                    label="Result"
                     value={selectedResultId}
                     onChange={setSelectedResultId}
                   />
+                );
+              case INPUT_FIELD.TIME_RANGE:
+                return (
+                  <>
+                    <LabelInput
+                      label="Start time"
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                    />
+                    <LabelInput
+                      label="End time"
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                    />
+                  </>
                 );
             }
           })}

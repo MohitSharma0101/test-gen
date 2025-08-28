@@ -6,8 +6,13 @@ Kindly ensure regular attendance for better learning and continuity in studies.
 
 Regards,
 Team Education+`,
-  extraClass: (name: string, date: string) => `Dear Parent,  
-We wish to inform you that your ward, *${name}*, will be staying late on _${date}_ due to an extra class.  
+  extraClass: (props: {
+    name: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+  }) => `Dear Parent,  
+We wish to inform you that your ward, *${props.name}*, will be staying late on _${props.date}_ due to an extra class scheduled from ${props.startTime} to ${props.endTime}.  
 
 Kindly make necessary arrangements for pickup accordingly.  
 
@@ -37,4 +42,20 @@ Kindly ensure necessary guidance and support to avoid such occurrences in the fu
 
 Regards,
 Team Education+`,
+  feesReminder: (name: string) => `Dear Parent,
+This is a gentle reminder that the fees for your ward ${name} is due. Kindly complete the payment at the earliest to avoid any inconvenience.
+
+Regards,
+Team Education+`,
+  ptm: (props: {
+    name: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+  }) => `Dear Parent,
+We request your presence on ${props.date} from ${props.startTime} to ${props.endTime} to discuss your ward ${props.name}’s progress and career guidance.
+
+Regards,
+Team Education+
+`,
 };

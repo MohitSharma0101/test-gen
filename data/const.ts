@@ -35,17 +35,22 @@ export enum MSG_TEMPLATE {
   EXTRA_CLASS = "EXTRA_CLASS",
   ABSENT = "ABSENT",
   RESULT = "RESULT",
+  PTM = "PTM",
+  FEE_REMINDER = "FEE_REMINDER",
 }
 
 export enum INPUT_FIELD {
   DATE = "DATE",
   RESULT_NAME = "RESULT_NAME",
+  TIME_RANGE = "TIME_RANGE",
 }
 
 export const MSG_TEMPLATES_OPTIONS = [
   { label: "Extra Class Template", value: MSG_TEMPLATE.EXTRA_CLASS },
   { label: "Absent Template", value: MSG_TEMPLATE.ABSENT },
   { label: "Result Template", value: MSG_TEMPLATE.RESULT },
+  { label: "Fee Reminder", value: MSG_TEMPLATE.FEE_REMINDER },
+  { label: "PTM", value: MSG_TEMPLATE.PTM },
 ];
 
 export const MSG_TEMPLATES_META = {
@@ -54,8 +59,13 @@ export const MSG_TEMPLATES_META = {
     preview: WA_MSG.absent("<NAME>", "<DATE>", "<BATCH>"),
   },
   [MSG_TEMPLATE.EXTRA_CLASS]: {
-    extraFields: [INPUT_FIELD.DATE],
-    preview: WA_MSG.extraClass("<NAME>", "<DATE>"),
+    extraFields: [INPUT_FIELD.DATE, INPUT_FIELD.TIME_RANGE],
+    preview: WA_MSG.extraClass({
+      name: "<NAME>",
+      date: "<DATE>",
+      startTime: "<START_TIME>",
+      endTime: "<END_TIME>",
+    }),
   },
   [MSG_TEMPLATE.RESULT]: {
     extraFields: [INPUT_FIELD.DATE, INPUT_FIELD.RESULT_NAME],
@@ -66,5 +76,18 @@ export const MSG_TEMPLATES_META = {
       total_marks: "TOTAL",
       subject: "SUBJECT",
     }),
+  },
+  [MSG_TEMPLATE.PTM]: {
+    extraFields: [INPUT_FIELD.DATE, INPUT_FIELD.TIME_RANGE],
+    preview: WA_MSG.ptm({
+      name: "<NAME>",
+      date: "<DATE>",
+      startTime: "<START_TIME>",
+      endTime: "<END_TIME>",
+    }),
+  },
+  [MSG_TEMPLATE.FEE_REMINDER]: {
+    extraFields: [],
+    preview: WA_MSG.feesReminder("NAME"),
   },
 };
