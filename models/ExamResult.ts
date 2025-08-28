@@ -8,7 +8,7 @@ export type TStudentResult = {
 export type TExamResult = {
   _id: string;
   name: string;
-  batchId: Types.ObjectId;
+  batchId: string;
   subject: string;
   date: string;
   totalMarks: number;

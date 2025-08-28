@@ -45,7 +45,9 @@ export const GET = async (req: NextRequest) => {
     if (subject) filter.subject = subject;
     if (date) filter.date = new Date(date);
 
-    const examResults = await ExamResult.find(filter).lean();
+    const examResults = await ExamResult.find(filter)
+      .sort({ date: -1 })
+      .lean();
 
     return nextSuccess(examResults);
   } catch (error: any) {

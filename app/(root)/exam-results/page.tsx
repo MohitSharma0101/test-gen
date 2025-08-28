@@ -7,6 +7,7 @@ import SelectCompact from "@/components/ui/select-compact";
 import useBatches from "@/hooks/useBatches";
 import useExamResults from "@/hooks/useExamResult";
 import Clock from "@/lib/clock";
+import { TBatch } from "@/models/Batch";
 import { TExamResult } from "@/models/ExamResult";
 import { PlusIcon } from "lucide-react";
 import { Loader2Icon } from "lucide-react";
@@ -14,15 +15,19 @@ import { ChevronRightIcon } from "lucide-react";
 import { SquareMousePointerIcon } from "lucide-react";
 import React, { useState } from "react";
 
-type Props = {};
+type TOpenResultSheet = {
+  isOpen: boolean;
+  batch: TBatch;
+  date: string;
+  result?: TExamResult;
+};
 
-const ExamResultsPage = (props: Props) => {
+const ExamResultsPage = () => {
   const { batches } = useBatches({ populateUsers: true });
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
   const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
   const [selectedDate, setSelectedDate] = useState<string>();
-  const [openResultSheet, setOpenResultSheet] = useState(false);
-  const [selectedResult, setSelectedResult] = useState<TExamResult | null>();
+  const [openResultSheet, setOpenResultSheet] = useState<TOpenResultSheet>();
 
   const { examResults, loading, fetchExamResults } = useExamResults();
 
@@ -33,8 +38,28 @@ const ExamResultsPage = (props: Props) => {
     });
   };
   const closeSheet = () => {
-    setOpenResultSheet(false);
-    setSelectedResult(null);
+    setOpenResultSheet(undefined);
+  };
+
+  const onAddResult = () => {
+    if (selectedBatch && selectedDate) {
+      setOpenResultSheet({
+        isOpen: true,
+        batch: selectedBatch,
+        date: selectedDate,
+      });
+    }
+  };
+  
+  const onViewResult = (result: TExamResult) => {
+    const batch = batches.find((batch) => batch._id === result.batchId);
+    if (!batch) return;
+    setOpenResultSheet({
+      isOpen: true,
+      batch: batch,
+      date: Clock.getDateInFormat(result.date),
+      result: result,
+    });
   };
 
   return (
@@ -46,7 +71,7 @@ const ExamResultsPage = (props: Props) => {
         {
           <Button
             disabled={!selectedBatchId || !selectedDate}
-            onClick={() => setOpenResultSheet(true)}
+            onClick={onAddResult}
           >
             Add <PlusIcon className="size-4 ml-2" />
           </Button>
@@ -85,10 +110,7 @@ const ExamResultsPage = (props: Props) => {
             examResults?.map((result) => (
               <div
                 key={result._id}
-                onClick={() => {
-                  setOpenResultSheet(true);
-                  setSelectedResult(result);
-                }}
+                onClick={() => onViewResult(result)}
                 className="p-4 flex items-center cursor-pointer border-b last:border-none hover:bg-slate-50"
               >
                 {result.name}
@@ -109,13 +131,13 @@ const ExamResultsPage = (props: Props) => {
           )}
         </div>
       </div>
-      {selectedBatch && selectedDate && openResultSheet && (
+      {openResultSheet && (
         <AddResultSheet
-          open={openResultSheet}
+          open={openResultSheet.isOpen}
           onOpenChange={() => closeSheet()}
-          batch={selectedBatch}
-          date={selectedDate}
-          defaultExamResult={selectedResult}
+          batch={openResultSheet.batch}
+          date={openResultSheet.date}
+          defaultExamResult={openResultSheet.result}
           onSubmit={() => {
             closeSheet();
             onSearch();

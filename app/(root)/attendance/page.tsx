@@ -24,7 +24,7 @@ const AttendancePage = (props: Props) => {
 
   const isDisabled = selectedDate != Clock.getDate();
 
-  const { attendance, loading, refresh, markAttendance } = useAttendance({
+  const { attendance, loading, markAttendance } = useAttendance({
     batchId: selectedBatchId,
     date: selectedDate,
   });
@@ -102,9 +102,6 @@ const AttendancePage = (props: Props) => {
                       {index + 1}.
                       <div className="flex-1">
                         <p className="text-sm font-medium">{user.name}</p>
-                        <p className="text-xs text-slate-500">
-                          {user.phone} | {user.dob}
-                        </p>
                       </div>
                       <Button
                         disabled={isDisabled}
