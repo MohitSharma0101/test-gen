@@ -137,7 +137,7 @@ export const sortQuestionsByMarks = (questions?: TQuestion[]) => {
 export const getWhatsappURL = (phone?: string, message?: string) => {
   if (!phone) return "";
   const encodedMessage = encodeURIComponent(message || "");
-  return `https://wa.me/91${phone}?text=${encodedMessage}`;
+  return `https://wa.me/91${phone.replaceAll(" ", "")}?text=${encodedMessage}`;
 };
 
 export const redirectToWhatsapp = (phone?: string, message?: string) => {

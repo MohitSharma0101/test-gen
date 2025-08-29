@@ -43,17 +43,20 @@ Kindly ensure necessary guidance and support to avoid such occurrences in the fu
 Regards,
 Team Education+`,
   feesReminder: (name: string) => `Dear Parent,
-This is a gentle reminder that the fees for your ward ${name} is due. Kindly complete the payment at the earliest to avoid any inconvenience.
+This is a kind reminder that your ward *${name}* fee for this month is due. We request you to kindly clear the dues at the earliest to avoid any inconvenience.
+Thank you for your cooperation.
+ignore if already paid.
 
 Regards,
-Team Education+`,
+Team Education+
+`,
   ptm: (props: {
     name: string;
     date: string;
     startTime: string;
     endTime: string;
   }) => `Dear Parent,
-We request your presence on ${props.date} from ${props.startTime} to ${props.endTime} to discuss your ward ${props.name}’s progress and career guidance.
+We request your presence on _${props.date}_ from *${props.startTime}* to *${props.endTime}* to discuss your ward *${props.name}’s* progress and career guidance.
 
 Regards,
 Team Education+

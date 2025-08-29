@@ -70,7 +70,7 @@ export default function SendMessagePage() {
         const userMarks = selectedResult?.results?.find(
           (res) => res.userId === data._id
         )?.marks;
-        if (!userMarks) {
+        if (userMarks == undefined || userMarks == null) {
           return WA_MSG.resultAbsent({
             name: data.name,
             date: Clock.getDateInFormat(selectedResult?.date),
@@ -81,8 +81,8 @@ export default function SendMessagePage() {
           name: data.name,
           date: Clock.getDateInFormat(selectedResult?.date),
           marks_obtained: userMarks,
-          total_marks: selectedResult?.totalMarks,
-          subject: selectedResult?.subject,
+          total_marks: selectedResult?.totalMarks ?? "",
+          subject: selectedResult?.subject ?? "",
         });
       case MSG_TEMPLATE.PTM:
         return WA_MSG.ptm({
