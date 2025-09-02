@@ -34,9 +34,9 @@ export const AddResultSheet = ({
   const [course, setCourse] = useState(COURSES[0]);
   const [subject, setSubject] = useState(SUBJECT_MAP[course][0]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [results, setResults] = useState<Record<string, number>>(
-    defaultExamResult?.results.reduce<Record<string, number>>((acc, curr) => {
-      acc[curr.userId.toString()] = curr.marks;
+  const [results, setResults] = useState<Record<string, string>>(
+    defaultExamResult?.results.reduce<Record<string, string>>((acc, curr) => {
+      acc[curr.userId.toString()] = String(curr.marks);
       return acc;
     }, {}) ?? {}
   );
@@ -59,8 +59,12 @@ export const AddResultSheet = ({
     }
   };
 
+  const isFormValid = () => {
+    return name && totalMarks;
+  };
+
   const handleSubmit = async () => {
-    if (viewMode) return;
+    if (viewMode || !isFormValid()) return;
     try {
       setIsSubmitting(true);
       const payload = {
@@ -163,18 +167,24 @@ export const AddResultSheet = ({
                       }}
                       disabled={viewMode}
                       placeholder="Marks"
-                      type="number"
                       className="w-1/4"
                       onKeyDown={(e) => onKeyDown(e, index)}
                       value={results[user._id]}
                       onChange={(e) => {
-                        const marks = Math.min(
-                          Math.max(0, parseInt(e.target.value)),
-                          totalMarks
-                        );
+                        let value = e.target.value;
+                        if (!value) return;
+
+                        const numValue = Number(value);
+                        console.log(numValue);
+                        if (isNaN(numValue)) return;
+
+                        if (numValue > totalMarks) {
+                          value = totalMarks.toString();
+                        }
+
                         setResults((prev) => ({
                           ...prev,
-                          [user._id]: marks,
+                          [user._id]: value,
                         }));
                       }}
                     />
@@ -185,7 +195,7 @@ export const AddResultSheet = ({
           </div>
         </div>
         <Button
-          disabled={viewMode || isSubmitting}
+          disabled={viewMode || isSubmitting || !isFormValid()}
           className="mb-2 mx-2"
           onClick={handleSubmit}
         >

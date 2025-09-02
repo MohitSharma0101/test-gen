@@ -3,7 +3,7 @@ export const WA_MSG = {
     name: string,
     date: string,
     batch: string
-  ) => `*Attendance Alert - Education+*  
+  ) => `*📌 Attendance Alert - Education+*  
 
 Dear Parent,  
 We wish to inform you that your ward, *${name}*, was marked *absent* on _${date}_ in batch *${batch}*.  
@@ -34,7 +34,7 @@ Team Education+`,
     subject: string;
     marks_obtained: string | number;
     total_marks: string | number;
-  }) => `*Result Alert - Education+*  
+  }) => `*🎓 Result Alert - Education+*  
 
 Dear Parent,  
 We wish to inform you that your ward, *${props.name}*, has secured *${props.marks_obtained}* out of *${props.total_marks}* marks in *${props.subject}* examination held on _${props.date}_.  
@@ -48,7 +48,7 @@ Team Education+`,
     name: string;
     date: string;
     subject: string;
-  }) => `*Examination Attendance Alert - Education+*  
+  }) => `*📌 Examination Attendance Alert - Education+*  
 
 Dear Parent,  
 We wish to inform you that your ward, *${props.name}*, was marked *ABSENT* in the *${props.subject}* examination held on _${props.date}_.  
@@ -74,7 +74,7 @@ Team Education+`,
     date: string;
     startTime: string;
     endTime: string;
-  }) => `*Meeting Alert - Education+*  
+  }) => `*📌Meeting Alert - Education+*  
 
 Dear Parent,  
 We request your presence on _${props.date}_ from *${props.startTime}* to *${props.endTime}* to discuss your ward *${props.name}’s* progress and career guidance.  
