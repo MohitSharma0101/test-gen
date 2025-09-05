@@ -26,6 +26,7 @@ const AddBatchSheet = ({
   onOpenChange,
 }: Props) => {
   const [name, setName] = useState(defaultBatch?.name ?? "");
+  const [fee, setFee] = useState(defaultBatch?.fee ?? 0);
   const { users } = useUsers();
   const [query, setQuery] = useState("");
   const defaultSelectedUserIds = ((defaultBatch?.userIds ?? []) as TUser[]).map(
@@ -45,9 +46,10 @@ const AddBatchSheet = ({
           _id: defaultBatch?._id,
           name,
           userIds: selectedUsers,
+          fee: fee,
         });
       } else {
-        await api.post(ENDPOINT.batches, { name });
+        await api.post(ENDPOINT.batches, { name, fee });
       }
       toast({
         title: "Success",
@@ -58,6 +60,7 @@ const AddBatchSheet = ({
       });
       onOpenChange?.(false);
       setName("");
+      setFee(0);
       onSuccess?.();
     } catch (err: any) {
       toast({
@@ -83,6 +86,13 @@ const AddBatchSheet = ({
             placeholder="eg: JEE-2025"
             value={name}
             onChange={(e) => setName(e.target.value)}
+          />
+          <LabelInput
+            label="Batch Fee (₹)"
+            placeholder="eg: 5000"
+            value={fee}
+            type="number"
+            onChange={(e) => setFee(parseInt(e.target.value))}
           />
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium flex items-center justify-between">

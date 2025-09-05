@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { TBatch } from "./Batch";
+import { TFeeSummary } from "./FeeSummary";
 
 export type TUser = {
   _id: string;
@@ -13,6 +15,17 @@ export type TUser = {
   createdAt?: string;
   updatedAt?: string;
   dob?: string;
+  batchIds?: (string | TBatch)[];
+  feeSummary?: TFeeSummary | string;
+};
+
+export type TUserWithFeeSummary = Omit<TUser, "feeSummary" | "batchIds"> & {
+  batchIds: TBatch[];
+  feeSummary: TFeeSummary & {
+    due: number;
+    paid: number;
+    totalFee: number;
+  };
 };
 
 export const UserSchema = new mongoose.Schema<TUser>(
@@ -46,6 +59,16 @@ export const UserSchema = new mongoose.Schema<TUser>(
     },
     dob: {
       type: String,
+    },
+    batchIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Batch",
+      },
+    ],
+    feeSummary: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "FeeSummary",
     },
   },
   { timestamps: true }

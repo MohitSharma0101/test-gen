@@ -8,6 +8,7 @@ import { TBatch } from "@/models/Batch";
 import { TUser } from "@/models/User";
 import CallButton from "../ui/call-button";
 import DataTable from "../ui/data-table";
+import LabelInput from "../ui/label-input";
 
 type Props = {
   batch?: TBatch;
@@ -35,6 +36,11 @@ const ViewBatchSheet = ({ batch, onEdit, open, onOpenChange }: Props) => {
         </div>
         <div className="flex flex-col gap-2 px-3 flex-grow overflow-auto">
           <div className="flex flex-col gap-2">
+            <LabelInput
+              label="Batch Fee"
+              value={batch?.fee || "-"}
+              disabled
+            />
             <label className="text-sm font-medium flex items-center justify-between">
               Students
             </label>

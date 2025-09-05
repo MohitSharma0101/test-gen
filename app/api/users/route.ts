@@ -94,7 +94,9 @@ export const POST = async (request: NextRequest) => {
 export const GET = async () => {
   try {
     await dbConnect();
-    const users = await User.find().sort({ userId: -1 });
+    const users = await User.find()
+      .sort({ userId: -1 })
+      .populate("batchIds", "name fees _id");
     return NextResponse.json({ users }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json(

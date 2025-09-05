@@ -21,6 +21,7 @@ type DataTableProps<T> = {
   data: T[];
   loading: boolean;
   columns: ColumnConfig<T>[];
+  className?: string;
   rowKey: (row: T) => string | number;
 };
 
@@ -28,10 +29,11 @@ const DataTable = <T,>({
   data,
   loading,
   columns,
+  className,
   rowKey,
 }: DataTableProps<T>) => {
   return (
-    <div>
+    <div className={className}>
       {loading ? (
         <div className="w-full flex flex-col gap-2 mt-2">
           {[...Array(4)].map((_, i) => (
@@ -39,8 +41,8 @@ const DataTable = <T,>({
           ))}
         </div>
       ) : (
-        <Table className="mt-2">
-          <TableHeader className="border border-slate-300">
+        <Table>
+          <TableHeader className="border border-slate-300 bg-slate-200">
             <TableRow className="divide-x divide-slate-300 border-b border-slate-300">
               {columns.map((col, index) => (
                 <TableHead

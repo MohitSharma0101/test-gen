@@ -25,6 +25,7 @@ import { Edit3Icon } from "lucide-react";
 import { MessageCircleIcon } from "lucide-react";
 import AccountMenu from "./account-menu";
 import { ScrollTextIcon } from "lucide-react";
+import { IndianRupeeIcon } from "lucide-react";
 
 type Props = {
   active?: "create" | "upload" | "chapter" | "book";
@@ -85,6 +86,11 @@ const navItems = [
     label: "Results",
     href: "/exam-results",
     icon: <ScrollTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
+  },
+  {
+    label: "Fees",
+    href: "/fees",
+    icon: <IndianRupeeIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
   },
 ];
 

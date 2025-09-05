@@ -50,7 +50,7 @@ export default function SendMessagePage() {
     }
   }, [selectedTemplate, selectedDate, selectedBatchId]);
 
-  const getWAMsg = (data: Record<string, string>) => {
+  const getWAMsg = (data: Record<string, any>) => {
     switch (selectedTemplate) {
       case MSG_TEMPLATE.EXTRA_CLASS:
         return WA_MSG.extraClass({

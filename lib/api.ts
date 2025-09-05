@@ -13,6 +13,8 @@ export const ENDPOINT = {
   batches: "batches",
   attendance: "attendance",
   examResults: "exam-results",
+  feesBatch: "fees/batch",
+  fees: "fees",
 
   //auth
   login: "auth/login",

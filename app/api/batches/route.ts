@@ -5,7 +5,7 @@ import User from "@/models/User"; // needed for populate
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { name } = (await request.json()) as TBatch;
+    const { name, fee, userIds } = (await request.json()) as TBatch;
 
     if (!name) {
       return NextResponse.json(
@@ -19,7 +19,7 @@ export const POST = async (request: NextRequest) => {
 
     await dbConnect();
 
-    const result = await Batch.create({ name });
+    const result = await Batch.create({ name, fee, userIds });
 
     return NextResponse.json(
       { status: "success", batches: result },
@@ -35,7 +35,7 @@ export const POST = async (request: NextRequest) => {
 
 export const PUT = async (request: NextRequest) => {
   try {
-    const { _id, name, userIds } = (await request.json()) as TBatch;
+    const { _id, name, fee, userIds } = (await request.json()) as TBatch;
 
     if (!_id) {
       return NextResponse.json(
@@ -46,7 +46,7 @@ export const PUT = async (request: NextRequest) => {
 
     await dbConnect();
 
-    const result = await Batch.updateOne({ _id }, { name, userIds });
+    const result = await Batch.updateOne({ _id }, { name, fee, userIds });
 
     return NextResponse.json(
       { status: "success", batches: result },
