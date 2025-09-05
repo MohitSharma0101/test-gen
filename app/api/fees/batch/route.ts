@@ -1,7 +1,7 @@
 import { dbConnect } from "@/lib/dbUtils";
 import { NextRequest, NextResponse } from "next/server";
-import Batch from "@/models/Batch";
-import FeeSummary from "@/models/FeeSummary";
+import "@/models/Batch";
+import "@/models/FeeSummary";
 import User, { TUserWithFeeSummary } from "@/models/User";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
 
