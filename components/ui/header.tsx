@@ -1,3 +1,5 @@
+"use client";
+
 import {
   BookOpenTextIcon,
   BookTextIcon,
@@ -97,7 +99,10 @@ const navItems = [
 const Header = ({ active }: Props) => {
   return (
     <div className="bg-white w-full px-3 md:px-6 py-2 items-center flex gap-4 text-sm font-bold">
-      <div className="flex items-center justify-center gap-2 font-bold text-xl">
+      <div
+        onClick={() => window.location.reload()}
+        className="flex items-center justify-center gap-2 font-bold text-xl cursor-pointer"
+      >
         <Image
           src={"/eplus-logo-min.png"}
           alt="education plus log"
