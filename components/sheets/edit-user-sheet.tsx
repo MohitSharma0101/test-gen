@@ -33,27 +33,16 @@ const EditUserSheet = ({ defaultUser, open, onOpenChange }: Props) => {
 
   const onUpdateUser = async () => {
     try {
-      const {
-        _id,
-        name,
-        dob,
-        parentPhone,
-        phone,
-        email,
-        fatherName,
-        motherName,
-        school,
-      } = user;
       await api.put(ENDPOINT.users, {
-        _id,
-        name,
-        dob,
-        parentPhone,
-        phone,
-        email,
-        fatherName,
-        motherName,
-        school,
+        _id: user._id,
+        name: user.name,
+        dob: user.dob,
+        parentPhone: user.parentPhone,
+        phone: user.phone,
+        email: user.email,
+        fatherName: user.fatherName,
+        motherName: user.motherName,
+        school: user.school,
       });
       toast({
         title: "User updated!",

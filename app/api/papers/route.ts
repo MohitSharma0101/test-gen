@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import "@/models/Chapter";
 import "@/models/Question";
 import { TChapter } from "@/models/Chapter";
+import { nextError, nextSuccess } from "@/lib/nextUtils";
 
 export const GET = async (request: NextRequest) => {
   try {
@@ -11,6 +12,8 @@ export const GET = async (request: NextRequest) => {
     const id = searchParams.get("id");
     const author = searchParams.get("author");
     const course = searchParams.get("course");
+    const limit = Number(searchParams.get("limit") || 10);
+    const page = Number(searchParams.get("page") || 1);
     const query: any = {};
     if (id) query._id = id;
     if (author) query.author = author;
@@ -19,23 +22,29 @@ export const GET = async (request: NextRequest) => {
     await dbConnect();
     const papers = await Paper.find(query)
       .sort({ createdAt: -1, _id: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit * 1)
       .populate({
         path: "questions",
         populate: {
           path: "chapter",
           model: "Chapter",
         },
-      });
+      })
+      .exec();
 
-    return NextResponse.json(
-      { status: "success", papers: papers },
-      { status: 200 }
-    );
+    const totalPapers = await Paper.countDocuments(query);
+    const totalPages = Math.ceil(totalPapers / limit);
+
+    return nextSuccess({
+      status: "success",
+      papers: papers,
+      totalPages,
+      totalPapers,
+      currentPage: page,
+    });
   } catch (err: any) {
-    return NextResponse.json(
-      { status: "error", error: err.message ?? "Something went wrong" },
-      { status: 500 }
-    );
+    return nextError(err.message);
   }
 };
 

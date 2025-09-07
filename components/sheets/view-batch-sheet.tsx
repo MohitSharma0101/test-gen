@@ -5,10 +5,10 @@ import { Button } from "../ui/button";
 import { Sheet, SheetContent } from "../ui/sheet";
 import { Input } from "../ui/input";
 import { TBatch } from "@/models/Batch";
-import { TUser } from "@/models/User";
 import CallButton from "../ui/call-button";
 import DataTable from "../ui/data-table";
 import LabelInput from "../ui/label-input";
+import useUsers from "@/hooks/useUsers";
 
 type Props = {
   batch?: TBatch;
@@ -18,7 +18,7 @@ type Props = {
 };
 
 const ViewBatchSheet = ({ batch, onEdit, open, onOpenChange }: Props) => {
-  const users = (batch?.userIds ?? []) as TUser[];
+  const { users, loading } = useUsers({ batchId: batch?._id });
   const [query, setQuery] = useState("");
 
   const filteredUsers = (users ?? []).filter((user) =>
@@ -36,11 +36,7 @@ const ViewBatchSheet = ({ batch, onEdit, open, onOpenChange }: Props) => {
         </div>
         <div className="flex flex-col gap-2 px-3 flex-grow overflow-auto">
           <div className="flex flex-col gap-2">
-            <LabelInput
-              label="Batch Fee"
-              value={batch?.fee || "-"}
-              disabled
-            />
+            <LabelInput label="Batch Fee" value={batch?.fee || "-"} disabled />
             <label className="text-sm font-medium flex items-center justify-between">
               Students
             </label>
@@ -58,7 +54,7 @@ const ViewBatchSheet = ({ batch, onEdit, open, onOpenChange }: Props) => {
               </div>
               <DataTable
                 data={filteredUsers}
-                loading={false}
+                loading={loading}
                 columns={[
                   {
                     header: "Name",

@@ -2,7 +2,6 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
-import type { TPaper } from "@/models/Paper";
 import { fetchPapers } from "@/service/core.service";
 import useSWR from "swr";
 
@@ -24,7 +23,7 @@ const usePaper = ({ id }: config = {}) => {
       errorRetryCount: 1,
     }
   );
-  const paper = data?.[0] as TPaper;
+  const paper = data?.papers?.[0];
   const loading = isLoading || isValidating;
   const refresh = () => mutate();
 

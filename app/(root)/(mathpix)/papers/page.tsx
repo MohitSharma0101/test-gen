@@ -22,13 +22,14 @@ import SelectCompact from "@/components/ui/select-compact";
 import { AUTHORS } from "@/models/Author";
 import { useAuthorStore } from "@/stores/authorStore";
 import { COURSES } from "@/data/const";
+import Pagination from "@/components/ui/pagination";
 
 type Props = {};
 
 const PapersPage = (props: Props) => {
   const { author, updateAuthor } = useAuthorStore();
   const [course, setCourse] = useState("");
-  const { papers, loading, deletePaper, refresh } = usePapers({
+  const { papers, data, loading, deletePaper, refresh } = usePapers({
     author,
     course,
   });
@@ -41,16 +42,16 @@ const PapersPage = (props: Props) => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-2 lg:p-4">
       <div className="flex-1 rounded">
-        <div className="rounded h-[52px] px-4 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center justify-between">
-          PAPERS
+        <div className="rounded h-[52px] px-2 lg:px-4 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center justify-between">
+          PAPERS {data?.totalPapers ? `(${data?.totalPapers})` : ""}
           <Button variant={"outline"} size={"sm"} onClick={refresh}>
             <RefreshCcw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
         </div>
-        <div className="flex gap-4 items-center mt-3">
+        <div className="flex gap-2 lg:gap-4 items-center mt-3">
           <SelectCompact
             options={AUTHORS.map((a) => ({ label: a, value: a }))}
             placeholder="Author"
@@ -78,7 +79,6 @@ const PapersPage = (props: Props) => {
             </Button>
           )}
         </div>
-
         {loading ? (
           <div className="w-full flex flex-col gap-2 mt-2">
             <Skeleton className="w-full h-[60px]" />
@@ -158,6 +158,9 @@ const PapersPage = (props: Props) => {
             </TableBody>
           </Table>
         )}
+        <div className="my-4">
+          <Pagination totalPages={data?.totalPages} hideLimit />
+        </div>
       </div>
     </div>
   );

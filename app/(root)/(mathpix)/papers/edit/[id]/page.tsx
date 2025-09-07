@@ -13,7 +13,7 @@ type Props = {
 };
 
 const EditPaperPage = async ({ params: { id } }: Props) => {
-  const papers = (await fetchPapers(id)) as TPaper[];
+  const papers = (await fetchPapers(id)).papers;
   const paper = papers?.[0];
   return (
     <>

@@ -76,7 +76,7 @@ const AddUserSheet = ({ children, onSuccess }: Props) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="min-w-fit">
         <DialogHeader>
           <DialogTitle>Add User</DialogTitle>
           <DialogDescription>
@@ -96,7 +96,7 @@ const AddUserSheet = ({ children, onSuccess }: Props) => {
               label: batches.find((batch) => batch._id === id)?.name ?? "",
               value: id,
             }))}
-            className="flex-grow lg:w-full"
+            className="flex-grow lg:w-full flex-wrap"
             label="Select batches"
             maxSelectionDisplay={3}
           />

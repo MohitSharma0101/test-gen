@@ -1,18 +1,16 @@
 import React, { Suspense } from "react";
 import { Button } from "./button";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import SelectCompact from "./select-compact";
 import { QUESTION_PAGE_LIMITS } from "@/data/const";
 
 type Props = {
   totalPages?: Number;
+  hideLimit?: boolean;
 };
 
-const Pagination = ({ totalPages }: Props) => {
+const Pagination = ({ totalPages, hideLimit = false }: Props) => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page") || 1);
   const limit = Number(searchParams.get("limit") || 50);
@@ -49,17 +47,19 @@ const Pagination = ({ totalPages }: Props) => {
       >
         <ChevronRightIcon className="w-4 h-4" />
       </Button>
-      <SelectCompact
-        className="w-fit"
-        value={limit.toString()}
-        placeholder=""
-        options={QUESTION_PAGE_LIMITS.map((item) => ({
-          label: item + " item",
-          value: item.toString(),
-        }))}
-        onChange={onLimitChange}
-        triggerClassName="h-9"
-      />
+      {!hideLimit && (
+        <SelectCompact
+          className="w-fit"
+          value={limit.toString()}
+          placeholder=""
+          options={QUESTION_PAGE_LIMITS.map((item) => ({
+            label: item + " item",
+            value: item.toString(),
+          }))}
+          onChange={onLimitChange}
+          triggerClassName="h-9"
+        />
+      )}
       {/* <Popover>
         <PopoverTrigger>
           <CircleEllipsisIcon className="w-4 h-4" />

@@ -4,6 +4,7 @@ import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
 import type { TPaper } from "@/models/Paper";
 import { fetchPapers } from "@/service/core.service";
+import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
 type TUsePaperProps = {
@@ -12,11 +13,13 @@ type TUsePaperProps = {
 };
 
 const usePapers = ({ author, course }: TUsePaperProps = {}) => {
-  const cache = ENDPOINT.papers + author + course;
+  const searchParams = useSearchParams();
+  const page = Number(searchParams.get("page") || 1);
+  const cache = ENDPOINT.papers + author + course + page;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
-      return await fetchPapers(null, author, course);
+      return await fetchPapers(null, author, course, page);
     },
     {
       revalidateIfStale: false,
@@ -24,7 +27,7 @@ const usePapers = ({ author, course }: TUsePaperProps = {}) => {
       errorRetryCount: 1,
     }
   );
-  const papers = (data || []) as TPaper[];
+  const papers = data?.papers || [];
   const loading = isLoading || isValidating;
   const refresh = () => mutate();
 
@@ -78,6 +81,7 @@ const usePapers = ({ author, course }: TUsePaperProps = {}) => {
 
   return {
     papers,
+    data,
     loading,
     error,
     refresh,

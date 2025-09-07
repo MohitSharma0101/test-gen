@@ -2,6 +2,7 @@ import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
 import { TAttendance } from "@/models/Attendance";
 import { TChapter } from "@/models/Chapter";
+import { TPaper } from "@/models/Paper";
 import { TQuestion } from "@/models/Question";
 
 type TFetchQuestionsResponse = {
@@ -81,7 +82,9 @@ export const fetchBooks = async (subject?: string, course?: string) => {
 export const fetchPapers = async (
   id?: string | null,
   author?: string,
-  course?: string
+  course?: string,
+  page?: number,
+  limit?: number
 ) => {
   return (
     await api.get(ENDPOINT.papers, {
@@ -89,9 +92,16 @@ export const fetchPapers = async (
         id: id,
         author: author,
         course: course,
+        page: page ?? 1,
+        limit: limit ?? 10,
       },
     })
-  ).data.papers;
+  ).data.data as {
+    papers: TPaper[];
+    totalPages: number;
+    totalPapers: number;
+    currentPage: number;
+  };
 };
 
 export const savePaper = async (

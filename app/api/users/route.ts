@@ -91,12 +91,22 @@ export const POST = async (request: NextRequest) => {
   }
 };
 
-export const GET = async () => {
+export const GET = async (request: NextRequest) => {
+  const searchParams = request.nextUrl.searchParams;
+  const batchId = searchParams.get("batchId");
+
   try {
     await dbConnect();
-    const users = await User.find()
+
+    const filter: Record<string, any> = {};
+    if (batchId) {
+      filter.batchIds = batchId;
+    }
+
+    const users = await User.find(filter)
       .sort({ userId: -1 })
       .populate("batchIds", "name fees _id");
+
     return NextResponse.json({ users }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json(
