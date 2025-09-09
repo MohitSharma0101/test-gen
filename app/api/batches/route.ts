@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
-import Batch, { TBatch } from "@/models/Batch";
+import Batch from "@/models/Batch";
 import User from "@/models/User"; // needed for populate
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { name, fee, userIds } = (await request.json()) as TBatch;
+    const { name, fee, userIds } = await request.json();
 
     if (!name) {
       return NextResponse.json(
@@ -35,7 +35,7 @@ export const POST = async (request: NextRequest) => {
 
 export const PUT = async (request: NextRequest) => {
   try {
-    const { _id, name, fee, userIds } = (await request.json()) as TBatch;
+    const { _id, name, fee, userIds } = await request.json();
 
     if (!_id) {
       return NextResponse.json(

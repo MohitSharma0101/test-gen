@@ -15,7 +15,6 @@ import React, { useState } from "react";
 const FeesPage = () => {
   const { batches } = useBatches({ populateUsers: true });
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
-  const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
 
   const [openAddFeeSheet, setOpenAddFeeSheet] = useState(false);
   const [selectedUser, setSelectedUser] = useState<
@@ -57,6 +56,11 @@ const FeesPage = () => {
                 {
                   header: "Name",
                   accessor: "name",
+                  className: "min-w-[140px]",
+                },
+                {
+                  header: "Father Name",
+                  accessor: "fatherName",
                   className: "min-w-[140px]",
                 },
                 {

@@ -16,6 +16,7 @@ import { api, ENDPOINT } from "@/lib/api";
 import { toast } from "../ui/use-toast";
 import useBatches from "@/hooks/useBatches";
 import MultiSelect from "../ui/multi-select";
+import EditUserSheet from "./edit-user-sheet";
 
 type Props = {
   children?: ReactNode;
@@ -27,6 +28,7 @@ const AddUserSheet = ({ children, onSuccess }: Props) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { batches } = useBatches();
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
+  const [openSingleUserSheet, setOpenSingleUserSheet] = useState(false);
 
   const isDisabled = !selectedFile || !selectedBatchIds.length;
 
@@ -105,11 +107,29 @@ const AddUserSheet = ({ children, onSuccess }: Props) => {
             accept=".csv"
             onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
           />
+          <div className="w-full justify-center flex items-center">OR</div>
+          <Button
+            variant={"outline"}
+            onClick={() => setOpenSingleUserSheet(true)}
+          >
+            Add single user
+          </Button>
         </div>
         <Button disabled={isDisabled} className="w-full" onClick={onAddUser}>
           Submit
         </Button>
       </DialogContent>
+      {openSingleUserSheet && (
+        <EditUserSheet
+          open={openSingleUserSheet}
+          onOpenChange={setOpenSingleUserSheet}
+          onSuccess={() => {
+            onSuccess?.();
+            setOpen(false);
+          }}
+          selectedBatchIds={selectedBatchIds}
+        />
+      )}
     </Dialog>
   );
 };

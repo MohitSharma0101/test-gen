@@ -50,7 +50,7 @@ const ExamResultsPage = () => {
       });
     }
   };
-  
+
   const onViewResult = (result: TExamResult) => {
     const batch = batches.find((batch) => batch._id === result.batchId);
     if (!batch) return;

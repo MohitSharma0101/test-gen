@@ -2,13 +2,14 @@ import { Button } from "../ui/button";
 import { Sheet, SheetContent } from "../ui/sheet";
 import { TBatch } from "@/models/Batch";
 import { Input } from "../ui/input";
-import { TUser } from "@/models/User";
 import { useRef, useState } from "react";
 import SelectCompact from "../ui/select-compact";
 import { COURSES, SUBJECT_MAP } from "@/data/const";
 import { api, ENDPOINT } from "@/lib/api";
 import { toast } from "../ui/use-toast";
 import { TExamResult } from "@/models/ExamResult";
+import useUsers from "@/hooks/useUsers";
+import { Loader2Icon } from "lucide-react";
 
 type Props = {
   defaultExamResult?: TExamResult | null;
@@ -27,6 +28,11 @@ export const AddResultSheet = ({
   defaultExamResult,
   onSubmit,
 }: Props) => {
+  const { users, loading: usersLoading } = useUsers({
+    batchId: batch._id,
+    shouldLoad: !!batch._id,
+  });
+
   const [totalMarks, setTotalMarks] = useState(
     defaultExamResult?.totalMarks ?? 100
   );
@@ -152,46 +158,50 @@ export const AddResultSheet = ({
           )}
           <p className="text-sm font-semibold pt-2">Add Marks</p>
           <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-200">
-            {(batch?.userIds as TUser[])?.map((user, index) => {
-              return (
-                <div
-                  key={user._id}
-                  className="py-2 px-3 flex items-center gap-2"
-                >
-                  {index + 1}.
-                  <div className="flex-1 flex justify-between items-center gap-2">
-                    <p className="text-sm font-medium">{user.name}</p>
-                    <Input
-                      ref={(el) => {
-                        inputRefs.current[index] = el;
-                      }}
-                      disabled={viewMode}
-                      placeholder="Marks"
-                      className="w-1/4"
-                      onKeyDown={(e) => onKeyDown(e, index)}
-                      value={results[user._id]}
-                      onChange={(e) => {
-                        let value = e.target.value;
-                        if (!value) return;
+            {usersLoading ? (
+              <Loader2Icon className="size-4 animate-spin my-4 mx-auto" />
+            ) : (
+              users?.map((user, index) => {
+                return (
+                  <div
+                    key={user._id}
+                    className="py-2 px-3 flex items-center gap-2"
+                  >
+                    {index + 1}.
+                    <div className="flex-1 flex justify-between items-center gap-2">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <Input
+                        ref={(el) => {
+                          inputRefs.current[index] = el;
+                        }}
+                        disabled={viewMode}
+                        placeholder="Marks"
+                        className="w-1/4"
+                        onKeyDown={(e) => onKeyDown(e, index)}
+                        value={results[user._id]}
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          if (!value) return;
 
-                        const numValue = Number(value);
-                        console.log(numValue);
-                        if (isNaN(numValue)) return;
+                          const numValue = Number(value);
+                          console.log(numValue);
+                          if (isNaN(numValue)) return;
 
-                        if (numValue > totalMarks) {
-                          value = totalMarks.toString();
-                        }
+                          if (numValue > totalMarks) {
+                            value = totalMarks.toString();
+                          }
 
-                        setResults((prev) => ({
-                          ...prev,
-                          [user._id]: value,
-                        }));
-                      }}
-                    />
+                          setResults((prev) => ({
+                            ...prev,
+                            [user._id]: value,
+                          }));
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
         <Button

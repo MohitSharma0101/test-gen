@@ -156,6 +156,7 @@ const UserPage = () => {
             if (!_open) setSelectedUser(undefined);
           }}
           defaultUser={selectedUser}
+          onSuccess={refreshUsers}
         />
       )}
     </div>

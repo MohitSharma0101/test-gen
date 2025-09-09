@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
 import Attendance, { TAttendance } from "@/models/Attendance";
+import User from "@/models/User";
+import { nextError, nextSuccess } from "@/lib/nextUtils";
 
 export const POST = async (request: NextRequest) => {
   try {
@@ -49,10 +51,7 @@ export const GET = async (request: NextRequest) => {
     const date = searchParams.get("date");
 
     if (!batchId || !date) {
-      return NextResponse.json(
-        { status: "error", error: "Batch ID and date are required" },
-        { status: 400 }
-      );
+      return nextError("Batch ID and date are required");
     }
 
     await dbConnect();
@@ -60,11 +59,13 @@ export const GET = async (request: NextRequest) => {
       batch: batchId,
       date: date,
     });
-    return NextResponse.json({ attendance: attendance?.[0] }, { status: 200 });
+
+    const users = await User.find({ batchIds: batchId }).sort({
+      name: 1,
+    }).select("name parentPhone");
+
+    return nextSuccess({ attendance: attendance?.[0], users: users });
   } catch (err: any) {
-    return NextResponse.json(
-      { status: "error", error: err.message ?? "Something went wrong" },
-      { status: 500 }
-    );
+    return nextError(err.message);
   }
 };

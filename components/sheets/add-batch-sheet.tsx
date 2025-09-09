@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { api, ENDPOINT } from "@/lib/api";
 import { toast } from "../ui/use-toast";
@@ -10,7 +10,6 @@ import useUsers from "@/hooks/useUsers";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
 import { TBatch } from "@/models/Batch";
-import { TUser } from "@/models/User";
 
 type Props = {
   defaultBatch?: TBatch;
@@ -29,11 +28,16 @@ const AddBatchSheet = ({
   const [fee, setFee] = useState(defaultBatch?.fee ?? 0);
   const { users } = useUsers();
   const [query, setQuery] = useState("");
-  const defaultSelectedUserIds = ((defaultBatch?.userIds ?? []) as TUser[]).map(
-    (user) => user?._id
-  );
+  const { users: defaultSelectedUsers } = useUsers({
+    batchId: defaultBatch?._id,
+  });
+  const defaultSelectedUserIds = defaultSelectedUsers?.map((user) => user?._id);
   const [selectedUsers, setSelectedUsers] = useState(defaultSelectedUserIds);
   const editMode = !!defaultBatch;
+
+  useEffect(() => {
+    setSelectedUsers(defaultSelectedUsers?.map((user) => user?._id));
+  }, [defaultSelectedUsers]);
 
   const filteredUsers = (users ?? []).filter((user) =>
     user.name.toLowerCase().includes(query.toLowerCase())

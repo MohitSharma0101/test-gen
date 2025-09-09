@@ -11,14 +11,16 @@ import { toast } from "../ui/use-toast";
 type Props = {
   open: boolean;
   onOpenChange: (_open: boolean) => void;
-  defaultUser: TUser;
+  defaultUser?: Partial<TUser>;
+  selectedBatchIds?: string[];
+  onSuccess?: () => void;
 };
 
 const inputConfig = [
   { label: "Name", key: "name" },
   { label: "Email", key: "email" },
   { label: "Phone", key: "phone" },
-  { label: "DOB", key: "dob" },
+  { label: "DOB (YYYY-MM-DD)", key: "dob" },
   { label: "Father Name", key: "fatherName" },
   { label: "Mother Name", key: "motherName" },
   { label: "Parent Phone", key: "parentPhone" },
@@ -28,13 +30,20 @@ const inputConfig = [
   key: keyof TUser;
 }[];
 
-const EditUserSheet = ({ defaultUser, open, onOpenChange }: Props) => {
+const EditUserSheet = ({
+  defaultUser,
+  open,
+  selectedBatchIds,
+  onOpenChange,
+  onSuccess,
+}: Props) => {
   const [user, setUser] = useState(defaultUser);
+  const editMode = !!defaultUser;
 
   const onUpdateUser = async () => {
+    if (!user) return;
     try {
-      await api.put(ENDPOINT.users, {
-        _id: user._id,
+      const payload = {
         name: user.name,
         dob: user.dob,
         parentPhone: user.parentPhone,
@@ -43,9 +52,18 @@ const EditUserSheet = ({ defaultUser, open, onOpenChange }: Props) => {
         fatherName: user.fatherName,
         motherName: user.motherName,
         school: user.school,
-      });
+      };
+      if (editMode) {
+        await api.put(ENDPOINT.users, { _id: user._id, ...payload });
+      } else {
+        await api.post(ENDPOINT.users, {
+          user: payload,
+          batchIds: selectedBatchIds,
+        });
+      }
+      onSuccess?.();
       toast({
-        title: "User updated!",
+        title: editMode ? "User updated!" : "User Added",
         variant: "success",
       });
     } catch (err) {
@@ -73,7 +91,7 @@ const EditUserSheet = ({ defaultUser, open, onOpenChange }: Props) => {
         className="p-0 flex flex-col gap-2 max-h-screen"
       >
         <div className="text-base font-medium px-2 py-3 bg-gray-200">
-          Edit User
+          {editMode ? "Edit" : "Add"} User
         </div>
         <div className="flex flex-col gap-2 px-3 flex-grow overflow-auto">
           {inputConfig.map((config) => (
@@ -81,7 +99,7 @@ const EditUserSheet = ({ defaultUser, open, onOpenChange }: Props) => {
               key={config.key}
               label={config.label}
               placeholder="Enter value"
-              value={user[config.key]}
+              value={user?.[config.key]}
               onChange={(e) => onUserChange(config.key, e.target.value)}
             />
           ))}

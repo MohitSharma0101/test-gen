@@ -11,12 +11,13 @@ import {
 import { WA_MSG } from "@/data/wa-msg";
 import useBatches from "@/hooks/useBatches";
 import Clock from "@/lib/clock";
-import { TUser } from "@/models/User";
 import { SquareMousePointerIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import useExamResults from "@/hooks/useExamResult";
 import LabelInput from "@/components/ui/label-input";
+import useUsers from "@/hooks/useUsers";
+import { Loader2Icon } from "lucide-react";
 
 type TMSG_TEMPLATE = keyof typeof MSG_TEMPLATE;
 
@@ -25,8 +26,13 @@ export default function SendMessagePage() {
     MSG_TEMPLATE.EXTRA_CLASS
   );
   const { batches } = useBatches({ populateUsers: true });
+
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
   const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
+  const { users, loading: userLoading } = useUsers({
+    batchId: selectedBatchId,
+    shouldLoad: !!selectedBatchId,
+  });
   const [selectedDate, setSelectedDate] = useState<string>(Clock.getDate());
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -38,7 +44,7 @@ export default function SendMessagePage() {
     (res) => res._id === selectedResultId
   );
 
-  const usersToShow = selectedBatch?.userIds as TUser[];
+  const usersToShow = users;
 
   useEffect(() => {
     if (selectedTemplate === MSG_TEMPLATE.RESULT) {
@@ -202,7 +208,9 @@ export default function SendMessagePage() {
         </div>
       </div>
       <div className="max-w-[700px] mx-auto my-3 px-2">
-        {!usersToShow ? (
+        {userLoading ? (
+          <Loader2Icon className="size-4 animate-spin my-4 mx-auto" />
+        ) : !usersToShow ? (
           <div className="py-10 px-3 text-slate-400 text-sm md:text-base font-medium h-full flex gap-4 flex-col items-center justify-center">
             <SquareMousePointerIcon
               className="w-[100px] h-[100px]"

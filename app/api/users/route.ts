@@ -1,93 +1,98 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
 import User, { TUser } from "@/models/User";
-import Batch from "@/models/Batch"; // Assuming you have this model
 import { parse } from "csv-parse/sync";
 import Counter from "@/models/Counter";
+import { nextError, nextSuccess } from "@/lib/nextUtils";
 
 export const POST = async (request: NextRequest) => {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File;
-    const batchIds = JSON.parse((formData.get("batchIds") as string) || "[]");
+    let file: File | null = null;
+    let batchIds: string[] = [];
+    let users: Partial<TUser>[] = [];
 
-    if (!file) {
-      return NextResponse.json(
-        { status: "error", error: "CSV file is required." },
-        { status: 400 }
-      );
+    // detect request type
+    const contentType = request.headers.get("content-type") || "";
+
+    if (contentType.includes("multipart/form-data")) {
+      // ✅ CSV flow
+      const formData = await request.formData();
+      file = formData.get("file") as File;
+      batchIds = JSON.parse((formData.get("batchIds") as string) || "[]");
+
+      if (!file) {
+        return nextError("CSV file is required.");
+      }
+
+      const csvText = await file.text();
+      const records = parse(csvText, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
+
+      users = records.map((row: any) => ({
+        name: row.name,
+        phone: row.phone,
+        fatherName: row.father_name,
+        motherName: row.mother_name,
+        parentPhone: row.parent_phone,
+        school: row.school,
+        email: row.email,
+        dob: row.dob,
+      }));
+    } else if (contentType.includes("application/json")) {
+      // ✅ Single user flow
+      const body = await request.json();
+      const user = body?.user ?? null;
+      batchIds = body?.batchIds ?? [];
+
+      if (!user) {
+        return nextError("User object is required.");
+      }
+
+      users = [user];
+    } else {
+      return nextError("Unsupported content type.");
     }
+
+    // Common validations
     if (!Array.isArray(batchIds) || batchIds.length === 0) {
-      return NextResponse.json(
-        { status: "error", error: "At least one batch ID is required." },
-        { status: 400 }
-      );
+      return nextError("At least one batch ID is required.");
     }
-
-    const csvText = await file.text();
-
-    const records = parse(csvText, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true,
-    });
-
-    const users = records.map((row: any) => ({
-      name: row.name,
-      phone: row.phone,
-      fatherName: row.father_name,
-      motherName: row.mother_name,
-      parentPhone: row.parent_phone,
-      school: row.school,
-      email: row.email,
-      dob: row.dob,
-    }));
 
     if (users.length === 0) {
-      return NextResponse.json(
-        { status: "error", error: "No valid users found in CSV." },
-        { status: 400 }
-      );
+      return nextError("No valid users provided.");
     }
 
     await dbConnect();
 
+    // Shared logic
     const counter = await Counter.findByIdAndUpdate(
       { _id: "userId" },
-      { $inc: { seq: users.length } }, // increment by count
+      { $inc: { seq: users.length } },
       { new: true, upsert: true }
     );
 
-    let start = counter.seq - users.length + 1;
+    const start = counter.seq - users.length + 1;
 
-    const usersWithIds = users.map((user, i) => ({
-      ...user,
+    const usersWithIds = users.map((u, i) => ({
+      ...u,
       userId: `U${(start + i).toString().padStart(3, "0")}`,
+      batchIds: batchIds,
     }));
 
     const createdUsers = await User.insertMany(usersWithIds);
-
     const userIds = createdUsers.map((u) => u._id);
 
-    await Batch.updateMany(
-      { _id: { $in: batchIds } },
-      { $addToSet: { userIds: { $each: userIds } } } // avoid duplicates
-    );
-
-    return NextResponse.json(
-      {
-        status: "success",
-        insertedUsers: createdUsers.length,
-        assignedToBatches: batchIds.length,
-        userIds,
-      },
-      { status: 200 }
-    );
+    return nextSuccess({
+      status: "success",
+      insertedUsers: createdUsers.length,
+      assignedToBatches: batchIds.length,
+      userIds,
+    });
   } catch (err: any) {
-    return NextResponse.json(
-      { status: "error", error: err.message ?? "Something went wrong" },
-      { status: 500 }
-    );
+    return nextError(err.message);
   }
 };
 
@@ -104,7 +109,7 @@ export const GET = async (request: NextRequest) => {
     }
 
     const users = await User.find(filter)
-      .sort({ userId: -1 })
+      .sort({ name: 1 })
       .populate("batchIds", "name fees _id");
 
     return NextResponse.json({ users }, { status: 200 });

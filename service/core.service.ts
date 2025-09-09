@@ -4,6 +4,7 @@ import { TAttendance } from "@/models/Attendance";
 import { TChapter } from "@/models/Chapter";
 import { TPaper } from "@/models/Paper";
 import { TQuestion } from "@/models/Question";
+import { TUser } from "@/models/User";
 
 type TFetchQuestionsResponse = {
   questions: TQuestion[];
@@ -151,9 +152,16 @@ export const moveChapter = async (chapterIds: string[], bookId: string) => {
   });
 };
 
+export type TAttendanceRes = {
+  data: {
+    attendance: TAttendance;
+    users: TUser[];
+  };
+};
+
 export const fetchAttendance = async (batchId?: string, date?: string) => {
   if (!batchId || !date) return null;
-  return api.get<{ attendance: TAttendance }>(ENDPOINT.attendance, {
+  return api.get<TAttendanceRes>(ENDPOINT.attendance, {
     params: {
       batchId,
       date,

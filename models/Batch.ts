@@ -1,11 +1,9 @@
 import mongoose from "mongoose";
-import { TUser } from "./User";
 
 export type TBatch = {
   _id: string;
   name: string;
   fee: number;
-  userIds: string[] | TUser[];
 };
 
 const batchSchema = new mongoose.Schema(

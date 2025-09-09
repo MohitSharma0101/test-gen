@@ -7,9 +7,10 @@ import { toast } from "@/components/ui/use-toast";
 
 type Props = {
   batchId?: string;
+  shouldLoad?: boolean;
 };
 
-const useUsers = ({ batchId }: Props = {}) => {
+const useUsers = ({ batchId, shouldLoad = true }: Props = {}) => {
   const [users, setUsers] = useState<TUser[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -31,11 +32,13 @@ const useUsers = ({ batchId }: Props = {}) => {
     }
 
     setLoading(false);
-  }, []);
+  }, [batchId]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    if (shouldLoad) {
+      fetchUsers();
+    }
+  }, [fetchUsers, shouldLoad]);
 
   return { users, loading, refreshUsers: fetchUsers };
 };

@@ -2,8 +2,7 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
-import { TAttendance } from "@/models/Attendance";
-import { fetchAttendance } from "@/service/core.service";
+import { fetchAttendance, TAttendanceRes } from "@/service/core.service";
 import { useCallback, useEffect, useState } from "react";
 
 type config = {
@@ -13,15 +12,18 @@ type config = {
 };
 
 const useAttendance = ({ batchId, date, _id }: config = {}) => {
-  const [attendance, setAttendance] = useState<TAttendance>();
+  const [data, setData] = useState<TAttendanceRes["data"]>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
+
+  const attendance = data?.attendance;
+  const users = data?.users;
 
   const getAttendance = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetchAttendance(batchId, date);
-      setAttendance(res?.data?.attendance);
+      if (res?.data?.data) setData(res?.data?.data);
     } catch (err) {
       console.log(err);
       setError("Unable to fetch attendance.");
@@ -58,6 +60,7 @@ const useAttendance = ({ batchId, date, _id }: config = {}) => {
 
   return {
     attendance,
+    users,
     loading,
     error,
     refresh: getAttendance,

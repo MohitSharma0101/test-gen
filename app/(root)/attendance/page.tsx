@@ -8,7 +8,6 @@ import useAttendance from "@/hooks/useAttendance";
 import useBatches from "@/hooks/useBatches";
 import Clock from "@/lib/clock";
 import { redirectToWhatsapp } from "@/lib/utils";
-import { TUser } from "@/models/User";
 import { Loader2Icon } from "lucide-react";
 import { SquareMousePointerIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
@@ -24,7 +23,7 @@ const AttendancePage = (props: Props) => {
 
   const isDisabled = selectedDate != Clock.getDate();
 
-  const { attendance, loading, markAttendance } = useAttendance({
+  const { attendance, users, loading, markAttendance } = useAttendance({
     batchId: selectedBatchId,
     date: selectedDate,
   });
@@ -47,7 +46,7 @@ const AttendancePage = (props: Props) => {
           {selectedBatch && (
             <span className="text-slate-600 font-medium">{`(${
               absentUsers.length || 0
-            } absent out of ${selectedBatch.userIds.length})`}</span>
+            } absent out of ${users?.length})`}</span>
           )}
         </h1>
         <div className="py-2 flex items-center justify-between flex-wrap gap-2 md:gap-4">
@@ -90,48 +89,46 @@ const AttendancePage = (props: Props) => {
             {loading ? (
               <Loader2Icon className="w-5 h-5 animate-spin mx-auto my-14" />
             ) : (
-              selectedBatch?.userIds
-                ?.map((u) => u as TUser)
-                ?.map((user, index) => {
-                  const isAbsent = absentUsers.includes(user._id);
-                  return (
-                    <div
-                      key={user._id}
-                      className="py-2 px-3 flex items-center gap-2"
-                    >
-                      {index + 1}.
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{user.name}</p>
-                      </div>
-                      <Button
-                        disabled={isDisabled}
-                        variant={isAbsent ? "destructive" : "outline"}
-                        size="sm"
-                        className="rounded-full text-xs gap-1"
-                        onClick={() => {
-                          setAbsentUsers(
-                            isAbsent
-                              ? absentUsers.filter((id) => id !== user._id)
-                              : [...absentUsers, user._id]
-                          );
-                          if (user.parentPhone && !isAbsent) {
-                            // here we need to take inverse of isAbsent because the value is yet to be set in the state
-                            redirectToWhatsapp(
-                              user.parentPhone,
-                              WA_MSG.absent(
-                                user.name,
-                                Clock.getDateInFormat(),
-                                selectedBatch.name
-                              )
-                            );
-                          }
-                        }}
-                      >
-                        Absent
-                      </Button>
+              users?.map((user, index) => {
+                const isAbsent = absentUsers.includes(user._id);
+                return (
+                  <div
+                    key={user._id}
+                    className="py-2 px-3 flex items-center gap-2"
+                  >
+                    {index + 1}.
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{user.name}</p>
                     </div>
-                  );
-                })
+                    <Button
+                      disabled={isDisabled}
+                      variant={isAbsent ? "destructive" : "outline"}
+                      size="sm"
+                      className="rounded-full text-xs gap-1"
+                      onClick={() => {
+                        setAbsentUsers(
+                          isAbsent
+                            ? absentUsers.filter((id) => id !== user._id)
+                            : [...absentUsers, user._id]
+                        );
+                        if (user.parentPhone && !isAbsent && selectedBatch) {
+                          // here we need to take inverse of isAbsent because the value is yet to be set in the state
+                          redirectToWhatsapp(
+                            user.parentPhone,
+                            WA_MSG.absent(
+                              user.name,
+                              Clock.getDateInFormat(),
+                              selectedBatch.name
+                            )
+                          );
+                        }
+                      }}
+                    >
+                      Absent
+                    </Button>
+                  </div>
+                );
+              })
             )}
           </div>
         )}

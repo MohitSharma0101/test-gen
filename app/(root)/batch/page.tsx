@@ -52,9 +52,6 @@ const BatchPage = (props: Props) => {
               >
                 <div>
                   <p className="text-sm font-medium">{batch.name}</p>
-                  <p className="text-sm text-slate-500">
-                    {batch.userIds.length} students
-                  </p>
                 </div>
                 <Button variant="outline" size="sm" className="rounded-full">
                   <PencilIcon className="w-4 h-4" />
