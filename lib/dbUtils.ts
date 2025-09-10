@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import "@/models/Batch";
+
 const { DB_PASSWORD, DB_USER } = process.env;
 
 const dbURL = `mongodb+srv://${DB_USER}:${DB_PASSWORD}@cluster0.nfwacai.mongodb.net/?retryWrites=true&w=majority`;
