@@ -25,8 +25,8 @@ const FeesPage = () => {
 
   return (
     <div>
-      <div className="rounded py-2 px-2 md:px-6 border border-slate-200 bg-slate-300 flex gap-x-4 items-center justify-between flex-wrap sticky top-0 ">
-        <h1 className="py-2 text-sm font-bold flex items-center gap-x-2">
+      <div className="rounded py-2 px-2 md:px-6 border border-slate-200 bg-slate-300 flex gap-x-4 items-center justify-between flex-wrap sticky top-0 z-[10]">
+        <h1 className="py-2 text-sm font-bold flex items-center gap-x-2 ">
           STUDENT FEES
         </h1>
       </div>

@@ -20,6 +20,7 @@ export const GET = async (request: NextRequest) => {
     await dbConnect();
 
     const users = await User.find({ batchIds: batchId })
+      .sort({ name: 1 })
       .populate("batchIds feeSummary")
       .lean();
 

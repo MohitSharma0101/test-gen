@@ -6,6 +6,8 @@ export type TAttendance = {
   batch: string;
   absentUsers: string[] | TUser[];
   date: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const AttendanceSchema = new mongoose.Schema(

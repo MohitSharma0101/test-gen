@@ -18,6 +18,7 @@ import useExamResults from "@/hooks/useExamResult";
 import LabelInput from "@/components/ui/label-input";
 import useUsers from "@/hooks/useUsers";
 import { Loader2Icon } from "lucide-react";
+import useAttendance from "@/hooks/useAttendance";
 
 type TMSG_TEMPLATE = keyof typeof MSG_TEMPLATE;
 
@@ -44,7 +45,20 @@ export default function SendMessagePage() {
     (res) => res._id === selectedResultId
   );
 
-  const usersToShow = users;
+  const { attendance } = useAttendance(
+    {
+      batchId: selectedBatchId,
+      date: selectedDate,
+      shouldLoad: selectedTemplate === MSG_TEMPLATE.ABSENT
+    }
+  );
+
+  const usersToShow =
+    selectedTemplate === MSG_TEMPLATE.ABSENT
+      ? users?.filter((user) =>
+          (attendance?.absentUsers as string[])?.includes(user._id)
+        )
+      : users;
 
   useEffect(() => {
     if (selectedTemplate === MSG_TEMPLATE.RESULT) {
@@ -61,7 +75,7 @@ export default function SendMessagePage() {
       case MSG_TEMPLATE.EXTRA_CLASS:
         return WA_MSG.extraClass({
           name: data.name,
-          date: selectedDate,
+          date: Clock.getDateInFormat(selectedDate),
           startTime,
           endTime,
         });
@@ -69,7 +83,7 @@ export default function SendMessagePage() {
       case MSG_TEMPLATE.ABSENT:
         return WA_MSG.absent(
           data.name,
-          selectedDate,
+          Clock.getDateInFormat(selectedDate),
           selectedBatch?.name || ""
         );
       case MSG_TEMPLATE.RESULT:
@@ -93,7 +107,7 @@ export default function SendMessagePage() {
       case MSG_TEMPLATE.PTM:
         return WA_MSG.ptm({
           name: data.name,
-          date: selectedDate,
+          date: Clock.getDateInFormat(selectedDate),
           startTime,
           endTime,
         });
@@ -220,6 +234,11 @@ export default function SendMessagePage() {
           </div>
         ) : (
           <div className="my-3 bg-white rounded-lg border border-slate-200 divide-y divide-slate-200">
+            {attendance && (
+              <div className="py-2 px-3 w-full text-slate-600 text-xs md:text-sm">
+                Last Updated At <strong>{Clock.getDateInFormat(attendance.updatedAt)}</strong>
+              </div>
+            )}
             {usersToShow?.map((user, index) => (
               <div key={user._id} className="py-2 px-3 flex items-center gap-2">
                 {index + 1}.

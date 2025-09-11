@@ -60,9 +60,9 @@ export const GET = async (request: NextRequest) => {
       date: date,
     });
 
-    const users = await User.find({ batchIds: batchId }).sort({
-      name: 1,
-    }).select("name parentPhone");
+    const users = await User.find({ batchIds: batchId })
+      .sort({ name: 1 })
+      .select("name parentPhone");
 
     return nextSuccess({ attendance: attendance?.[0], users: users });
   } catch (err: any) {

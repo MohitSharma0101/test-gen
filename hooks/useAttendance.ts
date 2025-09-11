@@ -9,9 +9,10 @@ type config = {
   _id?: string;
   batchId?: string;
   date?: string;
+  shouldLoad?: boolean;
 };
 
-const useAttendance = ({ batchId, date, _id }: config = {}) => {
+const useAttendance = ({ batchId, date, shouldLoad = true }: config = {}) => {
   const [data, setData] = useState<TAttendanceRes["data"]>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -20,6 +21,7 @@ const useAttendance = ({ batchId, date, _id }: config = {}) => {
   const users = data?.users;
 
   const getAttendance = useCallback(async () => {
+    if (!batchId || !date) return;
     try {
       setLoading(true);
       const res = await fetchAttendance(batchId, date);
@@ -33,8 +35,10 @@ const useAttendance = ({ batchId, date, _id }: config = {}) => {
   }, [batchId, date]);
 
   useEffect(() => {
-    getAttendance();
-  }, [getAttendance]);
+    if (shouldLoad) {
+      getAttendance();
+    }
+  }, [getAttendance, shouldLoad]);
 
   const markAttendance = async (absentUsers: string[]) => {
     try {

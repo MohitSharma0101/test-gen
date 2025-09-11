@@ -6,8 +6,9 @@ import SelectCompact from "@/components/ui/select-compact";
 import { WA_MSG } from "@/data/wa-msg";
 import useAttendance from "@/hooks/useAttendance";
 import useBatches from "@/hooks/useBatches";
+import WhatsappOutlineIcon from "@/icons/whatsapp-outline";
 import Clock from "@/lib/clock";
-import { redirectToWhatsapp } from "@/lib/utils";
+import { cn, redirectToWhatsapp } from "@/lib/utils";
 import { Loader2Icon } from "lucide-react";
 import { SquareMousePointerIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
@@ -20,6 +21,7 @@ const AttendancePage = (props: Props) => {
   const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
   const [absentUsers, setAbsentUsers] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(Clock.getDate());
+  const [enableWARedirection, setEnableWARedirection] = useState(false);
 
   const isDisabled = selectedDate != Clock.getDate();
 
@@ -43,11 +45,18 @@ const AttendancePage = (props: Props) => {
       <div className="rounded py-1 px-2 md:px-6 border border-slate-200 bg-slate-300 flex gap-x-4 items-center justify-between flex-wrap sticky top-0 z-[10]">
         <h1 className="py-2 text-sm font-bold flex items-center gap-x-2">
           ATTENDANCE
-          {selectedBatch && (
+          {selectedBatch && attendance && (
             <span className="text-slate-600 font-medium">{`(${
               absentUsers.length || 0
             } absent out of ${users?.length})`}</span>
           )}
+          <Button
+            variant={enableWARedirection ? "default" : "outline"}
+            className={cn("p-2 h-fit", enableWARedirection && "bg-emerald-500")}
+            onClick={() => setEnableWARedirection((prev) => !prev)}
+          >
+            <WhatsappOutlineIcon className="size-5" />
+          </Button>
         </h1>
         <div className="py-2 flex items-center justify-between flex-wrap gap-2 md:gap-4">
           <SelectCompact
@@ -86,6 +95,12 @@ const AttendancePage = (props: Props) => {
           </div>
         ) : (
           <div className="my-3 bg-white rounded-lg border border-slate-200 divide-y divide-slate-200">
+            {attendance && (
+              <div className="py-2 px-3 w-full text-slate-600 text-xs md:text-sm">
+                Last Updated At{" "}
+                <strong>{Clock.getDateInFormat(attendance.updatedAt)}</strong>
+              </div>
+            )}
             {loading ? (
               <Loader2Icon className="w-5 h-5 animate-spin mx-auto my-14" />
             ) : (
@@ -111,7 +126,12 @@ const AttendancePage = (props: Props) => {
                             ? absentUsers.filter((id) => id !== user._id)
                             : [...absentUsers, user._id]
                         );
-                        if (user.parentPhone && !isAbsent && selectedBatch) {
+                        if (
+                          enableWARedirection &&
+                          user.parentPhone &&
+                          !isAbsent &&
+                          selectedBatch
+                        ) {
                           // here we need to take inverse of isAbsent because the value is yet to be set in the state
                           redirectToWhatsapp(
                             user.parentPhone,

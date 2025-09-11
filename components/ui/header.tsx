@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  BookOpenTextIcon,
-  BookTextIcon,
-  FilePenLineIcon,
-  FileQuestion,
-  FileUpIcon,
-  MenuIcon,
-  NewspaperIcon,
-} from "lucide-react";
+import { MenuIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -21,80 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "./button";
-import { Users2 } from "lucide-react";
-import { GraduationCap } from "lucide-react";
-import { Edit3Icon } from "lucide-react";
-import { MessageCircleIcon } from "lucide-react";
 import AccountMenu from "./account-menu";
-import { ScrollTextIcon } from "lucide-react";
-import { IndianRupeeIcon } from "lucide-react";
+import { ROUTES } from "@/data/routes";
 
 type Props = {
   active?: "create" | "upload" | "chapter" | "book";
 };
-
-const navItems = [
-  {
-    label: "Create Paper",
-    href: "/",
-    icon: <FilePenLineIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Upload Paper",
-    href: "/upload",
-    icon: <FileUpIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Chapters",
-    href: "/chapters",
-    icon: <BookOpenTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Books",
-    href: "/books",
-    icon: <BookTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Papers",
-    href: "/papers",
-    icon: <NewspaperIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Questions",
-    href: "/questions",
-    icon: <FileQuestion className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Users",
-    href: "/users",
-    icon: <Users2 className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Batches",
-    href: "/batch",
-    icon: <GraduationCap className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Attendance",
-    href: "/attendance",
-    icon: <Edit3Icon className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Send Message",
-    href: "/send-message",
-    icon: <MessageCircleIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Results",
-    href: "/exam-results",
-    icon: <ScrollTextIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-  {
-    label: "Fees",
-    href: "/fees",
-    icon: <IndianRupeeIcon className="w-5 h-5 mr-2" strokeWidth={2} />,
-  },
-];
 
 const Header = ({ active }: Props) => {
   return (
@@ -127,9 +51,9 @@ const Header = ({ active }: Props) => {
         <DropdownMenuContent side="bottom" align="end" className="p-1">
           <DropdownMenuLabel>Quick links</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {navItems.map((item) => (
+          {ROUTES.map((item) => (
             <DropdownMenuItem asChild key={item.href} className="w-[180px]">
-              <Link href={item.href} className="cursor-pointer py-2">
+              <Link href={item.href} className="cursor-pointer py-2 flex items-center gap-2">
                 {item.icon}
                 {item.label}
               </Link>
