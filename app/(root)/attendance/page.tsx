@@ -98,7 +98,7 @@ const AttendancePage = (props: Props) => {
             {attendance && (
               <div className="py-2 px-3 w-full text-slate-600 text-xs md:text-sm">
                 Last Updated At{" "}
-                <strong>{Clock.getDateInFormat(attendance.updatedAt)}</strong>
+                <strong>{Clock.getDateTimeInFormat(attendance.updatedAt)}</strong>
               </div>
             )}
             {loading ? (
