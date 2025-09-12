@@ -14,7 +14,7 @@ export type ColumnConfig<T> = {
   accessor?: keyof T;
   className?: string;
   cellClassName?: string;
-  render?: (row: T) => React.ReactNode;
+  render?: (row: T, index: number) => React.ReactNode;
 };
 
 type DataTableProps<T> = {
@@ -55,7 +55,7 @@ const DataTable = <T,>({
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-slate-300 border border-slate-300">
-            {data.map((row) => (
+            {data.map((row, rowIndex) => (
               <TableRow
                 key={rowKey(row)}
                 className="divide-x divide-slate-300 border-slate-300"
@@ -66,7 +66,7 @@ const DataTable = <T,>({
                     className={`${col.cellClassName || "text-right"}`}
                   >
                     {col.render
-                      ? col.render(row)
+                      ? col.render(row, rowIndex)
                       : String(col.accessor ? row[col.accessor] : "")}
                   </TableCell>
                 ))}

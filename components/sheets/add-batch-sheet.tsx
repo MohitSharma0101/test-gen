@@ -24,16 +24,18 @@ const AddBatchSheet = ({
   open,
   onOpenChange,
 }: Props) => {
+  const editMode = !!defaultBatch;
+
   const [name, setName] = useState(defaultBatch?.name ?? "");
   const [fee, setFee] = useState(defaultBatch?.fee ?? 0);
   const { users } = useUsers();
   const [query, setQuery] = useState("");
   const { users: defaultSelectedUsers } = useUsers({
     batchId: defaultBatch?._id,
+    shouldLoad: editMode,
   });
   const defaultSelectedUserIds = defaultSelectedUsers?.map((user) => user?._id);
   const [selectedUsers, setSelectedUsers] = useState(defaultSelectedUserIds);
-  const editMode = !!defaultBatch;
 
   useEffect(() => {
     setSelectedUsers(defaultSelectedUsers?.map((user) => user?._id));
@@ -46,11 +48,19 @@ const AddBatchSheet = ({
   const onAddBatch = async () => {
     try {
       if (editMode) {
+        const newUsers = selectedUsers.filter(
+          (id) => !defaultSelectedUserIds.includes(id)
+        );
+        const removedUsers = defaultSelectedUserIds.filter(
+          (id) => !selectedUsers.includes(id)
+        );
         await api.put(ENDPOINT.batches, {
           _id: defaultBatch?._id,
           name,
           userIds: selectedUsers,
           fee: fee,
+          usersToAdd: newUsers,
+          usersToRemove: removedUsers,
         });
       } else {
         await api.post(ENDPOINT.batches, { name, fee });

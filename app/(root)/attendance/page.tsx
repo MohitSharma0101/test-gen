@@ -16,7 +16,7 @@ import React, { useEffect, useState } from "react";
 type Props = {};
 
 const AttendancePage = (props: Props) => {
-  const { batches } = useBatches({ populateUsers: true });
+  const { batches } = useBatches();
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
   const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
   const [absentUsers, setAbsentUsers] = useState<string[]>([]);

@@ -5,17 +5,21 @@ import { useCallback, useEffect, useState } from "react";
 import { TBatch } from "@/models/Batch";
 
 type UseBatchesProps = {
-  populateUsers?: boolean;
+  withCount?: boolean;
 };
 
-const useBatches = ({ populateUsers }: UseBatchesProps = {}) => {
-  const [batches, setBatches] = useState<TBatch[]>([]);
+type TBatchWithCount = TBatch & {
+  totalStudents: number;
+};
+
+const useBatches = ({ withCount }: UseBatchesProps = {}) => {
+  const [batches, setBatches] = useState<TBatchWithCount[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchBatches = useCallback(async () => {
     setLoading(true);
     const res = await api.get(ENDPOINT.batches, {
-      params: { populateUsers },
+      params: { withCount },
     });
     setBatches(res.data.batches);
     setLoading(false);

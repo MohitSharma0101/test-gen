@@ -26,7 +26,7 @@ export default function SendMessagePage() {
   const [selectedTemplate, setSelectedTemplate] = useState<TMSG_TEMPLATE>(
     MSG_TEMPLATE.EXTRA_CLASS
   );
-  const { batches } = useBatches({ populateUsers: true });
+  const { batches } = useBatches();
 
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
   const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);

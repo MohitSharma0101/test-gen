@@ -13,9 +13,7 @@ import ViewBatchSheet from "@/components/sheets/view-batch-sheet";
 type Props = {};
 
 const BatchPage = (props: Props) => {
-  const { batches, loading, refreshBatches } = useBatches({
-    populateUsers: true,
-  });
+  const { batches, loading, refreshBatches } = useBatches({ withCount: true });
   const [selectedBatch, setSelectedBatch] = useState<TBatch>();
   const [openAddBatchSheet, setOpenAddBatchSheet] = useState(false);
   const [openViewBatchSheet, setOpenViewBatchSheet] = useState(false);
@@ -52,6 +50,9 @@ const BatchPage = (props: Props) => {
               >
                 <div>
                   <p className="text-sm font-medium">{batch.name}</p>
+                  <p className="text-xs text-slate-500">
+                    {batch.totalStudents || 0} Students
+                  </p>
                 </div>
                 <Button variant="outline" size="sm" className="rounded-full">
                   <PencilIcon className="w-4 h-4" />

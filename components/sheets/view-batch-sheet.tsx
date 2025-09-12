@@ -47,18 +47,18 @@ const ViewBatchSheet = ({ batch, onEdit, open, onOpenChange }: Props) => {
                 onChange={(e) => setQuery(e.target.value)}
                 className="rounded-b-none rounded-t-md"
               />
-              <div className="grid grid-cols-3 items-center py-2 px-2 gap-2 gap-x-6 border-b last:border-b-none border-slate-200">
-                <p className="text-sm font-medium">Name</p>
-                <p className="text-sm font-medium">Phone</p>
-                <p className="text-sm font-medium">Parent Phone</p>
-              </div>
               <DataTable
                 data={filteredUsers}
                 loading={loading}
                 columns={[
                   {
+                    header: "Sr.",
+                    render: (_, index) => index + 1,
+                  },
+                  {
                     header: "Name",
                     accessor: "name",
+                    className: "min-w-[120px]"
                   },
                   {
                     header: "Phone",

@@ -13,7 +13,7 @@ import { SquareMousePointerIcon } from "lucide-react";
 import React, { useState } from "react";
 
 const FeesPage = () => {
-  const { batches } = useBatches({ populateUsers: true });
+  const { batches } = useBatches();
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
 
   const [openAddFeeSheet, setOpenAddFeeSheet] = useState(false);
