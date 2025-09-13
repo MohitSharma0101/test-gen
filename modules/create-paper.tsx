@@ -39,16 +39,16 @@ import { TPaper } from "@/models/Paper";
 import { useAuthorStore } from "@/stores/authorStore";
 import AddTagSheet, { TAGS } from "@/components/sheets/add-tag-sheet";
 import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
+import { Input } from "@/components/ui/input";
 
 type TCreatePaperProps = {
   mode?: "create" | "update";
   defaultPaper?: TPaper;
 };
 
-export default function CreatePaper({
-  defaultPaper,
-}: TCreatePaperProps) {
-  const defaultChapter = defaultPaper?.questions?.[0]?.chapter as TChapter | null;
+export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
+  const defaultChapter = defaultPaper?.questions?.[0]
+    ?.chapter as TChapter | null;
 
   const [course, setCourse] = useState(defaultPaper?.course || COURSES[5]);
   const [subject, setSubject] = useState(defaultChapter?.subject || "");
@@ -58,6 +58,7 @@ export default function CreatePaper({
   const { author } = useAuthorStore();
   const [selectedTag, setSelectedTag] = useState("");
   const [hideUsed, setHideUsed] = useState(false);
+  const [chapterSearch, setChapterSearch] = useState("");
 
   const { chapters, loading: chaptersLoading } = useChapters(
     subject,
@@ -74,7 +75,17 @@ export default function CreatePaper({
     refresh,
     updateUsage,
     updateQuestion,
-  } = useQuestions(selectedChapter?._id, marks, undefined, selectedTag, hideUsed ? 0 : undefined);
+  } = useQuestions(
+    selectedChapter?._id,
+    marks,
+    undefined,
+    selectedTag,
+    hideUsed ? 0 : undefined
+  );
+
+  const chapterToShow = chapters?.filter((c) =>
+    c.title.toLowerCase().includes(chapterSearch.toLowerCase())
+  );
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>(
     defaultPaper?.questions || []
@@ -86,6 +97,7 @@ export default function CreatePaper({
   useEffect(() => {
     if (chapters) {
       setSelectedChapter(defaultChapter || chapters?.[0]);
+      setChapterSearch("");
     }
   }, [chapters]);
 
@@ -152,8 +164,16 @@ export default function CreatePaper({
             }))}
             canUnselect
           />
-          <label className={cn(buttonVariants({ variant: 'outline' }), 'gap-2 mt-auto cursor-pointer')}>
-            <Checkbox checked={hideUsed} onCheckedChange={(_checked: boolean) => setHideUsed(_checked)} />
+          <label
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "gap-2 mt-auto cursor-pointer"
+            )}
+          >
+            <Checkbox
+              checked={hideUsed}
+              onCheckedChange={(_checked: boolean) => setHideUsed(_checked)}
+            />
             Hide Used
           </label>
         </div>
@@ -179,7 +199,11 @@ export default function CreatePaper({
               questions={selectedQuestions}
               onPrint={() => updateUsage(selectedQuestions)}
               defaultTwoColumn={twoColumn}
-              onQuestionRemove={(q) => setSelectedQuestions(prev => prev.filter(ques => ques._id !== q._id))}
+              onQuestionRemove={(q) =>
+                setSelectedQuestions((prev) =>
+                  prev.filter((ques) => ques._id !== q._id)
+                )
+              }
               editable
             />
             <Print>
@@ -211,6 +235,11 @@ export default function CreatePaper({
           <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">
             CHAPTERS
           </div>
+          <Input
+            placeholder={"Search Chapter"}
+            value={chapterSearch}
+            onChange={(e) => setChapterSearch(e.target.value)}
+          />
           <ol className="h-full max-h-[100vh] list-decimal flex flex-col overflow-scroll pt-4 pb-[200px]">
             {chaptersLoading ? (
               <>
@@ -220,13 +249,13 @@ export default function CreatePaper({
                 <Skeleton className="h-[30px] mx-4 my-1" />
                 <Skeleton className="h-[30px] mx-4 my-1" />
               </>
-            ) : !chapters || chapters?.length === 0 ? (
+            ) : !chapterToShow || chapterToShow?.length === 0 ? (
               <div className="flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
                 <InboxIcon className="w-[100px] h-[100px]" strokeWidth={1.4} />
                 <p className="text-lg">No Chapter Found!</p>
               </div>
             ) : (
-              chapters?.map((q: TChapter, index: number) => (
+              chapterToShow?.map((q: TChapter, index: number) => (
                 <Button
                   key={index}
                   onClick={() => {
@@ -415,7 +444,8 @@ export default function CreatePaper({
                     <div>
                       <Markdown text={q.text ?? ""} />
                       <div className="flex gap-2 items-start [&_#preview]:!py-0">
-                        <strong>Ans:
+                        <strong>
+                          Ans:
                           <EditMarkdownSheet
                             text={q.ans}
                             onSave={(text) => {
@@ -425,7 +455,8 @@ export default function CreatePaper({
                               });
                             }}
                           />
-                        </strong> <Markdown text={q.ans || ""} />
+                        </strong>{" "}
+                        <Markdown text={q.ans || ""} />
                       </div>
                     </div>
                     <span className="pt-[10px] px-2 font-medium ml-auto">
