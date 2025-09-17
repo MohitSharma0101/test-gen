@@ -27,7 +27,7 @@ export const SUBJECT_MAP: TSubjectMap = {
   NEET: NEET_SUBJECTS,
 };
 
-export const MARKS = [1, 2, 3, 4, 5, 6];
+export const MARKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
 export const QUESTION_PAGE_LIMITS = [10, 20, 25, 30, 45, 50, 75, 90, 180, 300];
 
