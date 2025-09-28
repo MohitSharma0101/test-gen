@@ -117,12 +117,13 @@ const PapersPage = (props: Props) => {
                   key={paper._id}
                   className="divide-x divide-slate-300 border-slate-300"
                 >
-                  <TableCell className="font-medium  flex items-center justify-between">
+                  <TableCell className="font-medium  flex items-center">
                     <p className="w-[220px] ">{paper.title}</p>
                     <Button
                       variant={"outline"}
                       size={"icon"}
                       onClick={() => setSchedulePaperId(paper._id)}
+                      className="ml-auto"
                     >
                       <CalendarClockIcon className="w-5 h-5" />
                     </Button>
