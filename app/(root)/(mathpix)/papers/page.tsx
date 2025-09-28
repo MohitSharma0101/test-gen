@@ -23,12 +23,15 @@ import { AUTHORS } from "@/models/Author";
 import { useAuthorStore } from "@/stores/authorStore";
 import { COURSES } from "@/data/const";
 import Pagination from "@/components/ui/pagination";
+import { SchedulePaperSheet } from "@/components/sheets/schedule-paper-sheet";
+import { CalendarClockIcon } from "lucide-react";
 
 type Props = {};
 
 const PapersPage = (props: Props) => {
   const { author, updateAuthor } = useAuthorStore();
   const [course, setCourse] = useState("");
+  const [schedulePaperId, setSchedulePaperId] = useState<string | null>(null);
   const { papers, data, loading, deletePaper, refresh } = usePapers({
     author,
     course,
@@ -115,12 +118,20 @@ const PapersPage = (props: Props) => {
                   className="divide-x divide-slate-300 border-slate-300"
                 >
                   <TableCell className="font-medium  flex items-center justify-between">
-                    <p className="w-[100px] md:w-fit">{paper.title}</p>
+                    <p className="w-[220px] ">{paper.title}</p>
+                    <Button
+                      variant={"outline"}
+                      size={"icon"}
+                      onClick={() => setSchedulePaperId(paper._id)}
+                    >
+                      <CalendarClockIcon className="w-5 h-5" />
+                    </Button>
+
                     <PreviewButton
                       questions={paper.questions}
                       defaultTwoColumn
                       onPrint={() => postUpdateUsage(paper.questions)}
-                      className="ml-4"
+                      className="ml-2"
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -161,6 +172,13 @@ const PapersPage = (props: Props) => {
         <div className="my-4">
           <Pagination totalPages={data?.totalPages} hideLimit />
         </div>
+        {schedulePaperId && (
+          <SchedulePaperSheet
+            paperId={schedulePaperId}
+            open={Boolean(schedulePaperId)}
+            onOpenChange={() => setSchedulePaperId(null)}
+          />
+        )}
       </div>
     </div>
   );

@@ -90,7 +90,7 @@ const ChaptersPage = (props: Props) => {
             />
           </div>
           <div className="mt-2">
-            <p className="mb-2 ml-1 text-sm">Chapter Title</p>
+            <p className="mb-2 ml-1 text-xs">Chapter Title</p>
             <Input
               value={chapterTitle}
               onChange={(e) => {

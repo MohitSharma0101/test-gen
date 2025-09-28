@@ -54,7 +54,6 @@ export const PUT = async (request: NextRequest) => {
 
     // Remove batch from users
     if (usersToRemove && usersToRemove.length > 0) {
-      console.log("user", usersToRemove);
       await User.updateMany(
         { _id: { $in: usersToRemove } },
         { $pull: { batchIds: _id } }

@@ -91,3 +91,12 @@ export const MSG_TEMPLATES_META = {
     preview: WA_MSG.feesReminder("NAME"),
   },
 };
+
+export const PAPER_DURATION_OPTIONS = [
+  { label: "90 min", value: "90" },
+  { label: "60 min", value: "60" },
+  { label: "45 min", value: "45" },
+  { label: "30 min", value: "30" },
+  { label: "20 min", value: "20" },
+  { label: "10 min", value: "10" },
+];

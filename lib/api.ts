@@ -15,6 +15,7 @@ export const ENDPOINT = {
   examResults: "exam-results",
   feesBatch: "fees/batch",
   fees: "fees",
+  schedulePaper: "schedule-paper",
 
   //auth
   login: "auth/login",

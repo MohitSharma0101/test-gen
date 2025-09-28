@@ -44,7 +44,7 @@ const SelectCompact = ({
     <div className={className}>
       {label && (
         <>
-          <label className="font-medium ml-1 mb-1 text-sm flex gap-2 items-center">
+          <label className="font-medium ml-1 mb-1 text-xs flex gap-2 items-center">
             {label}
           </label>
         </>
