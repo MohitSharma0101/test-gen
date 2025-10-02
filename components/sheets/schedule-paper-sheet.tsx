@@ -24,8 +24,21 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange }: Props) => {
     duration: Number(PAPER_DURATION_OPTIONS[0].value),
   });
 
+  const isInvalid =
+    !payload.startTime ||
+    !payload.endTime ||
+    !payload.duration ||
+    !selectedBatchId;
+
   const onSubmit = async () => {
     try {
+      if (isInvalid) {
+        toast({
+          title: "All fields are mandatory!",
+          variant: "destructive",
+        });
+        return;
+      }
       await api.post(ENDPOINT.schedulePaper, {
         paperId,
         duration: Number(payload.duration),
@@ -86,6 +99,8 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange }: Props) => {
             label="Expiry Time"
             type="datetime-local"
             className="w-fit"
+            disabled={!payload.startTime}
+            min={payload.startTime}
             value={payload.endTime}
             onChange={(e) => onPayloadChange("endTime", e.target.value)}
           />
@@ -97,7 +112,7 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange }: Props) => {
             value={String(payload.duration)}
             onChange={(value) => onPayloadChange("duration", value)}
           />
-          <Button className="mt-4" onClick={onSubmit}>
+          <Button disabled={isInvalid} className="mt-4" onClick={onSubmit}>
             Submit
           </Button>
         </div>

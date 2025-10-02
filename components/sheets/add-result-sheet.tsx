@@ -72,6 +72,14 @@ export const AddResultSheet = ({
   const handleSubmit = async () => {
     if (viewMode || !isFormValid()) return;
     try {
+      const resultsList = Object.entries(results);
+      if (resultsList.some(([_, value]) => isNaN(Number(value)))) {
+        toast({
+          title: "Invalid values",
+          variant: "destructive",
+        });
+        return;
+      }
       setIsSubmitting(true);
       const payload = {
         name: name,
@@ -81,7 +89,7 @@ export const AddResultSheet = ({
         totalMarks: totalMarks,
         results: Object.entries(results).map(([key, value]) => ({
           userId: key,
-          marks: value,
+          marks: Number(value),
         })),
       };
       await api.post(ENDPOINT.examResults, payload);
@@ -181,16 +189,6 @@ export const AddResultSheet = ({
                         value={results[user._id]}
                         onChange={(e) => {
                           let value = e.target.value;
-                          if (!value) return;
-
-                          const numValue = Number(value);
-                          console.log(numValue);
-                          if (isNaN(numValue)) return;
-
-                          if (numValue > totalMarks) {
-                            value = totalMarks.toString();
-                          }
-
                           setResults((prev) => ({
                             ...prev,
                             [user._id]: value,
