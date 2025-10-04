@@ -65,12 +65,10 @@ export const AddResultSheet = ({
     }
   };
 
-  const isFormValid = () => {
-    return name && totalMarks;
-  };
+  const isFormInvalid = Boolean(!name || !totalMarks);
 
   const handleSubmit = async () => {
-    if (viewMode || !isFormValid()) return;
+    if (viewMode || isFormInvalid) return;
     try {
       const resultsList = Object.entries(results);
       if (resultsList.some(([_, value]) => isNaN(Number(value)))) {
@@ -106,7 +104,7 @@ export const AddResultSheet = ({
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(true);
+      setIsSubmitting(false);
     }
   };
 
@@ -203,7 +201,7 @@ export const AddResultSheet = ({
           </div>
         </div>
         <Button
-          disabled={viewMode || isSubmitting || !isFormValid()}
+          disabled={viewMode || isSubmitting || isFormInvalid}
           className="mb-2 mx-2"
           onClick={handleSubmit}
         >

@@ -25,7 +25,7 @@ type TOpenResultSheet = {
 const ExamResultsPage = () => {
   const { batches } = useBatches();
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
-  const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
+  const selectedBatch = batches?.find((batch) => batch._id === selectedBatchId);
   const [selectedDate, setSelectedDate] = useState<string>();
   const [openResultSheet, setOpenResultSheet] = useState<TOpenResultSheet>();
 
