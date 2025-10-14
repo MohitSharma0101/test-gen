@@ -1,6 +1,8 @@
+import { TUserResult } from "@/models/AnswerSheet";
 import type { SubjectQuestions, TQuestion } from "@/models/Question";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import Clock from "./clock";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -160,4 +162,39 @@ export function getScheduleStatus(startTime: string, endTime: string) {
   if (now >= start && now <= end) return "active";
   if (now > end) return "expired";
   return "upcoming";
+}
+
+
+
+export const sortResultsOnRank = (results: TUserResult[]) => {
+  return results?.toSorted((a, b) => {
+    const aMarks = a.result?.obtainedMarks || 0;
+    const bMarks = b.result?.obtainedMarks || 0;
+
+    if (bMarks !== aMarks) {
+      return bMarks - aMarks; // Higher marks first
+    }
+
+    const aCorrect = a.result?.correctAns || 0;
+    const bCorrect = b.result?.correctAns || 0;
+
+    if (bCorrect !== aCorrect) {
+      return bCorrect - aCorrect; // Higher correct answers next
+    }
+
+    const aIncorrect = a.result?.incorrectAns || 0;
+    const bIncorrect = b.result?.incorrectAns || 0;
+
+    if (aIncorrect !== bIncorrect) {
+      return aIncorrect - bIncorrect; // Lower incorrect answers last
+    }
+
+    if (!a.result?.submittedOn || !a.result.startedOn || !b.result?.submittedOn || !b.result?.startedOn) return -1;
+
+    // Tie-breaker: Submission time (faster is better)
+    const aTimeTaken = Clock.getTimeDifference(a.result?.submittedOn || 0, a.result?.startedOn || 0);
+    const bTimeTaken = Clock.getTimeDifference(b.result?.submittedOn || 0, b.result?.startedOn || 0);
+
+    return aTimeTaken - bTimeTaken; // Less time taken = higher rank
+  }) ?? []
 }

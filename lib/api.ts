@@ -24,7 +24,7 @@ export const ENDPOINT = {
 };
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH;
-export const AUTH_TOKEN_KEY = "jwt_token";
+export const AUTH_TOKEN_KEY = "jwt_token_admin";
 
 export const api = axios.create({
   baseURL: BASE_PATH,

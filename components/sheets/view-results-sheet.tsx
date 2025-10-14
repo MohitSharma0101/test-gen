@@ -3,6 +3,8 @@ import { Loader2Icon } from "lucide-react";
 import useAnswerSheets from "@/hooks/useAnswerSheets";
 import useUsers from "@/hooks/useUsers";
 import DataTable from "../ui/data-table";
+import Clock from "@/lib/clock";
+import { sortResultsOnRank } from "@/lib/utils";
 
 type Props = {
     open: boolean;
@@ -22,11 +24,12 @@ export const ViewResultSheet = ({ open, scheduleId, title, batchId, onOpenChange
         result: ansMap.get(u._id)
     }));
 
+    const sortedResults = sortResultsOnRank(results);
     const loading = userLoading || answersLoading;
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side={'right'} className="p-0 flex flex-col gap-2 max-h-screen md:max-w-xl">
+            <SheetContent side={'right'} className="p-0 flex flex-col gap-2 max-h-screen min-w-[300px] md:max-w-fit">
                 {
                     loading ? (
                         <div className="h-full flex items-center justify-center">
@@ -44,6 +47,10 @@ export const ViewResultSheet = ({ open, scheduleId, title, batchId, onOpenChange
                             <DataTable
                                 loading={loading}
                                 columns={[
+                                    {
+                                        header: "Rank",
+                                        render: ((_, index) => index + 1)
+                                    },
                                     {
                                         header: "Id",
                                         accessor: "userId",
@@ -69,8 +76,25 @@ export const ViewResultSheet = ({ open, scheduleId, title, batchId, onOpenChange
                                         header: "Skipped",
                                         render: (item) => item.result?.skippedAns ?? "-"
                                     },
+                                    {
+                                        header: "Started On",
+                                        render: (item) => item.result?.startedOn ? Clock.getDateTimeInFormat(item.result?.startedOn) : "-"
+                                    },
+                                    {
+                                        header: "Submitted On",
+                                        render: (item) => item.result?.submittedOn ? Clock.getDateTimeInFormat(item.result?.submittedOn) : "-"
+                                    },
+                                    {
+                                        header: "Time taken",
+                                        className: "min-w-[140px]",
+                                        render: (item) => item.result?.submittedOn && item.result?.startedOn ? Clock.getTimeDiffInFormat(
+                                            item.result?.startedOn || 0,
+                                            item.result?.submittedOn || 0
+                                        ) : "-"
+                                    },
+
                                 ]}
-                                data={results}
+                                data={sortedResults}
                                 rowKey={(row) => row._id}
                             />
                         </div>
