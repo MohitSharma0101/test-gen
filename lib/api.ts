@@ -16,6 +16,7 @@ export const ENDPOINT = {
   feesBatch: "fees/batch",
   fees: "fees",
   schedulePaper: "schedule-paper",
+  answerSheets: "/answer-sheets",
 
   //auth
   login: "auth/login",

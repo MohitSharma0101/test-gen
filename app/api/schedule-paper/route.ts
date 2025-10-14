@@ -32,3 +32,26 @@ export const POST = async (request: NextRequest) => {
     return nextError(err.message);
   }
 };
+
+export const GET = async (request: NextRequest) => {
+  try {
+    const { searchParams } = new URL(request.url);
+    const batchId = searchParams.get("batchId");
+
+    if (!batchId) {
+      return nextError("Batch ID is required.");
+    }
+
+    await dbConnect();
+
+    const schedulePapers = await SchedulePaper.find({ batch: batchId }).sort({ createdAt: -1 }).populate("paper");
+
+    return nextSuccess({
+      status: "success",
+      results: schedulePapers.length,
+      schedulePapers,
+    });
+  } catch (err: any) {
+    return nextError(err.message || "Failed to fetch schedule papers.");
+  }
+};

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import "@/models/Batch";
+import "@/models/Paper";
 
 const { DB_PASSWORD, DB_USER } = process.env;
 

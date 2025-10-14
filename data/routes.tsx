@@ -1,3 +1,4 @@
+import { FileClockIcon } from "lucide-react";
 import {
   BookOpenTextIcon,
   BookTextIcon,
@@ -73,5 +74,10 @@ export const ROUTES = [
     label: "Fees",
     href: "/fees",
     icon: <IndianRupeeIcon className="w-5 h-5 " strokeWidth={2} />,
+  },
+  {
+    label: "Schedule Papers",
+    href: "/schedule-paper",
+    icon: <FileClockIcon className="w-5 h-5 " strokeWidth={2} />,
   },
 ];

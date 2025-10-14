@@ -145,3 +145,19 @@ export const redirectToWhatsapp = (phone?: string, message?: string) => {
   const url = getWhatsappURL(phone, message);
   window.open(url, "_blank", "noopener,noreferrer");
 };
+
+/*
+ * Check schedule status
+ * @param startTime ISO string
+ * @param endTime ISO string
+ * @returns "active" | "expired" | "upcoming"
+ */
+export function getScheduleStatus(startTime: string, endTime: string) {
+  const now = new Date();
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  if (now >= start && now <= end) return "active";
+  if (now > end) return "expired";
+  return "upcoming";
+}
