@@ -45,12 +45,14 @@ const SchedulePaperPage = (props: Props) => {
         />
     )
 
+    const isEmpty = !schedulePapersRes?.schedulePapers;
+    const noData = schedulePapersRes?.schedulePapers.length === 0
 
     return (
         <PageWrapper
             title='SCHEDULE PAPERS'
             headerActions={headerActions}
-            state={loading ? "loading" : error ? 'error' : !schedulePapersRes ? 'empty' : 'data'}
+            state={loading ? "loading" : error ? 'error' : isEmpty ? 'empty' : noData ? 'no-data' : 'data'}
         >
             <div className='my-3 px-2 flex flex-col gap-2'>
                 {schedulePapersRes?.schedulePapers.map(item => (

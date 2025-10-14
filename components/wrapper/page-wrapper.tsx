@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 type Props = {
     title: string;
     headerActions?: ReactNode;
-    state: 'loading' | 'empty' | 'data' | 'error'
+    state: 'loading' | 'empty' | 'data' | 'error' | 'no-data'
     children: ReactNode;
 }
 
@@ -29,6 +29,11 @@ export const PageWrapper = ({ title, headerActions, state, children }: Props) =>
             case 'error': return (
                 <div className="py-16 flex items-center justify-center text-destructive">
                     <p>Unable to Load.</p>
+                </div>
+            )
+            case 'no-data': return (
+                <div className="py-16 flex items-center justify-center">
+                    <p>No Data found.</p>
                 </div>
             )
             case 'data': return children
