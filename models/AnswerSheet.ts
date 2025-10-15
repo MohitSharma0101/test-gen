@@ -25,6 +25,7 @@ export type TAnswerSheet = {
     skippedAns?: number;
     totalMarks?: number;
     obtainedMarks?: number;
+    screenLeftCount?: number;
 };
 
 const AnswerSheetSchema = new mongoose.Schema(
@@ -47,7 +48,30 @@ const AnswerSheetSchema = new mongoose.Schema(
         submittedOn: {
             type: Date,
         },
-        // Store answers as array of objects
+        correctAns: {
+            type: Number,
+            default: 0,
+        },
+        incorrectAns: {
+            type: Number,
+            default: 0,
+        },
+        skippedAns: {
+            type: Number,
+            default: 0,
+        },
+        totalMarks: {
+            type: Number,
+            default: 0,
+        },
+        obtainedMarks: {
+            type: Number,
+            default: 0,
+        },
+        screenLeftCount: {
+            type: Number,
+            default: 0,
+        },
         answers: [
             {
                 question: {
@@ -63,6 +87,10 @@ const AnswerSheetSchema = new mongoose.Schema(
                     type: Number, // in seconds
                     default: 0,
                 },
+                isCorrect: {
+                    type: Boolean,
+                    required: false,
+                }
             },
         ],
     },

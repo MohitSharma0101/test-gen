@@ -195,6 +195,6 @@ export const sortResultsOnRank = (results: TUserResult[]) => {
     const aTimeTaken = Clock.getTimeDifference(a.result?.submittedOn || 0, a.result?.startedOn || 0);
     const bTimeTaken = Clock.getTimeDifference(b.result?.submittedOn || 0, b.result?.startedOn || 0);
 
-    return aTimeTaken - bTimeTaken; // Less time taken = higher rank
+    return bTimeTaken - aTimeTaken; // Less time taken = higher rank
   }) ?? []
 }

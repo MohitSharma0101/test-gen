@@ -92,7 +92,11 @@ export const ViewResultSheet = ({ open, scheduleId, title, batchId, onOpenChange
                                             item.result?.submittedOn || 0
                                         ) : "-"
                                     },
-
+                                    {
+                                        header: "Screen Left",
+                                        render: (item) => item.result?.screenLeftCount ?
+                                            `${item.result?.screenLeftCount} time` : "-"
+                                    },
                                 ]}
                                 data={sortedResults}
                                 rowKey={(row) => row._id}

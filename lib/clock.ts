@@ -86,7 +86,6 @@ class Clock {
   
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   }
-
 }
 
 export default Clock;
