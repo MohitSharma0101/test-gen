@@ -17,6 +17,7 @@ export const ENDPOINT = {
   fees: "fees",
   schedulePaper: "schedule-paper",
   answerSheets: "/answer-sheets",
+  recheck: "/answer-sheets/recheck",
 
   //auth
   login: "auth/login",
