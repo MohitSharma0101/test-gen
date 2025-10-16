@@ -4,55 +4,74 @@ import { analyseTest } from "@/lib/test-utils";
 import AnswerSheet, { TAnswerSheet } from "@/models/AnswerSheet";
 import SchedulePaper, { TSchedulePaper } from "@/models/SchedulePaper";
 import { NextRequest } from "next/server";
+
+// Import related models for population
 import '@/models/Question';
 import '@/models/Chapter';
 
 export const PUT = async (req: NextRequest) => {
     try {
         const { scheduleId } = await req.json();
+
         if (!scheduleId) {
-            return nextError("Schedule Id is required");
+            return nextError("Schedule ID is required.");
         }
+
         await dbConnect();
 
+        // Fetch the schedule with paper and questions populated
         const schedule = await SchedulePaper.findById(scheduleId)
             .populate({
                 path: "paper",
                 select: "title questions",
                 populate: {
                     path: "questions",
-                    populate: {
-                        path: "chapter",
-                    },
                 },
             })
             .lean<TSchedulePaper>();
-        const answerSheets = await AnswerSheet.find({
-            schedulePaper: scheduleId,
-        }).lean<TAnswerSheet[]>();
 
-
-        for (const sheet of answerSheets) {
-            const testAnalysis = analyseTest(schedule?.paper?.questions ?? [], sheet.answers);
-            await AnswerSheet.findOneAndUpdate(
-                { schedulePaper: sheet.schedulePaper, user: sheet.user }, // Match condition
-                {
-                    $set: {
-                        answers: testAnalysis?.analysedAns || sheet.answers,
-                        correctAns: testAnalysis?.correctAns,
-                        incorrectAns: testAnalysis?.incorrectAns,
-                        skippedAns: testAnalysis?.skippedAns,
-                        totalMarks: testAnalysis?.totalMarks,
-                        obtainedMarks: testAnalysis?.obtainedMarks,
-                    } as TAnswerSheet,
-                }
-            );
+        if (!schedule) {
+            return nextError("Schedule or associated paper not found.");
         }
 
-        return nextSuccess({ success: true })
+        const questions = schedule.paper?.questions ?? [];
+        const answerSheets = await AnswerSheet.find({ schedulePaper: scheduleId }).lean<TAnswerSheet[]>();
 
-    } catch (err) {
-        console.error(err);
-        return nextError();
+        if (!answerSheets.length) {
+            return nextSuccess({ message: "No answer sheets found to analyze.", success: true });
+        }
+
+        // Prepare bulk update operations
+        const bulkOps = answerSheets.map((sheet) => {
+            const analysis = analyseTest(questions, sheet.answers);
+
+            return {
+                updateOne: {
+                    filter: { schedulePaper: sheet.schedulePaper, user: sheet.user },
+                    update: {
+                        $set: {
+                            answers: analysis?.analysedAns ?? sheet.answers,
+                            correctAns: analysis?.correctAns,
+                            incorrectAns: analysis?.incorrectAns,
+                            skippedAns: analysis?.skippedAns,
+                            totalMarks: analysis?.totalMarks,
+                            obtainedMarks: analysis?.obtainedMarks,
+                        }
+                    }
+                }
+            };
+        });
+
+        // Perform bulk update
+        await AnswerSheet.bulkWrite(bulkOps);
+
+        return nextSuccess({
+            message: "Answer sheets analyzed and updated successfully.",
+            success: true
+        });
+
+    } catch (err: any) {
+        console.error("Error in PUT /api/analyse:", err);
+        return nextError("Internal server error.");
     }
-}
+};
