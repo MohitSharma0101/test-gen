@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { TQuestion } from "./Question";
+import { PaperStatus } from "@/data/const";
 
 export type TPaper = {
   id: string;
@@ -8,6 +9,7 @@ export type TPaper = {
   author: string;
   questions: TQuestion[];
   course?: string;
+  status?: PaperStatus;
   createdAt: string;
   updatedAt: string;
 };
@@ -25,6 +27,11 @@ export const PaperSchema = new mongoose.Schema(
     course: {
       type: String,
       required: false,
+    },
+    status: {
+      type: String,
+      enum: PaperStatus,
+      default: PaperStatus.PUBLIC
     },
     questions: [
       {

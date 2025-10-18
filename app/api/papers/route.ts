@@ -5,6 +5,7 @@ import "@/models/Chapter";
 import "@/models/Question";
 import { TChapter } from "@/models/Chapter";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
+import { PaperStatus } from "@/data/const";
 
 export const GET = async (request: NextRequest) => {
   try {
@@ -14,10 +15,13 @@ export const GET = async (request: NextRequest) => {
     const course = searchParams.get("course");
     const limit = Number(searchParams.get("limit") || 10);
     const page = Number(searchParams.get("page") || 1);
+    const status = searchParams.get("status") as PaperStatus | undefined;
+
     const query: any = {};
     if (id) query._id = id;
     if (author) query.author = author;
     if (course) query.course = course;
+    if (status) query.status = status;
 
     await dbConnect();
     const papers = await Paper.find(query)
@@ -31,7 +35,7 @@ export const GET = async (request: NextRequest) => {
           model: "Chapter",
         },
       })
-      .exec();
+      .lean();
 
     const totalPapers = await Paper.countDocuments(query);
     const totalPages = Math.ceil(totalPapers / limit);
@@ -50,7 +54,7 @@ export const GET = async (request: NextRequest) => {
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { id, title, questions, author } = (await request.json()) as TPaper;
+    const { id, title, questions, author, status } = (await request.json()) as TPaper;
 
     if (!title || !questions || !questions.length) {
       return NextResponse.json(
@@ -66,7 +70,7 @@ export const POST = async (request: NextRequest) => {
     const course = (questions?.[0]?.chapter as TChapter)?.course;
     const questionsIds = questions.map((q) => q._id);
 
-    const paperObj = { title, questions: questionsIds, author, course };
+    const paperObj = { title, questions: questionsIds, author, course, status };
 
     if (id) {
       const paper = await Paper.findByIdAndUpdate(id, paperObj);

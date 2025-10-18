@@ -8,6 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 export type ColumnConfig<T> = {
   header: string;
@@ -47,7 +48,7 @@ const DataTable = <T,>({
               {columns.map((col, index) => (
                 <TableHead
                   key={String(col.accessor) + index}
-                  className={`${col.className || ""} text-right`}
+                  className={cn(`text-right`, index === 0 && 'text-left', col.className)}
                 >
                   {col.header}
                 </TableHead>
@@ -63,7 +64,7 @@ const DataTable = <T,>({
                 {columns.map((col, index) => (
                   <TableCell
                     key={String(col.accessor) + index}
-                    className={`${col.cellClassName || "text-right"}`}
+                    className={cn(`text-right`, index === 0 && 'text-left', col.cellClassName)}
                   >
                     {col.render
                       ? col.render(row, rowIndex)

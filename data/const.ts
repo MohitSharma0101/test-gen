@@ -138,3 +138,15 @@ export const ThresholdOptions = [
   { label: "90%", value: Threshold.NINE },
   { label: "100%", value: Threshold.TEN },
 ];
+
+export enum PaperStatus {
+  DRAFT = "DRAFT",
+  PUBLIC = "PUBLIC",
+  PRIVATE = 'PRIVATE'
+}
+
+export const PaperStatusOptions = [
+  { label: "Public", value: PaperStatus.PUBLIC },
+  { label: "Private", value: PaperStatus.PRIVATE },
+  { label: "Draft", value: PaperStatus.DRAFT },
+]

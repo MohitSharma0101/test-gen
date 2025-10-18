@@ -1,4 +1,5 @@
 import { toast } from "@/components/ui/use-toast";
+import { PaperStatus } from "@/data/const";
 import { api, ENDPOINT } from "@/lib/api";
 import { TAttendance } from "@/models/Attendance";
 import { TChapter } from "@/models/Chapter";
@@ -85,7 +86,8 @@ export const fetchPapers = async (
   author?: string,
   course?: string,
   page?: number,
-  limit?: number
+  limit?: number,
+  status?: PaperStatus
 ) => {
   return (
     await api.get(ENDPOINT.papers, {
@@ -93,6 +95,7 @@ export const fetchPapers = async (
         id: id,
         author: author,
         course: course,
+        status: status,
         page: page ?? 1,
         limit: limit ?? 10,
       },
@@ -109,7 +112,8 @@ export const savePaper = async (
   title: string,
   questions: TQuestion[],
   id?: string,
-  author?: string
+  author?: string,
+  status?: PaperStatus
 ) => {
   if (questions.length === 0) return;
   try {
@@ -118,6 +122,7 @@ export const savePaper = async (
       questions,
       id,
       author,
+      status,
     });
     toast({
       title: "💾 Question Paper saved!",

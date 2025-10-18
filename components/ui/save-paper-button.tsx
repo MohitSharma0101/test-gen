@@ -14,6 +14,7 @@ import type { TQuestion } from "@/models/Question";
 import { savePaper } from "@/service/core.service";
 import SelectCompact from "./select-compact";
 import { AUTHORS } from "@/models/Author";
+import { PaperStatus, PaperStatusOptions } from "@/data/const";
 
 type Props = {
   id?: string;
@@ -30,8 +31,25 @@ const SavePaperButton = ({
 }: Props) => {
   const [title, setTitle] = useState(defaultTitle);
   const [author, setAuthor] = useState(defaultAuthor);
+  const [status, setStatus] = useState(PaperStatus.PUBLIC);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
+
+  const onSubmit = async () => {
+    try {
+      if (title) {
+        await savePaper(title, questions, id, author, status);
+        setOpen(false);
+        setTitle("");
+      } else {
+        setError("Please enter a title to save paper.");
+      }
+    } catch (err) {
+      console.warn(err);
+      setError("Unable to save paper");
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -48,19 +66,26 @@ const SavePaperButton = ({
             on the cloud. You can access it from anywhere.
           </DialogDescription>
         </DialogHeader>
-        <div>
-          <label className="text-xs font-medium pb-1">Paper Title</label>
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-medium">Paper Title</label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter title of your paper..."
           />
-          <label className="text-xs font-medium pb-1 mt-4">Author</label>
           <SelectCompact
+            label="Author"
             options={AUTHORS.map((a) => ({ label: a, value: a }))}
             placeholder="Select Author"
             value={author}
             onChange={setAuthor}
+          />
+          <SelectCompact
+            label="Status"
+            options={PaperStatusOptions}
+            placeholder="Select Status"
+            value={status}
+            onChange={(v) => setStatus(v as PaperStatus)}
           />
           {error && (
             <p className="text-destructive text-xs pt-0.5 font-medium">
@@ -82,15 +107,7 @@ const SavePaperButton = ({
 
         <Button
           disabled={questions.length === 0 || !title}
-          onClick={async () => {
-            if (title) {
-              await savePaper(title, questions, id, author);
-              setOpen(false);
-              setTitle("");
-            } else {
-              setError("Please enter a title to save paper.");
-            }
-          }}
+          onClick={onSubmit}
           className="w-fit ml-auto"
           size={"lg"}
         >

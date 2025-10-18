@@ -1,8 +1,8 @@
 "use client";
 
 import { toast } from "@/components/ui/use-toast";
+import { PaperStatus } from "@/data/const";
 import { api, ENDPOINT } from "@/lib/api";
-import type { TPaper } from "@/models/Paper";
 import { fetchPapers } from "@/service/core.service";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
@@ -10,16 +10,17 @@ import useSWR from "swr";
 type TUsePaperProps = {
   author?: string;
   course?: string;
+  status?: PaperStatus
 };
 
-const usePapers = ({ author, course }: TUsePaperProps = {}) => {
+const usePapers = ({ author, course, status }: TUsePaperProps = {}) => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page") || 1);
-  const cache = ENDPOINT.papers + author + course + page;
+  const cache = ENDPOINT.papers + author + course + page + status;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
-      return await fetchPapers(null, author, course, page);
+      return await fetchPapers(null, author, course, page, 10, status);
     },
     {
       revalidateIfStale: false,

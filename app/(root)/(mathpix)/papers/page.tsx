@@ -2,15 +2,7 @@
 
 import React, { useState } from "react";
 import usePapers from "@/hooks/usePapers";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { getDateFromISO, getTotalMarks } from "@/lib/utils";
+import { cn, getDateFromISO, getTotalMarks } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import PreviewButton from "@/components/ui/preview-button";
 import { postUpdateUsage } from "@/service/core.service";
@@ -21,10 +13,13 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import SelectCompact from "@/components/ui/select-compact";
 import { AUTHORS } from "@/models/Author";
 import { useAuthorStore } from "@/stores/authorStore";
-import { COURSES } from "@/data/const";
+import { COURSES, PaperStatus, PaperStatusOptions } from "@/data/const";
 import Pagination from "@/components/ui/pagination";
 import { SchedulePaperSheet } from "@/components/sheets/schedule-paper-sheet";
 import { CalendarClockIcon } from "lucide-react";
+import DataTable from "@/components/ui/data-table";
+import { Badge } from "@/components/ui/badge";
+
 
 type Props = {};
 
@@ -32,9 +27,12 @@ const PapersPage = (props: Props) => {
   const { author, updateAuthor } = useAuthorStore();
   const [course, setCourse] = useState("");
   const [schedulePaperId, setSchedulePaperId] = useState<string | null>(null);
+  const [status, setStatus] = useState(PaperStatus.PUBLIC);
+
   const { papers, data, loading, deletePaper, refresh } = usePapers({
     author,
     course,
+    status,
   });
 
   const isFilterApplied = author || course;
@@ -42,7 +40,17 @@ const PapersPage = (props: Props) => {
   const onClearFilter = () => {
     if (author) updateAuthor();
     if (course) setCourse("");
+    if (status) setStatus(PaperStatus.PUBLIC)
   };
+
+  const getStatusColor = (status?: PaperStatus) => {
+    switch (status) {
+      case PaperStatus.PUBLIC: return 'bg-green-500'
+      case PaperStatus.PRIVATE: return 'bg-black'
+      case PaperStatus.DRAFT: return 'bg-blue-500';
+      default: return 'bg-slate-500';
+    }
+  }
 
   return (
     <div className="p-2 lg:p-4">
@@ -71,6 +79,12 @@ const PapersPage = (props: Props) => {
             className="w-[200px]"
             canUnselect
           />
+          <SelectCompact
+            options={PaperStatusOptions}
+            placeholder="Select Status"
+            value={status}
+            onChange={(v) => setStatus(v as PaperStatus)}
+          />
           {isFilterApplied && (
             <Button
               size={"sm"}
@@ -90,35 +104,16 @@ const PapersPage = (props: Props) => {
             <Skeleton className="w-full h-[60px]" />
           </div>
         ) : (
-          <Table className="mt-2">
-            <TableHeader className="border border-slate-300">
-              <TableRow className="divide-x divide-slate-300 border-b border-slate-300">
-                <TableHead className="min-w-[200px]">Title</TableHead>
-                <TableHead className="w-[130px] text-right">
-                  Total Questions
-                </TableHead>
-                <TableHead className="w-[120px] text-right">Author</TableHead>
-                <TableHead className="w-[120px] text-right">Class</TableHead>
-                <TableHead className="w-[120px] text-right">
-                  Total Marks
-                </TableHead>
-                <TableHead className="w-[130px] text-right">
-                  Created At
-                </TableHead>
-                <TableHead className="w-[150px] text-right">
-                  Last Updated At
-                </TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-slate-300 border border-slate-300">
-              {papers.map((paper) => (
-                <TableRow
-                  key={paper._id}
-                  className="divide-x divide-slate-300 border-slate-300"
-                >
-                  <TableCell className="font-medium  flex items-center">
-                    <p className="w-[220px] ">{paper.title}</p>
+          <DataTable
+            data={papers}
+            className="pt-4"
+            columns={[
+              {
+                header: "Title",
+                accessor: 'title',
+                render: (paper) => (
+                  <div className="flex items-center justify-start text-left ">
+                    <p className="w-[220px] font-medium">{paper.title}</p>
                     <Button
                       variant={"outline"}
                       size={"icon"}
@@ -127,33 +122,63 @@ const PapersPage = (props: Props) => {
                     >
                       <CalendarClockIcon className="w-5 h-5" />
                     </Button>
-
                     <PreviewButton
                       questions={paper.questions}
                       defaultTwoColumn
                       onPrint={() => postUpdateUsage(paper.questions)}
                       className="ml-2"
                     />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {paper.questions.length}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {paper.author || "-"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {paper.course || "-"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {getTotalMarks(paper.questions)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {getDateFromISO(paper.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {getDateFromISO(paper.updatedAt)}
-                  </TableCell>
-                  <TableCell className="text-center flex items-center justify-center gap-2">
+                  </div>
+                ),
+                className: "min-w-[200px]"
+              },
+              {
+                header: "Total Questions",
+                render: (paper) => paper.questions.length,
+                className: "w-[130px]",
+              },
+              {
+                header: "Author",
+                render: (paper) => paper.author || "-",
+                className: "w-[120px]",
+              },
+              {
+                header: "Class",
+                accessor: "course", // Assuming 'course' maps to 'Class'
+                render: (paper) => (
+                  <div className="text-right">{paper.course || "-"}</div>
+                ),
+                className: "w-[120px]",
+              },
+              {
+                header: "Status",
+                render: (paper) => <Badge
+                  variant={'default'}
+                  className={cn('', getStatusColor(paper.status))}
+                >
+                  {paper.status ?? "-"}
+                </Badge>,
+                className: "w-[120px]",
+              },
+              {
+                header: "Total Marks",
+                render: (paper) => getTotalMarks(paper.questions),
+                className: "w-[120px]",
+              },
+              {
+                header: "Created At",
+                render: (paper) => getDateFromISO(paper.createdAt),
+                className: "w-[130px]",
+              },
+              {
+                header: "Last Updated At",
+                render: (paper) => getDateFromISO(paper.updatedAt),
+                className: "w-[150px]",
+              },
+              {
+                header: "Actions",
+                render: (paper) => (
+                  <div className="flex items-center justify-center gap-2">
                     <Link
                       href={`/papers/edit/${paper._id}`}
                       className={buttonVariants({
@@ -164,11 +189,15 @@ const PapersPage = (props: Props) => {
                       <Edit2Icon className="w-4 h-4" />
                     </Link>
                     <DeleteButton onDelete={() => deletePaper(paper._id)} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                ),
+                className: "w-[100px] text-center",
+                cellClassName: "flex items-center justify-center gap-2"
+              },
+            ]}
+            loading={false}
+            rowKey={(paper) => paper._id}
+          />
         )}
         <div className="my-4">
           <Pagination totalPages={data?.totalPages} hideLimit />
