@@ -4,6 +4,8 @@ import { nextError, nextSuccess } from "@/lib/nextUtils";
 import { analyzeQuestions } from "@/lib/test-utils";
 import AnswerSheet, { TAnswerSheet } from "@/models/AnswerSheet";
 import { NextRequest } from "next/server";
+import '@/models/Question';
+import '@/models/Chapter';
 
 export const GET = async (req: NextRequest) => {
     try {
