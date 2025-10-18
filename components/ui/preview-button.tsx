@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useTransition } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "./sheet";
-import { Button } from "./button";
+import { Button, ButtonProps } from "./button";
 import { Print, PrintContent, PrintTrigger } from "./print";
 import PaperFrame from "../frames/paper-frame";
 import type { TQuestion } from "@/models/Question";
@@ -18,6 +18,7 @@ type Props = {
   className?: string;
   onQuestionRemove?: (question: TQuestion) => void;
   editable?: boolean;
+  variant?: ButtonProps['variant']
 };
 
 const PreviewButton = ({
@@ -27,6 +28,7 @@ const PreviewButton = ({
   className,
   onQuestionRemove,
   editable,
+  variant = 'outline'
 }: Props) => {
   const [twoColumn, setTwoColumn] = useState(defaultTwoColumn);
   const [loadPreview, setLoadPreview] = useState(false);
@@ -43,7 +45,7 @@ const PreviewButton = ({
       <SheetTrigger asChild>
         <Button
           disabled={questions.length === 0}
-          variant={"outline"}
+          variant={variant}
           className={className}
         >
           Preview
@@ -51,9 +53,9 @@ const PreviewButton = ({
       </SheetTrigger>
       <SheetContent
         side={"bottom"}
-        className="max-h-[90svh] m-auto rounded max-w-screen-lg scrollbar-hide overflow-scroll"
+        className="max-h-[90svh] px-2 pt-10 m-auto rounded max-w-screen-lg scrollbar-hide overflow-scroll"
       >
-        <div className="flex gap-2 bg-white w-full mr-5 z-10">
+        <div className="flex gap-2 bg-white w-full mr-5 z-10 flex-wrap">
           <Print>
             <PrintTrigger
               className="px-6"

@@ -1,4 +1,5 @@
-import { TAnswer } from "@/models/AnswerSheet";
+import { QuestionAnalyze } from "@/data/const";
+import { TAnalysedQuestion, TAnswer, TAnswerSheet } from "@/models/AnswerSheet";
 import { TQuestion } from "@/models/Question";
 
 
@@ -81,3 +82,65 @@ export const analyseTest = (questions: TQuestion[], answers: TAnswer[]) => {
   };
 };
 
+
+export function analyzeQuestions(
+  answerSheets: TAnswerSheet<true>[],
+  options?: {
+    threshold?: number;
+    analyzeOn?: QuestionAnalyze;
+    topN?: number;
+  }
+): TAnalysedQuestion[] {
+  const { threshold = 0.5, analyzeOn, topN } = options || {};
+
+  if (!answerSheets || answerSheets.length === 0) return [];
+
+  // Flatten all responses
+  const allResponses = answerSheets.flatMap(a => a.answers);
+
+  // Aggregate per question
+  const summary: Record<string, { total: number; incorrect: number; totalTime: number, question: TQuestion }> = {};
+  for (const r of allResponses) {
+    const q = summary[String(r.question._id)] ||= { total: 0, incorrect: 0, totalTime: 0, question: r.question };
+    q.total++;
+    q.totalTime += r.timeSpent;
+    if (!r.isCorrect) q.incorrect++;
+  }
+
+  // Compute stats
+  const stats: TAnalysedQuestion[] = Object.entries(summary).map(([id, s]) => ({
+    question: s.question,
+    incorrectRate: s.incorrect / s.total,
+    avgTimeSpent: s.totalTime / s.total,
+    normalizedTime: 0, // will calculate next
+    attempts: s.total
+  }));
+
+  // Normalize avgTimeSpent
+  const maxTime = Math.max(...stats.map(q => q.avgTimeSpent));
+  const minTime = Math.min(...stats.map(q => q.avgTimeSpent));
+  const range = maxTime - minTime || 1;
+
+  for (const q of stats) {
+    q.normalizedTime = (q.avgTimeSpent - minTime) / range;
+  }
+
+  // Filter by threshold
+  let filtered: TAnalysedQuestion[] = [];
+  switch (analyzeOn) {
+    case QuestionAnalyze.INCORRECT: {
+      filtered = stats.filter(q => q.incorrectRate >= threshold)
+        .sort((a, b) => b.incorrectRate - a.incorrectRate);
+      break;
+    }
+    case QuestionAnalyze.TIME_SPENT: {
+      filtered = stats.filter(q => q.normalizedTime >= threshold)
+        .sort((a, b) => b.normalizedTime - a.normalizedTime);
+      break;
+    }
+  }
+  // Apply topN limit if provided
+  if (topN) filtered = filtered.slice(0, topN);
+
+  return filtered;
+}

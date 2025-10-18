@@ -1,21 +1,31 @@
 import mongoose from "mongoose";
 import { TUser } from "./User";
+import { TQuestion } from "./Question";
+
+export type TAnalysedQuestion = {
+    question: TQuestion;
+    incorrectRate: number;
+    avgTimeSpent: number;
+    normalizedTime: number;
+    attempts: number;
+}
 
 export type TUserResult = TUser & {
     result?: TAnswerSheet
 }
 
-export type TAnswer = {
-    question: string; // Question ID
+export type TAnswer<Populated = false> = {
+    question: Populated extends true ? TQuestion : string; // Question ID
     answer: string; // Selected answer (could be text or option key)
     isCorrect?: boolean;
+    timeSpent: number;
 };
 
-export type TAnswerSheet = {
+export type TAnswerSheet<Populated = false> = {
     _id: string;
     schedulePaper: string; // ObjectId as string
     user: string; // userId (not Mongo _id)
-    answers: TAnswer[];
+    answers: TAnswer<Populated>[];
     submittedOn?: string;
     startedOn?: string;
     createdAt: string;

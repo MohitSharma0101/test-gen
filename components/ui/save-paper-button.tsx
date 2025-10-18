@@ -81,7 +81,7 @@ const SavePaperButton = ({
         </div>
 
         <Button
-          disabled={questions.length === 0}
+          disabled={questions.length === 0 || !title}
           onClick={async () => {
             if (title) {
               await savePaper(title, questions, id, author);

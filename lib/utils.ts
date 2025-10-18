@@ -3,6 +3,7 @@ import type { SubjectQuestions, TQuestion } from "@/models/Question";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Clock from "./clock";
+import { toast } from "@/components/ui/use-toast";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -164,8 +165,6 @@ export function getScheduleStatus(startTime: string, endTime: string) {
   return "upcoming";
 }
 
-
-
 export const sortResultsOnRank = (results: TUserResult[]) => {
   return results?.toSorted((a, b) => {
     const aMarks = a.result?.obtainedMarks || 0;
@@ -198,3 +197,19 @@ export const sortResultsOnRank = (results: TUserResult[]) => {
     return bTimeTaken - aTimeTaken; // Less time taken = higher rank
   }) ?? []
 }
+
+export const copyToClipboard = (value?: string) => {
+  try {
+    if(!value) return;
+    navigator.clipboard.writeText(value);
+    toast({
+      title: "Copied!",
+      variant: "success",
+    });
+  } catch {
+    toast({
+      title: "Unable to copy!",
+      variant: "destructive",
+    });
+  }
+};

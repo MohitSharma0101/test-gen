@@ -100,3 +100,41 @@ export const PAPER_DURATION_OPTIONS = [
   { label: "20 min", value: "20" },
   { label: "10 min", value: "10" },
 ];
+
+export enum QuestionAnalyze {
+  INCORRECT = 'INCORRECT',
+  TIME_SPENT = 'TIME_SPENT'
+}
+
+export const QuestionAnalyzeOptions = [
+  { label: "Incorrect", value: QuestionAnalyze.INCORRECT },
+  { label: "Time Spent", value: QuestionAnalyze.TIME_SPENT }
+]
+
+export enum Threshold {
+  ZERO = "0.0",
+  ONE = "0.1",
+  TWO = "0.2",
+  THREE = "0.3",
+  FOUR = "0.4",
+  FIVE = "0.5",
+  SIX = "0.6",
+  SEVEN = "0.7",
+  EIGHT = "0.8",
+  NINE = "0.9",
+  TEN = "1.0",
+}
+
+export const ThresholdOptions = [
+  { label: "0%", value: Threshold.ZERO },
+  { label: "10%", value: Threshold.ONE },
+  { label: "20%", value: Threshold.TWO },
+  { label: "30%", value: Threshold.THREE },
+  { label: "40%", value: Threshold.FOUR },
+  { label: "50%", value: Threshold.FIVE },
+  { label: "60%", value: Threshold.SIX },
+  { label: "70%", value: Threshold.SEVEN },
+  { label: "80%", value: Threshold.EIGHT },
+  { label: "90%", value: Threshold.NINE },
+  { label: "100%", value: Threshold.TEN },
+];

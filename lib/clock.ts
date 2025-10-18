@@ -86,6 +86,37 @@ class Clock {
   
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   }
+  static getTimeInFormat2(timeInSec: number): string {
+    if (isNaN(timeInSec) || timeInSec < 0) {
+      return "0s";
+    }
+
+    const diffInSeconds = Math.floor(timeInSec);
+
+    const hours = Math.floor(diffInSeconds / 3600);
+    const minutes = Math.floor((diffInSeconds % 3600) / 60);
+    const seconds = diffInSeconds % 60;
+
+    const parts = [];
+
+    if (hours > 0) {
+      parts.push(`${hours}hr`);
+    }
+
+    if (minutes > 0 || (hours > 0 && seconds === 0)) {
+      parts.push(`${minutes}min`);
+    }
+
+    if (seconds > 0 || parts.length === 0) {
+      parts.push(`${seconds}s`);
+    }
+
+    if (diffInSeconds === 0 && parts.length === 0) {
+      return "0s";
+    }
+
+    return parts.join(" ");
+  }
 }
 
 export default Clock;
