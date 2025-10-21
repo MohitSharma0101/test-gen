@@ -19,6 +19,7 @@ export const ENDPOINT = {
   answerSheets: "/answer-sheets",
   recheck: "/answer-sheets/recheck",
   analyzeQuestions: '/answer-sheets/analyze',
+  mergePapers: '/papers/merge',
 
   //auth
   login: "auth/login",

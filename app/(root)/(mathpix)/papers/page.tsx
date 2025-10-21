@@ -19,6 +19,9 @@ import { SchedulePaperSheet } from "@/components/sheets/schedule-paper-sheet";
 import { CalendarClockIcon } from "lucide-react";
 import DataTable from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
+import { MergeIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MergePaperSheet } from "@/components/sheets/merge-paper-sheet";
 
 
 type Props = {};
@@ -28,6 +31,8 @@ const PapersPage = (props: Props) => {
   const [course, setCourse] = useState("");
   const [schedulePaperId, setSchedulePaperId] = useState<string | null>(null);
   const [status, setStatus] = useState(PaperStatus.PUBLIC);
+  const [selectedPapers, setSelectedPapers] = useState<string[]>([]);
+  const [openMergePapers, setOpenMergePapers] = useState(false);
 
   const { papers, data, loading, deletePaper, refresh } = usePapers({
     author,
@@ -52,11 +57,25 @@ const PapersPage = (props: Props) => {
     }
   }
 
+  const omMergePapers = () => {
+    setOpenMergePapers(true);
+  }
+
   return (
     <div className="p-2 lg:p-4">
       <div className="flex-1 rounded">
-        <div className="rounded h-[52px] px-2 lg:px-4 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center justify-between">
+        <div className="rounded h-[52px] px-2 lg:px-4 border border-slate-200 bg-slate-300 text-sm font-medium flex gap-2 items-center">
           PAPERS {data?.totalPapers ? `(${data?.totalPapers})` : ""}
+          <Button
+            disabled={selectedPapers.length <= 1}
+            variant={"outline"}
+            size={"sm"}
+            className="ml-auto"
+            onClick={omMergePapers}
+          >
+            <MergeIcon className='size-4 mr-2' />
+            Merge
+          </Button>
           <Button variant={"outline"} size={"sm"} onClick={refresh}>
             <RefreshCcw className="w-4 h-4 mr-2" />
             Refresh
@@ -108,6 +127,22 @@ const PapersPage = (props: Props) => {
             data={papers}
             className="pt-4"
             columns={[
+              {
+                header: "",
+                cellClassName: "px-2",
+                render: (paper) => (
+                  <Checkbox
+                    checked={selectedPapers?.includes(paper._id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedPapers(prev => [...prev, paper._id])
+                      } else {
+                        setSelectedPapers(prev => prev.filter(id => id != paper._id))
+                      }
+                    }}
+                  />
+                )
+              },
               {
                 header: "Title",
                 accessor: 'title',
@@ -209,6 +244,20 @@ const PapersPage = (props: Props) => {
             onOpenChange={() => setSchedulePaperId(null)}
           />
         )}
+        {
+          openMergePapers && (
+            <MergePaperSheet
+              open={openMergePapers}
+              onOpenChange={setOpenMergePapers}
+              paperIds={selectedPapers}
+              onClear={() => {
+                setSelectedPapers([]);
+                setOpenMergePapers(false);
+              }}
+              onRefresh={refresh}
+            />
+          )
+        }
       </div>
     </div>
   );
