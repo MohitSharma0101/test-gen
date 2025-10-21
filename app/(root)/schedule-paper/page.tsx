@@ -53,7 +53,7 @@ const SchedulePaperPage = (props: Props) => {
 
     return (
         <PageWrapper
-            title='SCHEDULE PAPERS'
+            title='ONLINE TEST'
             headerActions={headerActions}
             state={loading ? "loading" : error ? 'error' : isEmpty ? 'empty' : noData ? 'no-data' : 'data'}
         >

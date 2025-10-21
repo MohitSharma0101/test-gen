@@ -22,3 +22,28 @@ export const GET = async (req: NextRequest) => {
         return nextError();
     }
 }
+
+export const DELETE = async (req: NextRequest) => {
+    try {
+      const { searchParams } = new URL(req.url);
+      const id = searchParams.get("id");
+  
+      if (!id) {
+        return nextError("AnswerSheet ID is required");
+      }
+  
+      await dbConnect();
+  
+      const deleted = await AnswerSheet.findByIdAndDelete(id);
+  
+      if (!deleted) {
+        return nextError("AnswerSheet not found or already deleted", 404);
+      }
+  
+      return nextSuccess({ message: "AnswerSheet deleted successfully", deleted });
+  
+    } catch (err) {
+      console.error("DELETE /answersheet error:", err);
+      return nextError("Internal server error");
+    }
+  };

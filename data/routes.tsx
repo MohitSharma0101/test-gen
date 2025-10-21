@@ -76,8 +76,8 @@ export const ROUTES = [
     icon: <IndianRupeeIcon className="w-5 h-5 " strokeWidth={2} />,
   },
   {
-    label: "Schedule Papers",
-    href: "/schedule-paper",
+    label: "Online Test",
+    href: "/online-test",
     icon: <FileClockIcon className="w-5 h-5 " strokeWidth={2} />,
   },
 ];

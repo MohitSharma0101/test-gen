@@ -6,6 +6,15 @@ function recheck(scheduleId: string) {
     })
 }
 
+function deleteAnswerSheet(id: string) {
+    return api.delete(ENDPOINT.answerSheets, {
+        params: {
+            id
+        }
+    })
+}
+
 export const TestService = {
-    recheck
+    recheck,
+    deleteAnswerSheet
 }

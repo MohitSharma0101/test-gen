@@ -11,6 +11,7 @@ import { Button } from "../ui/button";
 import { CheckCheckIcon } from "lucide-react";
 import { TestService } from "@/service/test.service";
 import { toast } from "../ui/use-toast";
+import DeleteButton from "../ui/delete-button";
 
 type Props = {
     open: boolean;
@@ -47,7 +48,24 @@ export const ViewResultSheet = ({ open, scheduleId, title, batchId, onOpenChange
                 variant: 'destructive',
                 title: "Unable to update results!"
             })
-        } finally {
+        }
+    }
+
+    const onDelete = async (answerSheetId?: string) => {
+        try {
+            if (!answerSheetId) return;
+            await TestService.deleteAnswerSheet(answerSheetId);
+            toast({
+                variant: 'success',
+                title: "✅ Answer Sheet Deleted!"
+            })
+            refresh();
+        } catch (err) {
+            console.warn(err);
+            toast({
+                variant: 'destructive',
+                title: "Unable to update results!"
+            })
         }
     }
 
@@ -126,6 +144,17 @@ export const ViewResultSheet = ({ open, scheduleId, title, batchId, onOpenChange
                                         className: "min-w-[120px]",
                                         render: (item) => item.result?.screenLeftCount ?
                                             `${item.result?.screenLeftCount} time` : "-"
+                                    },
+                                    {
+                                        header: "Action",
+                                        className: "min-w-fit",
+                                        render: (item) => (
+                                            <DeleteButton
+                                                disabled={!item.result}
+                                                size={'icon'}
+                                                onDelete={() => onDelete(item.result?._id)}
+                                            />
+                                        )
                                     },
                                 ]}
                                 data={sortedResults}
