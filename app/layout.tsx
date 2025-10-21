@@ -3,6 +3,7 @@ import { Lato } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import PageProgressProvider from "@/provider/PageProgressProvider";
+import Link from "next/link";
 
 const lato = Lato({
   subsets: ["latin"],
@@ -21,6 +22,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <Link rel="manifest" href="/app/manifest.json" />
+        <Link rel="apple-touch-icon" href="/app/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body className={`${lato.className} bg-gray-100 print:hidden`}>
         {children}
         <Toaster />

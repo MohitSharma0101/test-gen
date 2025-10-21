@@ -9,6 +9,7 @@ import { PaperStatus, PaperStatusOptions } from "@/data/const"
 import { useState } from "react"
 import { useAuthorStore } from "@/stores/authorStore";
 import { api, ENDPOINT } from "@/lib/api";
+import { toast } from "sonner";
 
 type Props = {
     paperIds: string[];
@@ -35,6 +36,7 @@ export const MergePaperSheet = ({ paperIds, open, onOpenChange, onClear, onRefre
                 author,
                 status
             });
+            toast.success("Paper Merged!")
             onClear?.();
             onRefresh?.();
         } catch (er) {
