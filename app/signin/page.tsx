@@ -20,11 +20,10 @@ export default function LoginPage() {
 
     try {
       await AuthService.login({ username, password });
+      router.refresh();
     } catch (err) {
       setError("Something went wrong.");
-    } finally {
       setLoading(false);
-      router.refresh();
     }
   };
 

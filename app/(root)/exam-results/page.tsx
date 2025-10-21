@@ -95,6 +95,7 @@ const ExamResultsPage = () => {
           <Input
             type="date"
             className="w-fit"
+            placeholder="dd/mm/yyyy"
             max={Clock.getDate()}
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
