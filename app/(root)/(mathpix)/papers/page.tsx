@@ -146,6 +146,7 @@ const PapersPage = (props: Props) => {
               {
                 header: "Title",
                 accessor: 'title',
+                headerClassName: 'text-left',
                 render: (paper) => (
                   <div className="flex items-center justify-start text-left ">
                     <p className="w-[220px] font-medium">{paper.title}</p>
@@ -168,9 +169,9 @@ const PapersPage = (props: Props) => {
                 className: "min-w-[200px]"
               },
               {
-                header: "Total Questions",
+                header: "Total Q.",
                 render: (paper) => paper.questions.length,
-                className: "w-[130px]",
+                className: "min-w-[80px]",
               },
               {
                 header: "Author",

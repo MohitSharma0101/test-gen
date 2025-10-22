@@ -15,6 +15,7 @@ export type ColumnConfig<T> = {
   accessor?: keyof T;
   className?: string;
   cellClassName?: string;
+  headerClassName?: string;
   render?: (row: T, index: number) => React.ReactNode;
 };
 
@@ -48,7 +49,7 @@ const DataTable = <T,>({
               {columns.map((col, index) => (
                 <TableHead
                   key={String(col.accessor) + index}
-                  className={cn(`text-right`, index === 0 && 'text-left', col.className)}
+                  className={cn(`text-right`, index === 0 && 'text-left', col.className, col.headerClassName)}
                 >
                   {col.header}
                 </TableHead>
