@@ -93,6 +93,7 @@ export const MSG_TEMPLATES_META = {
 };
 
 export const PAPER_DURATION_OPTIONS = [
+  { label: "180 min", value: "180" },
   { label: "90 min", value: "90" },
   { label: "60 min", value: "60" },
   { label: "45 min", value: "45" },
@@ -102,14 +103,14 @@ export const PAPER_DURATION_OPTIONS = [
 ];
 
 export enum QuestionAnalyze {
-  INCORRECT = 'INCORRECT',
-  TIME_SPENT = 'TIME_SPENT'
+  INCORRECT = "INCORRECT",
+  TIME_SPENT = "TIME_SPENT",
 }
 
 export const QuestionAnalyzeOptions = [
   { label: "Incorrect", value: QuestionAnalyze.INCORRECT },
-  { label: "Time Spent", value: QuestionAnalyze.TIME_SPENT }
-]
+  { label: "Time Spent", value: QuestionAnalyze.TIME_SPENT },
+];
 
 export enum Threshold {
   ZERO = "0.0",
@@ -142,8 +143,8 @@ export const ThresholdOptions = [
 export enum PaperStatus {
   DRAFT = "DRAFT",
   PUBLIC = "PUBLIC",
-  PRIVATE = 'PRIVATE',
-  ONLINE = 'ONLINE',
+  PRIVATE = "PRIVATE",
+  ONLINE = "ONLINE",
 }
 
 export const PaperStatusOptions = [
@@ -151,4 +152,4 @@ export const PaperStatusOptions = [
   { label: "Private", value: PaperStatus.PRIVATE },
   { label: "Draft", value: PaperStatus.DRAFT },
   { label: "Online", value: PaperStatus.ONLINE },
-]
+];
