@@ -1,16 +1,22 @@
-import { QuestionAnalyze } from "@/data/const";
+import { QuestionAnalyze, TAG } from "@/data/const";
 import { TAnalysedQuestion, TAnswer, TAnswerSheet } from "@/models/AnswerSheet";
 import { TQuestion } from "@/models/Question";
 
-
-export const normalizeAnswer = (ans?: string): string => {
+// sync
+export const normalizeAnswer = (ans?: string, isNotMCQ?: boolean): string => {
   if (!ans) return "";
 
   // Take only first line (ignore explanation after newline)
-  const firstLine = ans?.split("\n")?.[0]?.slice(0, 2)?.trim().toLowerCase();
+  let firstLine = ans?.split("\n")?.[0]?.trim().toLowerCase();
+
+  if (!isNotMCQ) {
+    firstLine = firstLine.slice(0, 2);
+  }
 
   // Remove brackets and spaces
   const clean = firstLine.replace(/[\(\)\[\]\{\}]/g, "").trim();
+
+  if (isNotMCQ) return clean.toLowerCase();
 
   // Map A/a -> 1, etc.
   const mapping: Record<string, string> = {
@@ -27,6 +33,7 @@ export const normalizeAnswer = (ans?: string): string => {
   return mapping[clean.toLowerCase()] || clean.toLowerCase();
 };
 
+// sync
 export const analyseTest = (questions: TQuestion[], answers: TAnswer[]) => {
   let correctAns = 0;
   let incorrectAns = 0;
@@ -35,9 +42,7 @@ export const analyseTest = (questions: TQuestion[], answers: TAnswer[]) => {
   let obtainedMarks = 0;
 
   // Map of questionId => user answer
-  const answerMap = new Map(
-    answers.map((ans) => [String(ans.question), ans])
-  );
+  const answerMap = new Map(answers.map((ans) => [String(ans.question), ans]));
 
   const analysedAns: TAnswer[] = [];
 
@@ -54,7 +59,10 @@ export const analyseTest = (questions: TQuestion[], answers: TAnswer[]) => {
       continue;
     }
 
-    const normalizedCorrect = normalizeAnswer(question.ans);
+    const normalizedCorrect = normalizeAnswer(
+      question.ans,
+      isNumerical(question)
+    );
     const userAns = userAnswer.answer.trim();
     const isCorrect = userAns === normalizedCorrect;
 
@@ -73,7 +81,7 @@ export const analyseTest = (questions: TQuestion[], answers: TAnswer[]) => {
   }
 
   return {
-    analysedAns,      // only answered questions
+    analysedAns, // only answered questions
     correctAns,
     incorrectAns,
     skippedAns,
@@ -81,7 +89,6 @@ export const analyseTest = (questions: TQuestion[], answers: TAnswer[]) => {
     obtainedMarks,
   };
 };
-
 
 export function analyzeQuestions(
   answerSheets: TAnswerSheet<true>[],
@@ -96,12 +103,20 @@ export function analyzeQuestions(
   if (!answerSheets || answerSheets.length === 0) return [];
 
   // Flatten all responses
-  const allResponses = answerSheets.flatMap(a => a.answers);
+  const allResponses = answerSheets.flatMap((a) => a.answers);
 
   // Aggregate per question
-  const summary: Record<string, { total: number; incorrect: number; totalTime: number, question: TQuestion }> = {};
+  const summary: Record<
+    string,
+    { total: number; incorrect: number; totalTime: number; question: TQuestion }
+  > = {};
   for (const r of allResponses) {
-    const q = summary[String(r.question._id)] ||= { total: 0, incorrect: 0, totalTime: 0, question: r.question };
+    const q = (summary[String(r.question._id)] ||= {
+      total: 0,
+      incorrect: 0,
+      totalTime: 0,
+      question: r.question,
+    });
     q.total++;
     q.totalTime += r.timeSpent;
     if (!r.isCorrect) q.incorrect++;
@@ -113,12 +128,12 @@ export function analyzeQuestions(
     incorrectRate: s.incorrect / s.total,
     avgTimeSpent: s.totalTime / s.total,
     normalizedTime: 0, // will calculate next
-    attempts: s.total
+    attempts: s.total,
   }));
 
   // Normalize avgTimeSpent
-  const maxTime = Math.max(...stats.map(q => q.avgTimeSpent));
-  const minTime = Math.min(...stats.map(q => q.avgTimeSpent));
+  const maxTime = Math.max(...stats.map((q) => q.avgTimeSpent));
+  const minTime = Math.min(...stats.map((q) => q.avgTimeSpent));
   const range = maxTime - minTime || 1;
 
   for (const q of stats) {
@@ -129,12 +144,14 @@ export function analyzeQuestions(
   let filtered: TAnalysedQuestion[] = [];
   switch (analyzeOn) {
     case QuestionAnalyze.INCORRECT: {
-      filtered = stats.filter(q => q.incorrectRate >= threshold)
+      filtered = stats
+        .filter((q) => q.incorrectRate >= threshold)
         .sort((a, b) => b.incorrectRate - a.incorrectRate);
       break;
     }
     case QuestionAnalyze.TIME_SPENT: {
-      filtered = stats.filter(q => q.normalizedTime >= threshold)
+      filtered = stats
+        .filter((q) => q.normalizedTime >= threshold)
         .sort((a, b) => b.normalizedTime - a.normalizedTime);
       break;
     }
@@ -144,3 +161,8 @@ export function analyzeQuestions(
 
   return filtered;
 }
+
+// sync
+export const isNumerical = (question?: TQuestion): boolean => {
+  return question?.tags?.includes(TAG.NUMERICAL) ?? false;
+};

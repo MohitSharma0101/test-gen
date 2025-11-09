@@ -153,3 +153,15 @@ export const PaperStatusOptions = [
   { label: "Draft", value: PaperStatus.DRAFT },
   { label: "Online", value: PaperStatus.ONLINE },
 ];
+
+// sync
+export enum TAG {
+  NUMERICAL = "Numerical",
+  CASE_STUDY = "Case Study",
+  NEET_2020 = "NEET 2020",
+  NEET_2019 = "NEET 2019",
+  LONG_QUESTIONS = "Long Questions",
+  PRACTICAL = "Practical",
+  SHORT_QUESTIONS = "Short Questions",
+}
+
