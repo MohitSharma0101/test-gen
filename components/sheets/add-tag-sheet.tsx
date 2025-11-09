@@ -15,11 +15,12 @@ import { toast } from "../ui/use-toast";
 
 type Props = {
   questionId?: string;
-  tags?: string[]
+  tags?: string[];
   children?: ReactNode;
 };
 
 export const TAGS = [
+  "Numerical",
   "Case Study",
   "NEET 2020",
   "NEET 2019",
@@ -28,9 +29,10 @@ export const TAGS = [
   "Short Questions",
 ];
 
-const AddTagSheet = ({ questionId, children , tags = [] }: Props) => {
+const AddTagSheet = ({ questionId, children, tags = [] }: Props) => {
   const [open, setOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>(tags);
+
   const onAddTags = async () => {
     try {
       if (questionId) {
@@ -38,6 +40,7 @@ const AddTagSheet = ({ questionId, children , tags = [] }: Props) => {
           id: questionId,
           tags: selectedTags,
         });
+
         toast({
           title: "Tags Added!",
         });
@@ -52,12 +55,15 @@ const AddTagSheet = ({ questionId, children , tags = [] }: Props) => {
       });
     }
   };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children || (
           <Button variant={"outline"} className="p-2 w-fit h-fit bg-white">
-           <abbr title={selectedTags.join(", ")}><TagIcon className="w-3 h-3" /></abbr> 
+            <abbr title={selectedTags.join(", ")}>
+              <TagIcon className="w-3 h-3" />
+            </abbr>
           </Button>
         )}
       </DialogTrigger>
@@ -93,9 +99,11 @@ const AddTagSheet = ({ questionId, children , tags = [] }: Props) => {
             );
           })}
         </div>
-        <Button onClick={onAddTags} className="w-fit ml-auto rounded-md">
-          <PlusIcon className="w-4 h-4 mr-1" />
-          Add Tags
+        <Button
+          onClick={onAddTags}
+          className="w-fit ml-auto rounded-md"
+        >
+          Update Tags
         </Button>
       </DialogContent>
     </Dialog>
