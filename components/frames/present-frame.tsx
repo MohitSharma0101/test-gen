@@ -14,9 +14,9 @@ const PresntFrame = ({ questions = [] }: Props) => {
       {questions.map((q, index) => (
         <div
           key={q._id}
-          className="print:break-before-page print:min-h-screen flex relative"
+          className="print:break-before-page h-screen flex relative"
         >
-          <div className="absolute inset-0 w-full h-full bg-[url('/education-plus-logo.png')] bg-no-repeat bg-center bg-contain opacity-25 bg-[length:30%] pointer-events-none" />
+          <div className="absolute inset-0 w-full h-full bg-[url('/education-plus-logo.png')] bg-no-repeat bg-center bg-contain opacity-25 bg-[length:200px] pointer-events-none" />
           <span className="pt-[10px] px-2">{index + 1}.</span>
           <Markdown text={q.text ?? ""} />
         </div>
