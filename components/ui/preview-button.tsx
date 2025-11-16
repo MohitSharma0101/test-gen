@@ -10,6 +10,7 @@ import { Columns2Icon, ListRestartIcon, Loader2Icon } from "lucide-react";
 import MCQAnsFrame from "../frames/mcq-ans-frame";
 import TeachersCopiesFrame from "../frames/teachers-copies-frame";
 import CopyQuestionsMd from "./copy--questions-md";
+import PresntFrame from "../frames/present-frame";
 
 type Props = {
   questions: TQuestion[];
@@ -18,7 +19,7 @@ type Props = {
   className?: string;
   onQuestionRemove?: (question: TQuestion) => void;
   editable?: boolean;
-  variant?: ButtonProps['variant']
+  variant?: ButtonProps["variant"];
 };
 
 const PreviewButton = ({
@@ -28,7 +29,7 @@ const PreviewButton = ({
   className,
   onQuestionRemove,
   editable,
-  variant = 'outline'
+  variant = "outline",
 }: Props) => {
   const [twoColumn, setTwoColumn] = useState(defaultTwoColumn);
   const [loadPreview, setLoadPreview] = useState(false);
@@ -85,6 +86,12 @@ const PreviewButton = ({
                 questions={questions}
                 twoColumn={twoColumn}
               />
+            </PrintContent>
+          </Print>
+          <Print>
+            <PrintTrigger>Present</PrintTrigger>
+            <PrintContent>
+              <PresntFrame questions={questions} />
             </PrintContent>
           </Print>
           <CopyQuestionsMd questions={questions} />
