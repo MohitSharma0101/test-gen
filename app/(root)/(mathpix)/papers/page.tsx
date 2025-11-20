@@ -7,9 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PreviewButton from "@/components/ui/preview-button";
 import { postUpdateUsage } from "@/service/core.service";
 import DeleteButton from "@/components/ui/delete-button";
-import Link from "next/link";
 import { Edit2Icon, RefreshCcw } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import SelectCompact from "@/components/ui/select-compact";
 import { AUTHORS } from "@/models/Author";
 import { useAuthorStore } from "@/stores/authorStore";
@@ -22,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { MergeIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MergePaperSheet } from "@/components/sheets/merge-paper-sheet";
-
+import { ViewPaperSheet } from "@/components/sheets/view-paper-sheet";
 
 type Props = {};
 
@@ -33,6 +32,7 @@ const PapersPage = (props: Props) => {
   const [status, setStatus] = useState(PaperStatus.PUBLIC);
   const [selectedPapers, setSelectedPapers] = useState<string[]>([]);
   const [openMergePapers, setOpenMergePapers] = useState(false);
+  const [viewPaperId, setViewPaperId] = useState<string | null>();
 
   const { papers, data, loading, deletePaper, refresh } = usePapers({
     author,
@@ -45,21 +45,25 @@ const PapersPage = (props: Props) => {
   const onClearFilter = () => {
     if (author) updateAuthor();
     if (course) setCourse("");
-    if (status) setStatus(PaperStatus.PUBLIC)
+    if (status) setStatus(PaperStatus.PUBLIC);
   };
 
   const getStatusColor = (status?: PaperStatus) => {
     switch (status) {
-      case PaperStatus.PUBLIC: return 'bg-green-500'
-      case PaperStatus.PRIVATE: return 'bg-black'
-      case PaperStatus.DRAFT: return 'bg-blue-500';
-      default: return 'bg-slate-500';
+      case PaperStatus.PUBLIC:
+        return "bg-green-500";
+      case PaperStatus.PRIVATE:
+        return "bg-black";
+      case PaperStatus.DRAFT:
+        return "bg-blue-500";
+      default:
+        return "bg-slate-500";
     }
-  }
+  };
 
   const omMergePapers = () => {
     setOpenMergePapers(true);
-  }
+  };
 
   return (
     <div className="p-2 lg:p-4">
@@ -73,7 +77,7 @@ const PapersPage = (props: Props) => {
             className="ml-auto"
             onClick={omMergePapers}
           >
-            <MergeIcon className='size-4 mr-2' />
+            <MergeIcon className="size-4 mr-2" />
             Merge
           </Button>
           <Button variant={"outline"} size={"sm"} onClick={refresh}>
@@ -135,18 +139,20 @@ const PapersPage = (props: Props) => {
                     checked={selectedPapers?.includes(paper._id)}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        setSelectedPapers(prev => [...prev, paper._id])
+                        setSelectedPapers((prev) => [...prev, paper._id]);
                       } else {
-                        setSelectedPapers(prev => prev.filter(id => id != paper._id))
+                        setSelectedPapers((prev) =>
+                          prev.filter((id) => id != paper._id)
+                        );
                       }
                     }}
                   />
-                )
+                ),
               },
               {
                 header: "Title",
-                accessor: 'title',
-                headerClassName: 'text-left',
+                accessor: "title",
+                headerClassName: "text-left",
                 render: (paper) => (
                   <div className="flex items-center justify-start text-left ">
                     <p className="w-[220px] font-medium">{paper.title}</p>
@@ -166,7 +172,7 @@ const PapersPage = (props: Props) => {
                     />
                   </div>
                 ),
-                className: "min-w-[200px]"
+                className: "min-w-[200px]",
               },
               {
                 header: "Total Q.",
@@ -188,12 +194,14 @@ const PapersPage = (props: Props) => {
               },
               {
                 header: "Status",
-                render: (paper) => <Badge
-                  variant={'default'}
-                  className={cn('', getStatusColor(paper.status))}
-                >
-                  {paper.status ?? "-"}
-                </Badge>,
+                render: (paper) => (
+                  <Badge
+                    variant={"default"}
+                    className={cn("", getStatusColor(paper.status))}
+                  >
+                    {paper.status ?? "-"}
+                  </Badge>
+                ),
                 className: "w-[120px]",
               },
               {
@@ -215,20 +223,18 @@ const PapersPage = (props: Props) => {
                 header: "Actions",
                 render: (paper) => (
                   <div className="flex items-center justify-center gap-2">
-                    <Link
-                      href={`/papers/edit/${paper._id}`}
-                      className={buttonVariants({
-                        variant: "outline",
-                        size: "icon",
-                      })}
+                    <Button
+                      size={"icon"}
+                      variant={"outline"}
+                      onClick={() => setViewPaperId(paper._id)}
                     >
                       <Edit2Icon className="w-4 h-4" />
-                    </Link>
+                    </Button>
                     <DeleteButton onDelete={() => deletePaper(paper._id)} />
                   </div>
                 ),
                 className: "w-[100px] text-center",
-                cellClassName: "flex items-center justify-center gap-2"
+                cellClassName: "flex items-center justify-center gap-2",
               },
             ]}
             loading={false}
@@ -245,20 +251,27 @@ const PapersPage = (props: Props) => {
             onOpenChange={() => setSchedulePaperId(null)}
           />
         )}
-        {
-          openMergePapers && (
-            <MergePaperSheet
-              open={openMergePapers}
-              onOpenChange={setOpenMergePapers}
-              paperIds={selectedPapers}
-              onClear={() => {
-                setSelectedPapers([]);
-                setOpenMergePapers(false);
-              }}
-              onRefresh={refresh}
-            />
-          )
-        }
+        {openMergePapers && (
+          <MergePaperSheet
+            open={openMergePapers}
+            onOpenChange={setOpenMergePapers}
+            paperIds={selectedPapers}
+            onClear={() => {
+              setSelectedPapers([]);
+              setOpenMergePapers(false);
+            }}
+            onRefresh={refresh}
+          />
+        )}
+        {viewPaperId && (
+          <ViewPaperSheet
+            paperId={viewPaperId}
+            open={!!viewPaperId}
+            onOpenChange={(_open) => {
+              if (!_open) setViewPaperId(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );
