@@ -4,6 +4,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Clock from "./clock";
 import { toast } from "@/components/ui/use-toast";
+import { useConfirmationStore } from "@/stores/confirmation.store";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,11 +34,7 @@ export function getRandomItems<T>(arr: T[], numItems?: number): T[] {
   return shuffled.slice(0, length);
 }
 
-export function addQueryToUrl(
-  url: string,
-  key: string,
-  value: string | number
-): string {
+export function addQueryToUrl(url: string, key: string, value: string | number): string {
   // Check if the URL already has a query string
   const separator = url.includes("?") ? "&" : "?";
 
@@ -51,10 +48,7 @@ export function addQueryToUrl(
   return updatedUrl;
 }
 
-export function segregateQuestionsBySubject(
-  questions: TQuestion[],
-  defaultSubject: string = "-"
-): SubjectQuestions[] {
+export function segregateQuestionsBySubject(questions: TQuestion[], defaultSubject: string = "-"): SubjectQuestions[] {
   const subjectMap = questions.reduce((acc, question, index) => {
     let subject: string | undefined;
 
@@ -84,18 +78,14 @@ export function segregateQuestionsBySubject(
   }));
 }
 
-export const getTotalMarks = (questions: TQuestion[]) =>
-  questions.reduce((sum, item) => sum + (item.mark || 1), 0);
+export const getTotalMarks = (questions: TQuestion[]) => questions.reduce((sum, item) => sum + (item.mark || 1), 0);
 
 export const getDateFromISO = (isoDate: string) => {
   const date = new Date(isoDate);
   return date.toLocaleDateString();
 };
 
-export function isArrayIncluded<T extends { id?: string; _id?: string }>(
-  subArray: T[],
-  mainArray: T[]
-): boolean {
+export function isArrayIncluded<T extends { id?: string; _id?: string }>(subArray: T[], mainArray: T[]): boolean {
   if (mainArray.length === 0 || subArray.length === 0) return false;
   const mainSet = new Set(mainArray.map((item) => item.id || item._id));
 
@@ -112,15 +102,11 @@ export function removeElementsById<T extends { id?: string; _id?: string }>(
   parentArray: T[],
   elementsToRemove: T[]
 ): T[] {
-  const idsToRemove = new Set(
-    elementsToRemove.map((item) => item.id || item._id)
-  );
+  const idsToRemove = new Set(elementsToRemove.map((item) => item.id || item._id));
   return parentArray.filter((item) => !idsToRemove.has(item.id || item._id));
 }
 
-export function getUniqueElementsById<T extends { id?: string; _id?: string }>(
-  array: T[]
-): T[] {
+export function getUniqueElementsById<T extends { id?: string; _id?: string }>(array: T[]): T[] {
   const seenIds = new Set();
   return array.filter((item) => {
     if (seenIds.has(item.id || item._id)) {
@@ -166,41 +152,43 @@ export function getScheduleStatus(startTime: string, endTime: string) {
 }
 
 export const sortResultsOnRank = (results: TUserResult[]) => {
-  return results?.toSorted((a, b) => {
-    const aMarks = a.result?.obtainedMarks || 0;
-    const bMarks = b.result?.obtainedMarks || 0;
+  return (
+    results?.toSorted((a, b) => {
+      const aMarks = a.result?.obtainedMarks || 0;
+      const bMarks = b.result?.obtainedMarks || 0;
 
-    if (bMarks !== aMarks) {
-      return bMarks - aMarks; // Higher marks first
-    }
+      if (bMarks !== aMarks) {
+        return bMarks - aMarks; // Higher marks first
+      }
 
-    const aCorrect = a.result?.correctAns || 0;
-    const bCorrect = b.result?.correctAns || 0;
+      const aCorrect = a.result?.correctAns || 0;
+      const bCorrect = b.result?.correctAns || 0;
 
-    if (bCorrect !== aCorrect) {
-      return bCorrect - aCorrect; // Higher correct answers next
-    }
+      if (bCorrect !== aCorrect) {
+        return bCorrect - aCorrect; // Higher correct answers next
+      }
 
-    const aIncorrect = a.result?.incorrectAns || 0;
-    const bIncorrect = b.result?.incorrectAns || 0;
+      const aIncorrect = a.result?.incorrectAns || 0;
+      const bIncorrect = b.result?.incorrectAns || 0;
 
-    if (aIncorrect !== bIncorrect) {
-      return aIncorrect - bIncorrect; // Lower incorrect answers last
-    }
+      if (aIncorrect !== bIncorrect) {
+        return aIncorrect - bIncorrect; // Lower incorrect answers last
+      }
 
-    if (!a.result?.submittedOn || !a.result.startedOn || !b.result?.submittedOn || !b.result?.startedOn) return -1;
+      if (!a.result?.submittedOn || !a.result.startedOn || !b.result?.submittedOn || !b.result?.startedOn) return -1;
 
-    // Tie-breaker: Submission time (faster is better)
-    const aTimeTaken = Clock.getTimeDifference(a.result?.submittedOn || 0, a.result?.startedOn || 0);
-    const bTimeTaken = Clock.getTimeDifference(b.result?.submittedOn || 0, b.result?.startedOn || 0);
+      // Tie-breaker: Submission time (faster is better)
+      const aTimeTaken = Clock.getTimeDifference(a.result?.submittedOn || 0, a.result?.startedOn || 0);
+      const bTimeTaken = Clock.getTimeDifference(b.result?.submittedOn || 0, b.result?.startedOn || 0);
 
-    return bTimeTaken - aTimeTaken; // Less time taken = higher rank
-  }) ?? []
-}
+      return bTimeTaken - aTimeTaken; // Less time taken = higher rank
+    }) ?? []
+  );
+};
 
 export const copyToClipboard = (value?: string) => {
   try {
-    if(!value) return;
+    if (!value) return;
     navigator.clipboard.writeText(value);
     toast({
       title: "Copied!",
@@ -212,4 +200,24 @@ export const copyToClipboard = (value?: string) => {
       variant: "destructive",
     });
   }
+};
+
+export const withConfirmation = (
+  fn: () => Promise<void> | void,
+  options?: {
+    title?: string;
+    description?: string;
+    confirmText?: string;
+  }
+) => {
+  useConfirmationStore.getState().openConfirm({
+    title: options?.title,
+    description: options?.description,
+    confirmText: options?.confirmText,
+    action: fn,
+  });
+};
+
+export const apiErrorMsg = (err: any, defaultMsg: string = "Something went wrong!") => {
+  return (err as any).message || defaultMsg;
 };

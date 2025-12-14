@@ -1,3 +1,4 @@
+import ConfirmationModal from "@/components/ui/confirmation-model";
 import Header from "@/components/ui/header";
 import { AuthProvider } from "@/context/auth-context";
 import { getAccount } from "@/lib/auth";
@@ -17,6 +18,7 @@ export default async function RootLayout({
       <Header />
       <Suspense>{children}</Suspense>
       <MathpixProvider />
+      <ConfirmationModal />
     </AuthProvider>
   );
 }

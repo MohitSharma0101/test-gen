@@ -2,11 +2,11 @@ import { NextRequest } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
 import SchedulePaper from "@/models/SchedulePaper";
+import AnswerSheet from "@/models/AnswerSheet";
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { paperId, duration, startTime, endTime, batchId } =
-      await request.json();
+    const { paperId, duration, startTime, endTime, batchId } = await request.json();
 
     // validations
     if (!paperId || !duration || !batchId || !startTime || !endTime) {
@@ -53,5 +53,36 @@ export const GET = async (request: NextRequest) => {
     });
   } catch (err: any) {
     return nextError(err.message || "Failed to fetch schedule papers.");
+  }
+};
+
+export const DELETE = async (request: NextRequest) => {
+  try {
+    const { searchParams } = new URL(request.url);
+    const schedulePaperId = searchParams.get("schedulePaperId");
+
+    if (!schedulePaperId) {
+      return nextError("Schedule Paper ID is required.");
+    }
+
+    await dbConnect();
+
+    const answerSheets = await AnswerSheet.find({ schedulePaper: schedulePaperId });
+    if (answerSheets.length > 0) {
+      return nextError("Paper is already attempted by students.");
+    }
+
+    const deletedSchedulePaper = await SchedulePaper.findByIdAndDelete(schedulePaperId);
+
+    if (!deletedSchedulePaper) {
+      return nextError("Schedule paper not found.");
+    }
+
+    return nextSuccess({
+      status: "success",
+      message: "Schedule paper deleted successfully.",
+    });
+  } catch (err: any) {
+    return nextError(err.message || "Failed to delete schedule paper.");
   }
 };

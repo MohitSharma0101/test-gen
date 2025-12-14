@@ -3,6 +3,7 @@ import { Lato } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import PageProgressProvider from "@/provider/PageProgressProvider";
+import { SonnerToaster } from "@/components/ui/sonnar-toaster";
 
 const lato = Lato({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body className={`${lato.className} bg-gray-100 print:hidden`}>
         {children}
         <Toaster />
+        <SonnerToaster />
         <PageProgressProvider />
       </body>
     </html>
