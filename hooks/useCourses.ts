@@ -10,9 +10,10 @@ type Props = {
 export const useCourses = ({ defaultCourse, defaultSubject }: Props = {}) => {
   const { account } = useAuth();
 
-  const courses = account?.courses
-    ? COURSES.filter((course) => account?.courses?.some((c) => c.course === course))
-    : COURSES;
+  const courses =
+    account?.courses && account?.courses?.length != 0
+      ? COURSES.filter((course) => account?.courses?.some((c) => c.course === course))
+      : COURSES;
 
   const [course, setCourse] = useState(defaultCourse || courses?.[0] || "");
 
