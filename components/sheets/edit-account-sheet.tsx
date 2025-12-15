@@ -58,7 +58,7 @@ export default function EditAccountSheet({ open, onOpenChange, defaultAccount, o
 
   const onSubmit = async () => {
     try {
-      await api.put(ENDPOINT.accounts, {
+      await api.post(ENDPOINT.accounts, {
         accountId: defaultAccount?._id,
         name: name,
         role: role,
