@@ -18,12 +18,13 @@ export const ENDPOINT = {
   schedulePaper: "schedule-paper",
   answerSheets: "/answer-sheets",
   recheck: "/answer-sheets/recheck",
-  analyzeQuestions: '/answer-sheets/analyze',
-  mergePapers: '/papers/merge',
+  analyzeQuestions: "/answer-sheets/analyze",
+  mergePapers: "/papers/merge",
 
   //auth
   login: "auth/login",
   user: "auth/user",
+  accounts: "auth/accounts",
 };
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH;
@@ -37,8 +38,7 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     // Modify the error message
-    const customErrorMessage =
-      (error.response?.data as any)?.error ?? "Something went wrong!";
+    const customErrorMessage = (error.response?.data as any)?.error ?? "Something went wrong!";
     return Promise.reject(new Error(customErrorMessage));
   }
 );

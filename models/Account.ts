@@ -1,15 +1,17 @@
-import { Schema, model, models, Document } from "mongoose";
+import { Role } from "@/data/const";
+import { Schema, model, models } from "mongoose";
 
-export enum Role {
-  TEACHER = "teacher",
-  ADMIN = "admin",
-}
-
-export type TAccount = Document & {
+export type TAccount = {
   _id: string;
+  name: string;
   username: string;
   password: string;
   role: Role;
+  courses?: {
+    course: string;
+    subjects: string[];
+  }[];
+  coursesString?: string;
 };
 
 const AccountSchema = new Schema<TAccount>(
@@ -21,6 +23,9 @@ const AccountSchema = new Schema<TAccount>(
       trim: true,
       lowercase: true,
     },
+    name: {
+      type: String,
+    },
     password: {
       type: String,
       required: true,
@@ -30,6 +35,15 @@ const AccountSchema = new Schema<TAccount>(
       enum: Object.values(Role),
       required: true,
     },
+    courses: [
+      {
+        course: {
+          type: String,
+          required: true,
+        },
+        subjects: [{ type: String, required: true }],
+      },
+    ],
   },
   { timestamps: true }
 );

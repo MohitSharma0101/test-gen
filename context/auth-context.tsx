@@ -35,9 +35,9 @@ export const AuthProvider = ({ account, children }: TAuthProviderProps) => {
     router.refresh();
   };
 
-  return (
-    <AuthContext.Provider value={{ account, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const parsedAccount = account
+    ? ({ ...account, courses: account.coursesString ? JSON.parse(account.coursesString) : [] } as TAccount)
+    : null;
+
+  return <AuthContext.Provider value={{ account: parsedAccount, logout }}>{children}</AuthContext.Provider>;
 };

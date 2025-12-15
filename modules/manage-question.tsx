@@ -3,27 +3,15 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import SelectCompact from "@/components/ui/select-compact";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { COURSES, MARKS, SUBJECT_MAP } from "@/data/const";
+import { MARKS } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import useQuestions from "@/hooks/useQuestions";
 import type { TChapter } from "@/models/Chapter";
 import type { TQuestion } from "@/models/Question";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  CheckCheckIcon,
-  CheckIcon,
-  Columns2Icon,
-  InboxIcon,
-  MenuIcon,
-  RefreshCcw,
-} from "lucide-react";
-import {
-  cn,
-  getUniqueElementsById,
-  isArrayIncluded,
-  removeElementsById,
-} from "@/lib/utils";
+import { CheckCheckIcon, CheckIcon, Columns2Icon, InboxIcon, MenuIcon, RefreshCcw } from "lucide-react";
+import { cn, getUniqueElementsById, isArrayIncluded, removeElementsById } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import Pagination from "@/components/ui/pagination";
 import TimesUsed from "@/components/ui/times-used";
@@ -34,32 +22,20 @@ import DeleteButton from "@/components/ui/delete-button";
 import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
 import SearchForm from "@/components/ui/SearchForm";
 import AddTagSheet, { TAGS } from "@/components/sheets/add-tag-sheet";
+import { useCourses } from "@/hooks/useCourses";
 
 export default function ManageQuestion() {
-  const [course, setCourse] = useState(COURSES[5]);
-  const [subject, setSubject] = useState("");
+  const { course, subject, setCourse, setSubject, courses, subjects } = useCourses();
   const [marks, setMarks] = useState("");
   const [book, setBook] = useState("");
   const { books, loading: booksLoading } = useBooks(subject, course);
   const [queryQuestionId, setQueryQuestionId] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
 
-  const { chapters, loading: chaptersLoading } = useChapters(
-    subject,
-    course,
-    book
-  );
+  const { chapters, loading: chaptersLoading } = useChapters(subject, course, book);
   const [selectedChapter, setSelectedChapter] = useState<TChapter | null>();
-  const {
-    questions,
-    loading,
-    lastIndex,
-    totalPages,
-    totalQuestions,
-    deleteQuestions,
-    refresh,
-    updateQuestion,
-  } = useQuestions(selectedChapter?._id, marks, queryQuestionId, selectedTag);
+  const { questions, loading, lastIndex, totalPages, totalQuestions, deleteQuestions, refresh, updateQuestion } =
+    useQuestions(selectedChapter?._id, marks, queryQuestionId, selectedTag);
 
   const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>([]);
 
@@ -82,7 +58,7 @@ export default function ManageQuestion() {
             className="md:w-[300px]"
             value={course}
             onChange={setCourse}
-            options={COURSES.map((c) => ({
+            options={courses.map((c) => ({
               label: c,
               value: c,
             }))}
@@ -94,7 +70,7 @@ export default function ManageQuestion() {
             emptyState="Select a Class first"
             value={subject}
             onChange={setSubject}
-            options={SUBJECT_MAP[course].map((c) => ({
+            options={subjects.map((c) => ({
               label: c,
               value: c,
             }))}
@@ -140,16 +116,13 @@ export default function ManageQuestion() {
         <div className="flex flex-wrap gap-4 ml-auto justify-end items-center whitespace-nowrap">
           <div className="flex md:flex-col gap-2 md:gap-0">
             <p>
-              Selected Questions:{" "}
-              <strong>{selectedQuestions?.length || 0}</strong>
+              Selected Questions: <strong>{selectedQuestions?.length || 0}</strong>
             </p>
           </div>
           <div className="flex gap-2">
             <DeleteButton
               size={"default"}
-              onDelete={(closeDialog) =>
-                deleteQuestions(selectedQuestions, closeDialog)
-              }
+              onDelete={(closeDialog) => deleteQuestions(selectedQuestions, closeDialog)}
               className="gap-1"
             >
               Delete
@@ -160,9 +133,7 @@ export default function ManageQuestion() {
 
       <div className="h-fit flex-grow overflow-y-scroll flex border-t border-slate-200">
         <div className="hidden md:block md:w-[200px] lg:w-[300px] h-full sticky top-0">
-          <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">
-            CHAPTERS
-          </div>
+          <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">CHAPTERS</div>
           <ol className="h-full max-h-[100vh] overflow-scroll list-decimal flex flex-col pt-4 pb-[200px]">
             {chaptersLoading ? (
               <>
@@ -215,10 +186,7 @@ export default function ManageQuestion() {
                     </>
                   ) : chapters?.length === 0 ? (
                     <div className="flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
-                      <InboxIcon
-                        className="w-[100px] h-[100px]"
-                        strokeWidth={1.4}
-                      />
+                      <InboxIcon className="w-[100px] h-[100px]" strokeWidth={1.4} />
                       <p className="text-lg">No Chapter Found!</p>
                     </div>
                   ) : (
@@ -239,9 +207,7 @@ export default function ManageQuestion() {
                 </ol>
               </SheetContent>
             </Sheet>
-            <p className="whitespace-nowrap">
-              QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}
-            </p>
+            <p className="whitespace-nowrap">QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}</p>
             {questions?.length > 0 && (
               <Button
                 size={"sm"}
@@ -249,16 +215,9 @@ export default function ManageQuestion() {
                 className="border"
                 onClick={() => {
                   if (allSelected) {
-                    setSelectedQuestions(
-                      removeElementsById(selectedQuestions, questions)
-                    );
+                    setSelectedQuestions(removeElementsById(selectedQuestions, questions));
                   } else {
-                    setSelectedQuestions(
-                      getUniqueElementsById([
-                        ...selectedQuestions,
-                        ...questions,
-                      ])
-                    );
+                    setSelectedQuestions(getUniqueElementsById([...selectedQuestions, ...questions]));
                   }
                 }}
               >
@@ -282,17 +241,9 @@ export default function ManageQuestion() {
               <Columns2Icon className="w-4 h-4" />
             </Button>
           </div>
-          <SearchForm
-            className="my-2 mx-4"
-            onSubmit={(q) => setQueryQuestionId(q)}
-          />
+          <SearchForm className="my-2 mx-4" onSubmit={(q) => setQueryQuestionId(q)} />
           {loading ? (
-            <ol
-              className={cn(
-                "border-l p-4 grid gap-4",
-                twoColumn && "grid-cols-2"
-              )}
-            >
+            <ol className={cn("border-l p-4 grid gap-4", twoColumn && "grid-cols-2")}>
               <Skeleton className="w-full h-[300px]" />
               <Skeleton className="w-full h-[300px]" />
               <Skeleton className="w-full h-[300px]" />
@@ -300,18 +251,10 @@ export default function ManageQuestion() {
               <Skeleton className="w-full h-[300px]" />
             </ol>
           ) : (
-            <ol
-              className={cn(
-                "border-l p-2 md:p-4 max-w-full",
-                twoColumn && "grid grid-cols-2"
-              )}
-            >
+            <ol className={cn("border-l p-2 md:p-4 max-w-full", twoColumn && "grid grid-cols-2")}>
               {!questions || questions?.length == 0 ? (
                 <div className="col-span-2 flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
-                  <InboxIcon
-                    className="w-[100px] h-[100px]"
-                    strokeWidth={1.4}
-                  />
+                  <InboxIcon className="w-[100px] h-[100px]" strokeWidth={1.4} />
                   <p className="text-lg">No Question Found!</p>
                 </div>
               ) : (
@@ -323,19 +266,13 @@ export default function ManageQuestion() {
                     <div className="mt-[14px] flex flex-col items-center justify-center gap-4">
                       <div className="flex flex-col gap-2">
                         <Checkbox
-                          checked={
-                            !!selectedQuestions.find(
-                              (item) => item._id === q._id
-                            )
-                          }
+                          checked={!!selectedQuestions.find((item) => item._id === q._id)}
                           onCheckedChange={(checked) => {
                             if (checked) {
                               setSelectedQuestions([q, ...selectedQuestions]);
                             } else {
                               let updatedList = selectedQuestions;
-                              updatedList = updatedList.filter(
-                                (ques) => ques._id != q._id
-                              );
+                              updatedList = updatedList.filter((ques) => ques._id != q._id);
                               setSelectedQuestions(updatedList);
                             }
                           }}
@@ -353,9 +290,7 @@ export default function ManageQuestion() {
                         <AddTagSheet questionId={q._id} tags={q.tags} />
                       </div>
                     </div>
-                    <span className="pt-[10px] px-2">
-                      {lastIndex + index + 1}.{" "}
-                    </span>
+                    <span className="pt-[10px] px-2">{lastIndex + index + 1}. </span>
                     <div>
                       <Markdown text={q.text ?? ""} />
                       <div className="flex gap-2 items-start [&_#preview]:!py-0">

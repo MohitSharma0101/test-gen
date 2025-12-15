@@ -1,12 +1,14 @@
 import { dbConnect } from "@/lib/dbUtils";
-import Account, { TAccount, Role } from "@/models/Account";
+import Account, { TAccount } from "@/models/Account";
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
+import { Role } from "@/data/const";
+import { getSafeAccount } from "@/lib/utils";
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { username, password, role } = await request.json();
+    const { username, password, role, courses, name } = await request.json();
 
     if (!username || !password) {
       return nextError("All fields are required.", 400);
@@ -27,18 +29,16 @@ export const POST = async (request: NextRequest) => {
     const newAccount = new Account({
       username,
       password: hashedPassword,
-      role: Role.ADMIN,
-    });
+      name: name || username,
+      role: role || Role.TEACHER,
+      courses: courses || [],
+    } as TAccount);
 
     await newAccount.save();
 
     return nextSuccess(
       {
-        account: {
-          id: newAccount._id,
-          username: newAccount.username,
-          role: newAccount.role,
-        },
+        account: getSafeAccount(newAccount),
       },
       201
     );

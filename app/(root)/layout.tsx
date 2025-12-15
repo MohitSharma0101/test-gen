@@ -13,6 +13,7 @@ export default async function RootLayout({
 }>) {
   const user = await getAccount();
   if (!user) redirect("/signin");
+  
   return (
     <AuthProvider account={user}>
       <Header />

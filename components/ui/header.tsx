@@ -14,13 +14,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "./button";
 import AccountMenu from "./account-menu";
-import { ROUTES } from "@/data/routes";
+import { useRoutes } from "@/hooks/useRoutes";
 
 type Props = {
   active?: "create" | "upload" | "chapter" | "book";
 };
 
 const Header = ({ active }: Props) => {
+  const routes = useRoutes();
   return (
     <div className="bg-white w-full px-3 md:px-6 py-2 items-center flex gap-4 text-sm font-bold">
       <div
@@ -36,9 +37,7 @@ const Header = ({ active }: Props) => {
         />
         <div className="flex flex-col leading-4">
           Education+
-          <span className="text-sky-500 text-[10px] font-medium">
-            Believe in Results
-          </span>
+          <span className="text-sky-500 text-[10px] font-medium">Believe in Results</span>
         </div>
       </div>
       <AccountMenu className="ml-auto" />
@@ -51,7 +50,7 @@ const Header = ({ active }: Props) => {
         <DropdownMenuContent side="bottom" align="end" className="p-1">
           <DropdownMenuLabel>Quick links</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {ROUTES.map((item) => (
+          {routes.map((item) => (
             <DropdownMenuItem asChild key={item.href} className="w-[180px]">
               <Link href={item.href} className="cursor-pointer py-2 flex items-center gap-2">
                 {item.icon}

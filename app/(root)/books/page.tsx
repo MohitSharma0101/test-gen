@@ -9,13 +9,12 @@ import React, { useState } from "react";
 import BookItem from "./book-item";
 import useBooks from "@/hooks/useBooks";
 import SelectCompact from "@/components/ui/select-compact";
-import { COURSES, SUBJECT_MAP } from "@/data/const";
+import { useCourses } from "@/hooks/useCourses";
 
 type Props = {};
 
 const BooksPage = (props: Props) => {
-  const [course, setCourse] = useState(COURSES[0]);
-  const [subject, setSubject] = useState("");
+  const { course, subject, setCourse, setSubject, courses, subjects } = useCourses();
   const { books, loading, addBook, deleteBook, updateBook } = useBooks(subject, course);
   const [chapterTitle, setBookTitle] = useState("");
 
@@ -32,14 +31,14 @@ const BooksPage = (props: Props) => {
     <div className="p-6">
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1">
-        <div className="flex gap-2">
+          <div className="flex gap-2">
             <SelectCompact
               label="Class"
               placeholder="Select a class"
               className="w-full"
               value={course}
               onChange={setCourse}
-              options={COURSES.map((c) => ({
+              options={courses.map((c) => ({
                 label: c,
                 value: c,
               }))}
@@ -50,7 +49,7 @@ const BooksPage = (props: Props) => {
               className="w-full"
               value={subject}
               onChange={setSubject}
-              options={SUBJECT_MAP[course].map((c) => ({
+              options={subjects.map((c) => ({
                 label: c,
                 value: c,
               }))}
@@ -94,13 +93,7 @@ const BooksPage = (props: Props) => {
               </div>
             ) : (
               books?.map((book: TBook, index: number) => (
-                <BookItem
-                  book={book}
-                  key={book._id}
-                  index={index}
-                  onDelete={onDeleteBook}
-                  onUpdate={updateBook}
-                />
+                <BookItem book={book} key={book._id} index={index} onDelete={onDeleteBook} onUpdate={updateBook} />
               ))
             )}
           </ol>

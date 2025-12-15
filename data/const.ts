@@ -165,3 +165,7 @@ export enum TAG {
   SHORT_QUESTIONS = "Short Questions",
 }
 
+export enum Role {
+  TEACHER = "teacher",
+  ADMIN = "admin",
+}

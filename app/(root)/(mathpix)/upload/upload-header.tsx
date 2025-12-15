@@ -1,7 +1,7 @@
 "use client";
 
 import SelectCompact from "@/components/ui/select-compact";
-import { COURSES, MARKS, SUBJECT_MAP } from "@/data/const";
+import { MARKS } from "@/data/const";
 import React, { useState } from "react";
 import useChapters from "@/hooks/useChapters";
 import type { TChapter } from "@/models/Chapter";
@@ -14,6 +14,7 @@ import PaperFrame from "@/components/frames/paper-frame";
 import type { TQuestion } from "@/models/Question";
 import PreviewButton from "@/components/ui/preview-button";
 import { TAGS } from "@/components/sheets/add-tag-sheet";
+import { useCourses } from "@/hooks/useCourses";
 
 type Props = {
   onUpload?: (chapter: string, marks: string, tags?: string[]) => Promise<void>;
@@ -22,15 +23,10 @@ type Props = {
 };
 
 const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
-  const [course, setCourse] = useState(COURSES[0]);
-  const [subject, setSubject] = useState("");
+  const { course, subject, setCourse, setSubject, courses, subjects } = useCourses();
   const [book, setBook] = useState("");
   const { books, loading: booksLoading } = useBooks(subject, course);
-  const { chapters, loading: chaptersLoading } = useChapters(
-    subject,
-    course,
-    book
-  );
+  const { chapters, loading: chaptersLoading } = useChapters(subject, course, book);
   const [chapter, setChapter] = useState("");
   const [marks, setMarks] = useState("1");
   const [loading, setLoading] = useState(false);
@@ -45,7 +41,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
           className="w-[300px] "
           value={course}
           onChange={setCourse}
-          options={COURSES.map((c) => ({
+          options={courses.map((c) => ({
             label: c,
             value: c,
           }))}
@@ -57,7 +53,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
           emptyState="Select a Class first"
           value={subject}
           onChange={setSubject}
-          options={SUBJECT_MAP[course].map((c) => ({
+          options={subjects.map((c) => ({
             label: c,
             value: c,
           }))}
@@ -119,10 +115,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         <p>
           Total Questions: <strong>{questions?.length || 0}</strong>
           <br />
-          Total Ans:{" "}
-          <strong>
-            {questions?.map((q) => q.ans)?.filter(Boolean)?.length || 0}
-          </strong>
+          Total Ans: <strong>{questions?.map((q) => q.ans)?.filter(Boolean)?.length || 0}</strong>
           <br />
           Total Marks: <strong>{questions?.length * Number(marks)}</strong>
         </p>
@@ -135,8 +128,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
               setLoading(false);
             } else {
               toast({
-                title:
-                  "Please select a Class, Subject & Chapter to upload a question set.",
+                title: "Please select a Class, Subject & Chapter to upload a question set.",
                 variant: "destructive",
               });
             }
@@ -147,10 +139,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         </Button>
         <PreviewButton questions={questions} defaultTwoColumn={twoColumn} />
         <Print>
-          <PrintTrigger
-            disabled={questions.length === 0 || loading}
-            className="px-6"
-          >
+          <PrintTrigger disabled={questions.length === 0 || loading} className="px-6">
             Print
           </PrintTrigger>
           <PrintContent>

@@ -5,6 +5,7 @@ import { twMerge } from "tailwind-merge";
 import Clock from "./clock";
 import { toast } from "@/components/ui/use-toast";
 import { useConfirmationStore } from "@/stores/confirmation.store";
+import { TAccount } from "@/models/Account";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -220,4 +221,20 @@ export const withConfirmation = (
 
 export const apiErrorMsg = (err: any, defaultMsg: string = "Something went wrong!") => {
   return (err as any).message || defaultMsg;
+};
+
+export const getSafeAccount = (account: TAccount, stringify = false) => {
+  const res = {
+    _id: account._id.toString(),
+    username: account.username,
+    name: account.name,
+    role: account.role,
+  } as TAccount;
+
+  if (stringify) {
+    res.coursesString = JSON.stringify(account.courses);
+  } else {
+    res.courses = account.courses;
+  }
+  return res;
 };

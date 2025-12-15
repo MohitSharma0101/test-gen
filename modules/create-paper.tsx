@@ -3,20 +3,14 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import SelectCompact from "@/components/ui/select-compact";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { COURSES, MARKS, SUBJECT_MAP } from "@/data/const";
+import { MARKS } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import useQuestions from "@/hooks/useQuestions";
 import type { TChapter } from "@/models/Chapter";
 import type { TQuestion } from "@/models/Question";
 import { startTransition, useEffect, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  CheckCheckIcon,
-  Columns2Icon,
-  InboxIcon,
-  MenuIcon,
-  RefreshCcw,
-} from "lucide-react";
+import { CheckCheckIcon, Columns2Icon, InboxIcon, MenuIcon, RefreshCcw } from "lucide-react";
 import {
   cn,
   getRandomItems,
@@ -40,6 +34,7 @@ import { useAuthorStore } from "@/stores/authorStore";
 import AddTagSheet, { TAGS } from "@/components/sheets/add-tag-sheet";
 import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
 import { Input } from "@/components/ui/input";
+import { useCourses } from "@/hooks/useCourses";
 
 type TCreatePaperProps = {
   mode?: "create" | "update";
@@ -47,11 +42,12 @@ type TCreatePaperProps = {
 };
 
 export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
-  const defaultChapter = defaultPaper?.questions?.[0]
-    ?.chapter as TChapter | null;
+  const defaultChapter = defaultPaper?.questions?.[0]?.chapter as TChapter | null;
 
-  const [course, setCourse] = useState(defaultPaper?.course || COURSES[5]);
-  const [subject, setSubject] = useState(defaultChapter?.subject || "");
+  const { course, subject, setCourse, setSubject, courses, subjects } = useCourses({
+    defaultCourse: defaultPaper?.course,
+    defaultSubject: defaultChapter?.subject,
+  });
   const [marks, setMarks] = useState("");
   const [book, setBook] = useState(defaultChapter?.book || "");
   const { books, loading: booksLoading } = useBooks(subject, course);
@@ -60,36 +56,14 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
   const [hideUsed, setHideUsed] = useState(false);
   const [chapterSearch, setChapterSearch] = useState("");
 
-  const { chapters, loading: chaptersLoading } = useChapters(
-    subject,
-    course,
-    book
-  );
+  const { chapters, loading: chaptersLoading } = useChapters(subject, course, book);
   const [selectedChapter, setSelectedChapter] = useState<TChapter | null>();
-  const {
-    questions,
-    loading,
-    lastIndex,
-    totalPages,
-    totalQuestions,
-    refresh,
-    updateUsage,
-    updateQuestion,
-  } = useQuestions(
-    selectedChapter?._id,
-    marks,
-    undefined,
-    selectedTag,
-    hideUsed ? 0 : undefined
-  );
+  const { questions, loading, lastIndex, totalPages, totalQuestions, refresh, updateUsage, updateQuestion } =
+    useQuestions(selectedChapter?._id, marks, undefined, selectedTag, hideUsed ? 0 : undefined);
 
-  const chapterToShow = chapters?.filter((c) =>
-    c.title.toLowerCase().includes(chapterSearch.toLowerCase())
-  );
+  const chapterToShow = chapters?.filter((c) => c.title.toLowerCase().includes(chapterSearch.toLowerCase()));
 
-  const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>(
-    defaultPaper?.questions || []
-  );
+  const [selectedQuestions, setSelectedQuestions] = useState<TQuestion[]>(defaultPaper?.questions || []);
 
   const [twoColumn, setTwoColumn] = useState(true);
   const allSelected = isArrayIncluded(questions ?? [], selectedQuestions);
@@ -111,7 +85,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
             className="md:w-[250px] "
             value={course}
             onChange={setCourse}
-            options={COURSES.map((c) => ({
+            options={courses.map((c) => ({
               label: c,
               value: c,
             }))}
@@ -123,7 +97,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
             emptyState="Select a Class first"
             value={subject}
             onChange={setSubject}
-            options={SUBJECT_MAP[course].map((c) => ({
+            options={subjects.map((c) => ({
               label: c,
               value: c,
             }))}
@@ -164,16 +138,8 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
             }))}
             canUnselect
           />
-          <label
-            className={cn(
-              buttonVariants({ variant: "outline" }),
-              "gap-2 mt-auto cursor-pointer"
-            )}
-          >
-            <Checkbox
-              checked={hideUsed}
-              onCheckedChange={(_checked: boolean) => setHideUsed(_checked)}
-            />
+          <label className={cn(buttonVariants({ variant: "outline" }), "gap-2 mt-auto cursor-pointer")}>
+            <Checkbox checked={hideUsed} onCheckedChange={(_checked: boolean) => setHideUsed(_checked)} />
             Hide Used
           </label>
         </div>
@@ -181,8 +147,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
         <div className="flex flex-wrap gap-4 ml-auto justify-end items-center whitespace-nowrap">
           <div className="flex md:flex-col gap-2 md:gap-0">
             <p>
-              Selected Questions:{" "}
-              <strong>{selectedQuestions?.length || 0}</strong>
+              Selected Questions: <strong>{selectedQuestions?.length || 0}</strong>
             </p>
             <p>
               Total Marks: <strong>{getTotalMarks(selectedQuestions)}</strong>
@@ -199,11 +164,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
               questions={selectedQuestions}
               onPrint={() => updateUsage(selectedQuestions)}
               defaultTwoColumn={twoColumn}
-              onQuestionRemove={(q) =>
-                setSelectedQuestions((prev) =>
-                  prev.filter((ques) => ques._id !== q._id)
-                )
-              }
+              onQuestionRemove={(q) => setSelectedQuestions((prev) => prev.filter((ques) => ques._id !== q._id))}
               editable
             />
             <Print>
@@ -218,12 +179,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
                 Print
               </PrintTrigger>
               <PrintContent>
-                <PaperFrame
-                  questions={selectedQuestions}
-                  twoColumn={twoColumn}
-                  course={course}
-                  subject={subject}
-                />
+                <PaperFrame questions={selectedQuestions} twoColumn={twoColumn} course={course} subject={subject} />
               </PrintContent>
             </Print>
           </div>
@@ -232,9 +188,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
 
       <div className="h-fit flex-grow overflow-y-scroll flex border-t border-slate-200">
         <div className="hidden md:block md:w-[200px] lg:w-[300px] h-full sticky top-0">
-          <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">
-            CHAPTERS
-          </div>
+          <div className="h-[52px] px-4 border border-slate-200 text-sm font-medium flex items-center ">CHAPTERS</div>
           <Input
             placeholder={"Search Chapter"}
             value={chapterSearch}
@@ -292,10 +246,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
                     </>
                   ) : chapters?.length === 0 ? (
                     <div className="flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
-                      <InboxIcon
-                        className="w-[100px] h-[100px]"
-                        strokeWidth={1.4}
-                      />
+                      <InboxIcon className="w-[100px] h-[100px]" strokeWidth={1.4} />
                       <p className="text-lg">No Chapter Found!</p>
                     </div>
                   ) : (
@@ -316,9 +267,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
                 </ol>
               </SheetContent>
             </Sheet>
-            <p className="whitespace-nowrap">
-              QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}
-            </p>
+            <p className="whitespace-nowrap">QUESTIONS {totalQuestions ? `(${totalQuestions})` : ""}</p>
             {questions?.length > 0 && (
               <Button
                 size={"sm"}
@@ -326,16 +275,9 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
                 className="border"
                 onClick={() => {
                   if (allSelected) {
-                    setSelectedQuestions(
-                      removeElementsById(selectedQuestions, questions)
-                    );
+                    setSelectedQuestions(removeElementsById(selectedQuestions, questions));
                   } else {
-                    setSelectedQuestions(
-                      getUniqueElementsById([
-                        ...selectedQuestions,
-                        ...questions,
-                      ])
-                    );
+                    setSelectedQuestions(getUniqueElementsById([...selectedQuestions, ...questions]));
                   }
                 }}
               >
@@ -348,10 +290,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
               <RandomInput
                 onSubmit={(random) => {
                   setSelectedQuestions((prev) =>
-                    getUniqueElementsById([
-                      ...prev,
-                      ...getRandomItems(questions, random),
-                    ])
+                    getUniqueElementsById([...prev, ...getRandomItems(questions, random)])
                   );
                 }}
               />
@@ -372,12 +311,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
             </Button>
           </div>
           {loading ? (
-            <ol
-              className={cn(
-                "border-l p-4 grid gap-4",
-                twoColumn && "grid-cols-2"
-              )}
-            >
+            <ol className={cn("border-l p-4 grid gap-4", twoColumn && "grid-cols-2")}>
               <Skeleton className="w-full h-[300px]" />
               <Skeleton className="w-full h-[300px]" />
               <Skeleton className="w-full h-[300px]" />
@@ -385,18 +319,10 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
               <Skeleton className="w-full h-[300px]" />
             </ol>
           ) : (
-            <ol
-              className={cn(
-                "border-l p-2 md:p-4 max-w-full",
-                twoColumn && "grid grid-cols-2"
-              )}
-            >
+            <ol className={cn("border-l p-2 md:p-4 max-w-full", twoColumn && "grid grid-cols-2")}>
               {!questions || questions?.length == 0 ? (
                 <div className="col-span-2 flex flex-col items-center justify-center w-full py-12 px-4 text-slate-400">
-                  <InboxIcon
-                    className="w-[100px] h-[100px]"
-                    strokeWidth={1.4}
-                  />
+                  <InboxIcon className="w-[100px] h-[100px]" strokeWidth={1.4} />
                   <p className="text-lg">No Question Found!</p>
                 </div>
               ) : (
@@ -408,19 +334,13 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
                     <div className="mt-[14px] flex flex-col items-center justify-center gap-4">
                       <div className="flex flex-col gap-2">
                         <Checkbox
-                          checked={
-                            !!selectedQuestions.find(
-                              (item) => item._id === q._id
-                            )
-                          }
+                          checked={!!selectedQuestions.find((item) => item._id === q._id)}
                           onCheckedChange={(checked) => {
                             if (checked) {
                               setSelectedQuestions([q, ...selectedQuestions]);
                             } else {
                               let updatedList = selectedQuestions;
-                              updatedList = updatedList.filter(
-                                (ques) => ques._id != q._id
-                              );
+                              updatedList = updatedList.filter((ques) => ques._id != q._id);
                               setSelectedQuestions(updatedList);
                             }
                           }}
@@ -438,9 +358,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
                         <AddTagSheet questionId={q._id} tags={q.tags} />
                       </div>
                     </div>
-                    <span className="pt-[10px] px-2">
-                      {lastIndex + index + 1}.{" "}
-                    </span>
+                    <span className="pt-[10px] px-2">{lastIndex + index + 1}. </span>
                     <div>
                       <Markdown text={q.text ?? ""} />
                       <div className="flex gap-2 items-start [&_#preview]:!py-0">
@@ -459,9 +377,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
                         <Markdown text={q.ans || ""} />
                       </div>
                     </div>
-                    <span className="pt-[10px] px-2 font-medium ml-auto">
-                      [{q.mark}]
-                    </span>
+                    <span className="pt-[10px] px-2 font-medium ml-auto">[{q.mark}]</span>
                   </label>
                 ))
               )}

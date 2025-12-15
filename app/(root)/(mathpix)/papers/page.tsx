@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import SelectCompact from "@/components/ui/select-compact";
 import { AUTHORS } from "@/models/Author";
 import { useAuthorStore } from "@/stores/authorStore";
-import { COURSES, PaperStatus, PaperStatusOptions } from "@/data/const";
+import { PaperStatus, PaperStatusOptions } from "@/data/const";
 import Pagination from "@/components/ui/pagination";
 import { SchedulePaperSheet } from "@/components/sheets/schedule-paper-sheet";
 import { CalendarClockIcon } from "lucide-react";
@@ -22,12 +22,13 @@ import { MergeIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MergePaperSheet } from "@/components/sheets/merge-paper-sheet";
 import { ViewPaperSheet } from "@/components/sheets/view-paper-sheet";
+import { useCourses } from "@/hooks/useCourses";
 
 type Props = {};
 
 const PapersPage = (props: Props) => {
   const { author, updateAuthor } = useAuthorStore();
-  const [course, setCourse] = useState("");
+  const { course, setCourse, courses } = useCourses();
   const [schedulePaperId, setSchedulePaperId] = useState<string | null>(null);
   const [status, setStatus] = useState(PaperStatus.PUBLIC);
   const [selectedPapers, setSelectedPapers] = useState<string[]>([]);
@@ -95,7 +96,7 @@ const PapersPage = (props: Props) => {
             canUnselect
           />
           <SelectCompact
-            options={COURSES.map((a) => ({ label: a, value: a }))}
+            options={courses.map((a) => ({ label: a, value: a }))}
             placeholder="Class"
             value={course}
             onChange={setCourse}
@@ -109,12 +110,7 @@ const PapersPage = (props: Props) => {
             onChange={(v) => setStatus(v as PaperStatus)}
           />
           {isFilterApplied && (
-            <Button
-              size={"sm"}
-              variant={"ghost"}
-              className="underline px-1 hover:font-bold"
-              onClick={onClearFilter}
-            >
+            <Button size={"sm"} variant={"ghost"} className="underline px-1 hover:font-bold" onClick={onClearFilter}>
               Clear Filters
             </Button>
           )}
@@ -141,9 +137,7 @@ const PapersPage = (props: Props) => {
                       if (checked) {
                         setSelectedPapers((prev) => [...prev, paper._id]);
                       } else {
-                        setSelectedPapers((prev) =>
-                          prev.filter((id) => id != paper._id)
-                        );
+                        setSelectedPapers((prev) => prev.filter((id) => id != paper._id));
                       }
                     }}
                   />
@@ -187,18 +181,13 @@ const PapersPage = (props: Props) => {
               {
                 header: "Class",
                 accessor: "course", // Assuming 'course' maps to 'Class'
-                render: (paper) => (
-                  <div className="text-right">{paper.course || "-"}</div>
-                ),
+                render: (paper) => <div className="text-right">{paper.course || "-"}</div>,
                 className: "w-[120px]",
               },
               {
                 header: "Status",
                 render: (paper) => (
-                  <Badge
-                    variant={"default"}
-                    className={cn("", getStatusColor(paper.status))}
-                  >
+                  <Badge variant={"default"} className={cn("", getStatusColor(paper.status))}>
                     {paper.status ?? "-"}
                   </Badge>
                 ),
@@ -223,11 +212,7 @@ const PapersPage = (props: Props) => {
                 header: "Actions",
                 render: (paper) => (
                   <div className="flex items-center justify-center gap-2">
-                    <Button
-                      size={"icon"}
-                      variant={"outline"}
-                      onClick={() => setViewPaperId(paper._id)}
-                    >
+                    <Button size={"icon"} variant={"outline"} onClick={() => setViewPaperId(paper._id)}>
                       <Edit2Icon className="w-4 h-4" />
                     </Button>
                     <DeleteButton onDelete={() => deletePaper(paper._id)} />

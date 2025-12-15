@@ -1,3 +1,4 @@
+import { SquareUserIcon } from "lucide-react";
 import { FileClockIcon } from "lucide-react";
 import {
   BookOpenTextIcon,
@@ -24,16 +25,19 @@ export const ROUTES = [
     label: "Upload Paper",
     href: "/upload",
     icon: <FileUpIcon className="w-5 h-5 " strokeWidth={2} />,
+    adminOnly: true,
   },
   {
     label: "Chapters",
     href: "/chapters",
     icon: <BookOpenTextIcon className="w-5 h-5 " strokeWidth={2} />,
+    adminOnly: true,
   },
   {
     label: "Books",
     href: "/books",
     icon: <BookTextIcon className="w-5 h-5" strokeWidth={2} />,
+    adminOnly: true,
   },
   {
     label: "Papers",
@@ -44,16 +48,19 @@ export const ROUTES = [
     label: "Questions",
     href: "/questions",
     icon: <FileQuestion className="w-5 h-5 " strokeWidth={2} />,
+    adminOnly: true,
   },
   {
     label: "Users",
     href: "/users",
     icon: <Users2Icon className="w-5 h-5 " strokeWidth={2} />,
+    adminOnly: true,
   },
   {
     label: "Batches",
     href: "/batch",
     icon: <GraduationCapIcon className="w-5 h-5 " strokeWidth={2} />,
+    adminOnly: true,
   },
   {
     label: "Attendance",
@@ -74,10 +81,17 @@ export const ROUTES = [
     label: "Fees",
     href: "/fees",
     icon: <IndianRupeeIcon className="w-5 h-5 " strokeWidth={2} />,
+    adminOnly: true,
   },
   {
     label: "Online Test",
     href: "/online-test",
     icon: <FileClockIcon className="w-5 h-5 " strokeWidth={2} />,
+  },
+  {
+    label: "Accounts",
+    href: "/accounts",
+    icon: <SquareUserIcon className="w-5 h-5 " strokeWidth={2} />,
+    adminOnly: true,
   },
 ];

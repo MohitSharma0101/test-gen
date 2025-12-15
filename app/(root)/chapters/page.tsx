@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SelectCompact from "@/components/ui/select-compact";
 import { Skeleton } from "@/components/ui/skeleton";
-import { COURSES, SUBJECT_MAP } from "@/data/const";
 import useChapters from "@/hooks/useChapters";
 import { TChapter } from "@/models/Chapter";
 import { InboxIcon } from "lucide-react";
@@ -13,12 +12,12 @@ import ChapterItem from "./chapter-item";
 import useBooks from "@/hooks/useBooks";
 import MoveChaptersDailog from "@/components/sheets/move-chapter-dailog";
 import { RefreshCcw } from "lucide-react";
+import { useCourses } from "@/hooks/useCourses";
 
 type Props = {};
 
 const ChaptersPage = (props: Props) => {
-  const [course, setCourse] = useState(COURSES[0]);
-  const [subject, setSubject] = useState("");
+  const { course, subject, setCourse, setSubject, courses, subjects } = useCourses();
   const { books, loading: booksLoading } = useBooks(subject, course);
   const [book, setBook] = useState("");
   const {
@@ -30,15 +29,15 @@ const ChaptersPage = (props: Props) => {
     refresh,
   } = useChapters(subject, course, book);
   const [chapterTitle, setChapterTitle] = useState("");
-  const [selectedChapters, setSelectedChapters] = useState<TChapter[]>([])
+  const [selectedChapters, setSelectedChapters] = useState<TChapter[]>([]);
 
   useEffect(() => {
     if (books && books.length > 0) {
-      setBook(books?.[0]._id)
+      setBook(books?.[0]._id);
     } else {
       setBook("");
     }
-  }, [books])
+  }, [books]);
 
   const onAddChapter = async () => {
     await addChapter(chapterTitle, book);
@@ -60,7 +59,7 @@ const ChaptersPage = (props: Props) => {
               className="w-full"
               value={course}
               onChange={setCourse}
-              options={COURSES.map((c) => ({
+              options={courses.map((c) => ({
                 label: c,
                 value: c,
               }))}
@@ -71,7 +70,7 @@ const ChaptersPage = (props: Props) => {
               className="w-full"
               value={subject}
               onChange={setSubject}
-              options={SUBJECT_MAP[course].map((c) => ({
+              options={subjects.map((c) => ({
                 label: c,
                 value: c,
               }))}
@@ -113,14 +112,17 @@ const ChaptersPage = (props: Props) => {
             CHAPTERS
             {chapters && chapters?.length > 0 && (
               <>
-                <Button className="ml-auto mr-2" variant={'secondary'} size={'sm'} onClick={refresh}>
+                <Button className="ml-auto mr-2" variant={"secondary"} size={"sm"} onClick={refresh}>
                   <RefreshCcw className="w-4 h-4 mr-2" />
                   Refresh
                 </Button>
-                <MoveChaptersDailog chapters={selectedChapters} onSuccess={() => {
-                  refresh();
-                  setSelectedChapters([]);
-                }} />
+                <MoveChaptersDailog
+                  chapters={selectedChapters}
+                  onSuccess={() => {
+                    refresh();
+                    setSelectedChapters([]);
+                  }}
+                />
               </>
             )}
           </div>
@@ -145,12 +147,12 @@ const ChaptersPage = (props: Props) => {
                   index={index}
                   onDelete={onDeleteChapter}
                   onUpdate={updateChapter}
-                  selected={Boolean(selectedChapters.find(c => c._id === chapter._id))}
+                  selected={Boolean(selectedChapters.find((c) => c._id === chapter._id))}
                   onSelectChange={(selected) => {
                     if (selected) {
-                      setSelectedChapters(prev => [...prev, chapter])
+                      setSelectedChapters((prev) => [...prev, chapter]);
                     } else {
-                      setSelectedChapters(prev => prev.filter(c => c._id !== chapter._id))
+                      setSelectedChapters((prev) => prev.filter((c) => c._id !== chapter._id));
                     }
                   }}
                 />
