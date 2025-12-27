@@ -5,9 +5,10 @@ import { useState } from "react";
 type Props = {
   defaultCourse?: string;
   defaultSubject?: string;
+  stopDefaultSelection?: boolean;
 };
 
-export const useCourses = ({ defaultCourse, defaultSubject }: Props = {}) => {
+export const useCourses = ({ defaultCourse, defaultSubject, stopDefaultSelection }: Props = {}) => {
   const { account } = useAuth();
 
   const courses =
@@ -15,7 +16,7 @@ export const useCourses = ({ defaultCourse, defaultSubject }: Props = {}) => {
       ? COURSES.filter((course) => account?.courses?.some((c) => c.course === course))
       : COURSES;
 
-  const [course, setCourse] = useState(defaultCourse || courses?.[0] || "");
+  const [course, setCourse] = useState(stopDefaultSelection ? "" : defaultCourse || courses?.[0] || "");
 
   const selectedCourse = account?.courses?.find((c) => c.course === course);
 

@@ -1,20 +1,13 @@
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./dialog";
 import { Button } from "./button";
 import { CloudUploadIcon } from "lucide-react";
 import { Input } from "./input";
 import type { TQuestion } from "@/models/Question";
 import { savePaper } from "@/service/core.service";
 import SelectCompact from "./select-compact";
-import { AUTHORS } from "@/models/Author";
 import { PaperStatus, PaperStatusOptions } from "@/data/const";
+import { useAuthors } from "@/hooks/useAuthors";
 
 type Props = {
   id?: string;
@@ -23,14 +16,9 @@ type Props = {
   questions: TQuestion[];
 };
 
-const SavePaperButton = ({
-  questions,
-  defaultTitle = "",
-  defaultAuthor,
-  id,
-}: Props) => {
+const SavePaperButton = ({ questions, defaultTitle = "", defaultAuthor, id }: Props) => {
   const [title, setTitle] = useState(defaultTitle);
-  const [author, setAuthor] = useState(defaultAuthor);
+  const { authors, author, updateAuthor } = useAuthors({ defaultAuthor });
   const [status, setStatus] = useState(PaperStatus.PUBLIC);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -48,7 +36,7 @@ const SavePaperButton = ({
       console.warn(err);
       setError("Unable to save paper");
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -62,23 +50,19 @@ const SavePaperButton = ({
         <DialogHeader>
           <DialogTitle>Save Test Paper</DialogTitle>
           <DialogDescription>
-            This will create a test paper from the selected question and save it
-            on the cloud. You can access it from anywhere.
+            This will create a test paper from the selected question and save it on the cloud. You can access it from
+            anywhere.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
           <label className="text-xs font-medium">Paper Title</label>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter title of your paper..."
-          />
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter title of your paper..." />
           <SelectCompact
             label="Author"
-            options={AUTHORS.map((a) => ({ label: a, value: a }))}
+            options={authors.map((a) => ({ label: a, value: a }))}
             placeholder="Select Author"
             value={author}
-            onChange={setAuthor}
+            onChange={updateAuthor}
           />
           <SelectCompact
             label="Status"
@@ -87,30 +71,18 @@ const SavePaperButton = ({
             value={status}
             onChange={(v) => setStatus(v as PaperStatus)}
           />
-          {error && (
-            <p className="text-destructive text-xs pt-0.5 font-medium">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-destructive text-xs pt-0.5 font-medium">{error}</p>}
           <div className="flex gap-4 justify-end pt-2 text-sm">
             <p>
               Selected Questions: <strong>{questions?.length || 0}</strong>
             </p>
             <p>
-              Total Marks:{" "}
-              <strong>
-                {questions.reduce((sum, item) => sum + (item.mark || 1), 0)}
-              </strong>
+              Total Marks: <strong>{questions.reduce((sum, item) => sum + (item.mark || 1), 0)}</strong>
             </p>
           </div>
         </div>
 
-        <Button
-          disabled={questions.length === 0 || !title}
-          onClick={onSubmit}
-          className="w-fit ml-auto"
-          size={"lg"}
-        >
+        <Button disabled={questions.length === 0 || !title} onClick={onSubmit} className="w-fit ml-auto" size={"lg"}>
           <CloudUploadIcon className="w-4 h-4 mr-2" />
           Save
         </Button>

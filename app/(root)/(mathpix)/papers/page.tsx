@@ -10,8 +10,6 @@ import DeleteButton from "@/components/ui/delete-button";
 import { Edit2Icon, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SelectCompact from "@/components/ui/select-compact";
-import { AUTHORS } from "@/models/Author";
-import { useAuthorStore } from "@/stores/authorStore";
 import { PaperStatus, PaperStatusOptions } from "@/data/const";
 import Pagination from "@/components/ui/pagination";
 import { SchedulePaperSheet } from "@/components/sheets/schedule-paper-sheet";
@@ -23,12 +21,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { MergePaperSheet } from "@/components/sheets/merge-paper-sheet";
 import { ViewPaperSheet } from "@/components/sheets/view-paper-sheet";
 import { useCourses } from "@/hooks/useCourses";
+import { useAuthors } from "@/hooks/useAuthors";
 
 type Props = {};
 
 const PapersPage = (props: Props) => {
-  const { author, updateAuthor } = useAuthorStore();
-  const { course, setCourse, courses } = useCourses();
+  const { authors, author, updateAuthor } = useAuthors();
+  const { course, setCourse, courses } = useCourses({ stopDefaultSelection: true });
   const [schedulePaperId, setSchedulePaperId] = useState<string | null>(null);
   const [status, setStatus] = useState(PaperStatus.PUBLIC);
   const [selectedPapers, setSelectedPapers] = useState<string[]>([]);
@@ -88,7 +87,7 @@ const PapersPage = (props: Props) => {
         </div>
         <div className="flex gap-2 lg:gap-4 items-center mt-3">
           <SelectCompact
-            options={AUTHORS.map((a) => ({ label: a, value: a }))}
+            options={authors.map((a) => ({ label: a, value: a }))}
             placeholder="Author"
             value={author}
             onChange={updateAuthor}

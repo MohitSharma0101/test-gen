@@ -1,7 +1,8 @@
 "use client";
 
 import { toast } from "@/components/ui/use-toast";
-import { PaperStatus } from "@/data/const";
+import { useAuth } from "@/context/auth-context";
+import { PaperStatus, Role } from "@/data/const";
 import { api, ENDPOINT } from "@/lib/api";
 import { fetchPapers } from "@/service/core.service";
 import { useSearchParams } from "next/navigation";
@@ -10,16 +11,18 @@ import useSWR from "swr";
 type TUsePaperProps = {
   author?: string;
   course?: string;
-  status?: PaperStatus
+  status?: PaperStatus;
 };
 
 const usePapers = ({ author, course, status }: TUsePaperProps = {}) => {
   const searchParams = useSearchParams();
+  const { account } = useAuth();
   const page = Number(searchParams.get("page") || 1);
   const cache = ENDPOINT.papers + author + course + page + status;
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     cache,
     async () => {
+      if (account?.role != Role.ADMIN && !author) return;
       return await fetchPapers(null, author, course, page, 10, status);
     },
     {

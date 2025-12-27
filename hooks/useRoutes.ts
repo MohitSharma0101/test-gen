@@ -13,7 +13,7 @@ export const useRoutes = () => {
   const routes = ROUTES.filter((route) => !route.adminOnly || account?.role === Role.ADMIN);
 
   useEffect(() => {
-    const route = routes.find((route) => route.href === pathname);
+    const route = routes.find((route) => pathname.includes(route.href));
     if (!route) {
       router.replace("/");
     }
