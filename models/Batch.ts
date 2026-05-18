@@ -4,6 +4,7 @@ export type TBatch = {
   _id: string;
   name: string;
   fee: number;
+  archived?: boolean;
 };
 
 const batchSchema = new mongoose.Schema(
@@ -21,6 +22,10 @@ const batchSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    archived: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

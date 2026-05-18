@@ -3,17 +3,19 @@
 import React, { useState } from "react";
 import AddBatchSheet from "@/components/sheets/add-batch-sheet";
 import useBatches from "@/hooks/useBatches";
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, PencilIcon, PlusIcon, ArchiveIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PencilIcon } from "lucide-react";
-import { PlusIcon } from "lucide-react";
+import Link from "next/link";
 import { TBatch } from "@/models/Batch";
 import ViewBatchSheet from "@/components/sheets/view-batch-sheet";
 
 type Props = {};
 
 const BatchPage = (props: Props) => {
-  const { batches, loading, refreshBatches } = useBatches({ withCount: true });
+  const { batches, loading, refreshBatches, deleteBatch, setBatchArchived } =
+    useBatches({
+    withCount: true,
+  });
   const [selectedBatch, setSelectedBatch] = useState<TBatch>();
   const [openAddBatchSheet, setOpenAddBatchSheet] = useState(false);
   const [openViewBatchSheet, setOpenViewBatchSheet] = useState(false);
@@ -22,17 +24,25 @@ const BatchPage = (props: Props) => {
     <div className="flex-1 rounded">
       <div className="rounded h-[52px] px-6 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center justify-between">
         BATCHES
-        <Button
-          variant={"outline"}
-          className="p-2 w-fit h-fit bg-white"
-          onClick={() => {
-            setSelectedBatch(undefined);
-            setOpenAddBatchSheet(true);
-          }}
-        >
-          <PlusIcon className="w-4 h-4" />
-          Add Batch
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="p-2 w-fit h-fit bg-white" asChild>
+            <Link href="/batch/archive">
+              <ArchiveIcon className="w-4 h-4 mr-1" />
+              Archived
+            </Link>
+          </Button>
+          <Button
+            variant={"outline"}
+            className="p-2 w-fit h-fit bg-white"
+            onClick={() => {
+              setSelectedBatch(undefined);
+              setOpenAddBatchSheet(true);
+            }}
+          >
+            <PlusIcon className="w-4 h-4" />
+            Add Batch
+          </Button>
+        </div>
       </div>
       <div className="px-6 py-3">
         {loading ? (
@@ -54,9 +64,24 @@ const BatchPage = (props: Props) => {
                     {batch.totalStudents || 0} Students
                   </p>
                 </div>
-                <Button variant="outline" size="sm" className="rounded-full">
-                  <PencilIcon className="w-4 h-4" />
-                </Button>
+                <div
+                  className="flex items-center gap-2"
+                  // onClick={(e) => e.stopPropagation()}
+                >
+                  <Button variant="outline" size="sm" className="rounded-full">
+                    <PencilIcon className="w-4 h-4" />
+                  </Button>
+                  {/* <DeleteButton
+                    size="sm"
+                    className="rounded-full"
+                    title="Delete batch"
+                    description={`Are you sure you want to delete "${batch.name}"? This will remove the batch from all assigned students.`}
+                    onDelete={(closeDialog) => {
+                      deleteBatch(batch._id);
+                      closeDialog();
+                    }}
+                  /> */}
+                </div>
               </div>
             ))}
           </div>
@@ -83,6 +108,11 @@ const BatchPage = (props: Props) => {
           onEdit={() => {
             setOpenAddBatchSheet(true);
           }}
+          onArchive={async () => {
+            if (!selectedBatch?._id) return;
+            await setBatchArchived(selectedBatch._id, true);
+            setOpenViewBatchSheet(false);
+          }}
         />
       )}
     </div>
@@ -90,3 +120,4 @@ const BatchPage = (props: Props) => {
 };
 
 export default BatchPage;
+

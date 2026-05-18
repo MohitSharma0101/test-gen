@@ -9,15 +9,29 @@ import CallButton from "../ui/call-button";
 import DataTable from "../ui/data-table";
 import LabelInput from "../ui/label-input";
 import useUsers from "@/hooks/useUsers";
+import DeleteButton from "../ui/delete-button";
+import { ArchiveIcon, ArchiveRestoreIcon } from "lucide-react";
 
 type Props = {
   batch?: TBatch;
   onEdit?: () => void;
+  onArchive?: () => void;
+  onUnarchive?: () => void;
+  isArchived?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 };
 
-const ViewBatchSheet = ({ batch, onEdit, open, onOpenChange }: Props) => {
+const ViewBatchSheet = ({
+  batch,
+  onEdit,
+  onArchive,
+  onUnarchive,
+  isArchived,
+  open,
+  onOpenChange,
+}: Props) => {
+
   const { users, loading } = useUsers({ batchId: batch?._id });
   const [query, setQuery] = useState("");
 
@@ -83,9 +97,46 @@ const ViewBatchSheet = ({ batch, onEdit, open, onOpenChange }: Props) => {
             </div>
           </div>
         </div>
-        <Button className="mb-2 mx-2" onClick={onEdit}>
-          Edit batch
-        </Button>
+        <div className="flex flex-col gap-2 mb-2 mx-2">
+          {!isArchived && onEdit && (
+            <Button onClick={onEdit}>Edit batch</Button>
+          )}
+          {isArchived ? (
+            <DeleteButton
+              className="w-full"
+              size="default"
+              variant="outline"
+              title="Restore batch"
+              description={`Restore "${batch?.name}" to the active batch list?`}
+              confirmText="Restore"
+              onDelete={(closeDialog) => {
+                onUnarchive?.();
+                closeDialog();
+              }}
+            >
+              <ArchiveRestoreIcon className="w-4 h-4 mr-2" />
+              Restore batch
+            </DeleteButton>
+          ) : (
+            onArchive && (
+              <DeleteButton
+                className="w-full"
+                size="default"
+                variant="outline"
+                title="Archive batch"
+                description={`Are you sure you want to archive "${batch?.name}"? It will be hidden from the batch list but student assignments are kept.`}
+                confirmText="Archive"
+                onDelete={(closeDialog) => {
+                  onArchive();
+                  closeDialog();
+                }}
+              >
+                <ArchiveIcon className="w-4 h-4 mr-2" />
+                Archive batch
+              </DeleteButton>
+            )
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   );

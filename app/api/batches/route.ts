@@ -72,9 +72,13 @@ export const GET = async (request: NextRequest) => {
 
     const searchParams = request.nextUrl.searchParams;
     const withCount = searchParams.get("withCount") === "true";
+    const archivedOnly = searchParams.get("archivedOnly") === "true";
 
-    // Fetch all batches
-    const batches = (await Batch.find()
+    const filter = archivedOnly
+      ? { archived: true }
+      : { $or: [{ archived: false }, { archived: { $exists: false } }] };
+
+    const batches = (await Batch.find(filter)
       .sort({ createdAt: -1 })
       .lean()) as unknown as TBatch[];
 
@@ -100,6 +104,67 @@ export const GET = async (request: NextRequest) => {
     }));
 
     return NextResponse.json({ batches: result }, { status: 200 });
+  } catch (err: any) {
+    return nextError(err.message);
+  }
+};
+
+export const PATCH = async (request: NextRequest) => {
+  try {
+    const { _id, archived } = await request.json();
+
+    if (!_id) {
+      return nextError("Batch id is required.");
+    }
+
+    if (typeof archived !== "boolean") {
+      return nextError("Archived status is required.");
+    }
+
+    await dbConnect();
+
+    const result = await Batch.updateOne(
+      { _id },
+      { $set: { archived } }
+    );
+
+    if (result.matchedCount === 0) {
+      return nextError("Batch not found.", 404);
+    }
+
+    const updated = (await Batch.findById(_id).select("archived").lean()) as {
+      archived?: boolean;
+    } | null;
+    if (!updated || updated.archived !== archived) {
+      return nextError("Failed to update batch archive status.");
+    }
+
+    return nextSuccess({ status: "success" });
+  } catch (err: any) {
+    return nextError(err.message);
+  }
+};
+
+export const DELETE = async (request: NextRequest) => {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return nextError("Batch id is required.");
+    }
+
+    await dbConnect();
+
+    const deleted = await Batch.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return nextError("Batch not found.", 404);
+    }
+
+    await User.updateMany({ batchIds: id }, { $pull: { batchIds: id } });
+
+    return nextSuccess({ status: "success" });
   } catch (err: any) {
     return nextError(err.message);
   }

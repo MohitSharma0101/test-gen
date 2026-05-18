@@ -20,6 +20,7 @@ type Props = {
   children?: ReactNode;
   confirmText?: string;
   disabled?: boolean;
+  variant?: ButtonProps["variant"];
 };
 
 const DeleteButton = ({
@@ -30,7 +31,8 @@ const DeleteButton = ({
   onDelete,
   confirmText,
   size = "icon",
-  disabled
+  disabled,
+  variant = "destructive",
 }: Props) => {
   const [open, setOpen] = useState(false);
   const closeDialog = () => setOpen(false);
@@ -39,11 +41,13 @@ const DeleteButton = ({
       <DialogTrigger asChild>
         <Button
           disabled={disabled}
-          variant={"destructive"}
+          variant={variant}
           size={size}
           className={className}
         >
-          <Trash2Icon className="w-4 h-4 text-destructive-foreground" />
+          {!children && (
+            <Trash2Icon className="w-4 h-4 text-destructive-foreground" />
+          )}
           {children}
         </Button>
       </DialogTrigger>
