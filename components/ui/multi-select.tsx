@@ -65,7 +65,7 @@ const MultiSelect = ({
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 z-[600]">
+      <DropdownMenuContent className="w-56 h-[400px] overflow-auto z-[600]">
         <DropdownMenuLabel className="w-full flex items-center py-1">
           Choose
           {!hideClearButton && (
