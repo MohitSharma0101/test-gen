@@ -20,6 +20,7 @@ export const ENDPOINT = {
   recheck: "/answer-sheets/recheck",
   analyzeQuestions: "/answer-sheets/analyze",
   mergePapers: "/papers/merge",
+  uploadSign: "uploads/sign",
 
   //auth
   login: "auth/login",
