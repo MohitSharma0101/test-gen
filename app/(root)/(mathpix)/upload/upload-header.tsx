@@ -15,6 +15,7 @@ import type { TQuestion } from "@/models/Question";
 import PreviewButton from "@/components/ui/preview-button";
 import { TAGS } from "@/components/sheets/add-tag-sheet";
 import { useCourses } from "@/hooks/useCourses";
+import GenerateVariantsSheet from "@/components/sheets/generate-variants-sheet";
 
 type Props = {
   onUpload?: (chapter: string, marks: string, tags?: string[]) => Promise<void>;
@@ -112,6 +113,11 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         />
       </div>
       <div className="flex gap-4 ml-auto items-center whitespace-nowrap">
+        <GenerateVariantsSheet
+          chapter={chapter}
+          marks={marks}
+          tags={selectedTag ? [selectedTag] : []}
+        />
         <p>
           Total Questions: <strong>{questions?.length || 0}</strong>
           <br />

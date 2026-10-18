@@ -21,6 +21,7 @@ export const ENDPOINT = {
   analyzeQuestions: "/answer-sheets/analyze",
   mergePapers: "/papers/merge",
   uploadSign: "uploads/sign",
+  generateVariants: "ai/variants",
 
   //auth
   login: "auth/login",
