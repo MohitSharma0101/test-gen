@@ -22,6 +22,7 @@ export const ENDPOINT = {
   mergePapers: "/papers/merge",
   uploadSign: "uploads/sign",
   generateVariants: "ai/variants",
+  recheckVariant: "ai/variants/recheck",
 
   //auth
   login: "auth/login",

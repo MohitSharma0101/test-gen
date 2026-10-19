@@ -12,6 +12,8 @@ type GenerateJsonInput = {
   responseSchema: Record<string, unknown>;
   // Gemini 3+ models: "low" | "medium" | "high"
   thinkingLevel?: string;
+  // Overrides GEMINI_MODEL for this call
+  model?: string;
 };
 
 export class GeminiError extends Error {
@@ -27,10 +29,11 @@ export const generateJson = async <T>({
   parts,
   responseSchema,
   thinkingLevel,
+  model: modelOverride,
 }: GenerateJsonInput): Promise<T> => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new GeminiError("GEMINI_API_KEY is not set on the server");
-  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+  const model = modelOverride || process.env.GEMINI_MODEL || DEFAULT_MODEL;
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,

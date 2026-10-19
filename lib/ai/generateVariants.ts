@@ -10,14 +10,8 @@ import type {
 
 export const VARIANT_COUNT = 2;
 
-const SYSTEM_INSTRUCTION = `You are an experienced question setter for Indian JEE and NEET coaching.
-You receive a photo of one question. Do two things:
-1. Transcribe that question exactly as "original", including its options and the correct answer with a solution.
-2. Write exactly ${VARIANT_COUNT} new "variants" that test the same concept at the same difficulty, using different values and, where it helps, a changed scenario. Each variant must be fully solvable and, for MCQs, have exactly one correct option. Make the wrong options plausible.
-
-Keep the question type of the original: an MCQ stays an MCQ with four options; a numerical (integer or decimal answer) stays numerical with no options.
-
-Formatting for every "text" and "solution" (it is rendered with Mathpix Markdown):
+// Shared with the recheck prompt
+export const FORMAT_RULES = `Formatting for every "text" and "solution" (it is rendered with Mathpix Markdown):
 - Plain Markdown. Write all maths, symbols, units with powers and chemical formulae in LaTeX: inline $...$ and display $$...$$.
 - No LaTeX preamble, \\documentclass, \\begin{document}, enumerate or itemize environments, tables of contents, code fences, HTML or images.
 - Do not number the question.
@@ -26,6 +20,15 @@ Formatting for every "text" and "solution" (it is rendered with Mathpix Markdown
 "answer": for an MCQ only the correct option letter, one of a, b, c, d. For a numerical only the final number, without units.
 "solution": a detailed step-by-step solution that ends with the final answer.
 "needsDiagram": true if the question cannot be understood without a figure. In that case still describe in the text every value a student needs.`;
+
+const SYSTEM_INSTRUCTION = `You are an experienced question setter for Indian JEE and NEET coaching.
+You receive a photo of one question. Do two things:
+1. Transcribe that question exactly as "original", including its options and the correct answer with a solution.
+2. Write exactly ${VARIANT_COUNT} new "variants" that test the same concept at the same difficulty, using different values and, where it helps, a changed scenario. Each variant must be fully solvable and, for MCQs, have exactly one correct option. Make the wrong options plausible.
+
+Keep the question type of the original: an MCQ stays an MCQ with four options; a numerical (integer or decimal answer) stays numerical with no options.
+
+${FORMAT_RULES}`;
 
 const QUESTION_SCHEMA = {
   type: "OBJECT",
@@ -65,7 +68,7 @@ type RawResponse = {
 
 // crack-it checks only the first line of `ans`, so keep it clean:
 // "(b\)" for an MCQ, the bare number for a numerical.
-const formatAnswer = (answer: string, type: TQuestionType) => {
+export const formatAnswer = (answer: string, type: TQuestionType) => {
   const first = (answer || "").trim().split("\n")[0].trim();
   if (type === "MCQ") {
     const letter = first.replace(/[()\[\]\s.]/g, "").charAt(0).toLowerCase();

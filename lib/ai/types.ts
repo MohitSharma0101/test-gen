@@ -33,3 +33,30 @@ export type TGenerateVariantsResponse = {
   questionType: TQuestionType;
   questions: TGeneratedQuestion[];
 };
+
+// Recheck: one Gemini call that solves the question without seeing our answer,
+// checks its quality and returns a fresh question, answer and solution.
+export type TRecheckRequest = {
+  text: string;
+  answerKey: string; // line 1 of `ans`; compared on the server, never shown to Gemini
+  questionType: TQuestionType;
+  kind: TGeneratedQuestion["kind"];
+  originalText?: string; // for a variant: the question it was made from
+  image?: { mimeType: string; data: string }; // for the original: the photo it was transcribed from
+};
+
+// checked: same answer, solution refreshed
+// answer-changed: question was fine but our answer key was wrong
+// question-fixed: the question itself was broken and has been rewritten
+// manual: Gemini could not verify it (e.g. needs a figure, more than one correct option)
+export type TRecheckStatus = "checked" | "answer-changed" | "question-fixed" | "manual";
+
+export type TRecheckResponse = {
+  status: TRecheckStatus;
+  summary: string;
+  issues: string[];
+  previousAnswer?: string;
+  newAnswer?: string;
+  // Missing when status is "manual"
+  question?: Pick<TGeneratedQuestion, "text" | "ans" | "needsDiagram">;
+};

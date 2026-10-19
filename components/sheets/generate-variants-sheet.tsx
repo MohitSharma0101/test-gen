@@ -2,7 +2,18 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ImageIcon, Loader2Icon, PencilIcon, SparklesIcon, TriangleAlertIcon, XIcon } from "lucide-react";
+import {
+  CheckIcon,
+  CopyIcon,
+  ImageIcon,
+  Loader2Icon,
+  PencilIcon,
+  SparklesIcon,
+  TriangleAlertIcon,
+  ShieldCheckIcon,
+  Undo2Icon,
+  XIcon,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -25,6 +36,8 @@ import {
   THINKING_MODES,
   type TGeneratedQuestion,
   type TGenerateVariantsResponse,
+  type TQuestionType,
+  type TRecheckResponse,
   type TThinkingMode,
 } from "@/lib/ai/types";
 
@@ -38,9 +51,9 @@ type Props = {
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 const THINKING_INFO: Record<TThinkingMode, { label: string; expectedMs: number }> = {
-  low: { label: "Fast (less thinking)", expectedMs: 8000 },
+  low: { label: "Fast", expectedMs: 8000 },
   medium: { label: "Balanced", expectedMs: 15000 },
-  high: { label: "Deep (most accurate, slowest)", expectedMs: 30000 },
+  high: { label: "Deep (slowest)", expectedMs: 30000 },
 };
 
 const THINKING_STORAGE_KEY = "generate-variants-thinking";
@@ -89,6 +102,108 @@ const GenerationProgress = ({ expectedMs }: { expectedMs: number }) => {
   );
 };
 
+// Copies the raw markdown of the question followed by its answer
+const CopyQuestionButton = ({ question }: { question: TGeneratedQuestion }) => {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(`${question.text}\n\n${question.ans}`);
+      setCopied(true);
+      toast.success("Copied question and answer");
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      className="h-9 w-9 shrink-0"
+      onClick={copy}
+      title="Copy question and answer"
+      aria-label="Copy question and answer"
+    >
+      {copied ? <CheckIcon className="w-4 h-4 text-green-600" /> : <CopyIcon className="w-4 h-4" />}
+    </Button>
+  );
+};
+
+// Recheck state lives only in this sheet; nothing about it is saved
+type TCheckState = {
+  loading: boolean;
+  result?: TRecheckResponse;
+  previous?: TGeneratedQuestion; // the version before the recheck, for Undo
+};
+
+const showAnswer = (answer?: string) => (answer || "").replace(/\\/g, "").trim() || "none";
+
+const CHECK_STYLES: Record<TRecheckResponse["status"], string> = {
+  checked: "bg-green-50 text-green-800",
+  "answer-changed": "bg-blue-50 text-blue-800",
+  "question-fixed": "bg-blue-50 text-blue-800",
+  manual: "bg-amber-50 text-amber-800",
+};
+
+const checkTitle = (result: TRecheckResponse) => {
+  switch (result.status) {
+    case "checked":
+      return "Recently checked: answer confirmed";
+    case "answer-changed":
+      return `Recently checked: answer changed from ${showAnswer(result.previousAnswer)} to ${showAnswer(result.newAnswer)}`;
+    case "question-fixed":
+      return "Recently checked: question fixed";
+    case "manual":
+      return "Check manually";
+  }
+};
+
+const CheckStrip = ({ check, onUndo }: { check?: TCheckState; onUndo: () => void }) => {
+  if (!check) return null;
+  if (check.loading) {
+    return (
+      <div className="flex items-center gap-2 border-b bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
+        Gemini is solving and checking this question…
+      </div>
+    );
+  }
+  const result = check.result;
+  if (!result) return null;
+  const showIssues = result.status !== "checked" && result.issues.length > 0;
+  return (
+    <div className={`flex flex-col gap-1 border-b px-3 py-2 text-xs ${CHECK_STYLES[result.status]}`}>
+      <div className="flex items-start gap-2">
+        <span className="font-semibold">{checkTitle(result)}</span>
+        {check.previous && (
+          <button
+            type="button"
+            onClick={onUndo}
+            className="ml-auto flex shrink-0 items-center gap-1 font-medium underline underline-offset-2"
+          >
+            <Undo2Icon className="w-3 h-3" /> Undo
+          </button>
+        )}
+      </div>
+      {result.summary && <p className="opacity-90">{result.summary}</p>}
+      {showIssues && (
+        <ul className="list-disc pl-4 opacity-90">
+          {result.issues.map((issue, i) => (
+            <li key={i}>{issue}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 const labelFor = (q: TGeneratedQuestion, index: number, hasOriginal: boolean) =>
   q.kind === "original" ? "Original" : `Variant ${hasOriginal ? index : index + 1}`;
 
@@ -102,6 +217,8 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
   const [uploading, setUploading] = useState(false);
   const [questions, setQuestions] = useState<TGeneratedQuestion[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [questionType, setQuestionType] = useState<TQuestionType>("MCQ");
+  const [checks, setChecks] = useState<Record<string, TCheckState>>({});
 
   useEffect(() => {
     if (!image) {
@@ -140,6 +257,7 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
     setPrompt("");
     setQuestions([]);
     setSelected({});
+    setChecks({});
   };
 
   const generate = async () => {
@@ -156,6 +274,8 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
         thinking,
       });
       setQuestions(data.questions);
+      setQuestionType(data.questionType);
+      setChecks({});
       // Variants start ticked; the original starts unticked
       setSelected(Object.fromEntries(data.questions.map((q) => [q.id, q.kind === "variant"])));
     } catch (err: any) {
@@ -167,6 +287,54 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
 
   const updateQuestion = (id: string, change: Partial<TGeneratedQuestion>) =>
     setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...change } : q)));
+
+  const clearCheck = (id: string) =>
+    setChecks((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+
+  // A manual edit means the tag no longer describes what is on screen
+  const editQuestion = (id: string, change: Partial<TGeneratedQuestion>) => {
+    updateQuestion(id, change);
+    clearCheck(id);
+  };
+
+  // One Gemini call: it solves the question without seeing our answer, then we
+  // replace the question, answer and solution in place with what it sends back.
+  const recheck = async (q: TGeneratedQuestion) => {
+    const before = checks[q.id];
+    setChecks((prev) => ({ ...prev, [q.id]: { ...prev[q.id], loading: true } }));
+    try {
+      const original = questions.find((x) => x.kind === "original");
+      const { data } = await api.post<TRecheckResponse>(ENDPOINT.recheckVariant, {
+        text: q.text,
+        answerKey: q.ans.split("\n")[0],
+        questionType,
+        kind: q.kind,
+        originalText: q.kind === "variant" ? original?.text : undefined,
+        // The original is checked against the photo it was transcribed from
+        image: q.kind === "original" && image ? await imageToBase64Jpeg(image) : undefined,
+      });
+      if (data.question) updateQuestion(q.id, data.question);
+      setChecks((prev) => ({
+        ...prev,
+        [q.id]: { loading: false, result: data, previous: data.question ? q : undefined },
+      }));
+    } catch (err: any) {
+      toast.error(err?.message || "Could not recheck the question");
+      setChecks((prev) => ({ ...prev, [q.id]: { ...before, loading: false } }));
+    }
+  };
+
+  const undoRecheck = (id: string) => {
+    const previous = checks[id]?.previous;
+    if (previous) updateQuestion(id, previous);
+    clearCheck(id);
+  };
+
+  const rechecking = Object.values(checks).some((c) => c.loading);
 
   const selectedQuestions = questions.filter((q) => selected[q.id]);
 
@@ -209,141 +377,192 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-none md:w-1/2 overflow-y-auto flex flex-col gap-4 [&>*]:shrink-0"
+        className="w-full max-w-full sm:max-w-none md:max-w-none md:w-1/2 p-0 gap-0 overflow-y-auto overflow-x-hidden flex flex-col [&>*]:shrink-0"
         onPaste={(e) => {
           // Pastes inside a nested editor bubble up here; the editor handles its own images
           if (e.defaultPrevented) return;
           if (pickImage(e.clipboardData?.files)) e.preventDefault();
         }}
       >
-        <SheetHeader>
-          <SheetTitle>Generate question variants</SheetTitle>
-          <SheetDescription>
-            Add a photo or screenshot of a question. Gemini writes the original and 2 variants
-            with answers and solutions. Uploads go to the chapter, marks and tag set in the header.
-          </SheetDescription>
-        </SheetHeader>
+        <div className="flex flex-col gap-4 p-4 sm:p-6">
+          <SheetHeader className="pr-8 text-left sm:text-left space-y-1">
+            <SheetTitle className="text-base sm:text-lg">Generate question variants</SheetTitle>
+            <SheetDescription className="text-xs sm:text-sm">
+              Add a photo or screenshot of a question. Gemini writes the original and 2 variants
+              with answers. Uploads use the chapter, marks and tag from the header.
+            </SheetDescription>
+          </SheetHeader>
 
-        <label
-          className="relative flex min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-slate-300 p-4 text-sm text-slate-500 hover:bg-slate-50"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            pickImage(e.dataTransfer.files);
-          }}
-        >
-          {imagePreview ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imagePreview} alt="Question" className="max-h-[260px] max-w-full object-contain" />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="absolute right-2 top-2 h-7 w-7"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setImage(null);
-                }}
-              >
-                <XIcon className="w-4 h-4" />
-              </Button>
-            </>
-          ) : (
-            <>
-              <ImageIcon className="w-8 h-8" strokeWidth={1.5} />
-              <p>Click to choose, drop, or paste the question image</p>
-            </>
-          )}
-          <input
-            type="file"
-            accept={IMAGE_TYPES.join(",")}
-            className="hidden"
-            onChange={(e) => {
-              pickImage(e.target.files);
-              e.target.value = "";
+          <label
+            className="relative flex min-h-[112px] sm:min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50/50 p-3 sm:p-4 text-center text-sm text-slate-500 hover:bg-slate-50"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              pickImage(e.dataTransfer.files);
             }}
+          >
+            {imagePreview ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imagePreview}
+                  alt="Question"
+                  className="max-h-[180px] sm:max-h-[260px] max-w-full object-contain"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="absolute right-2 top-2 h-8 w-8"
+                  aria-label="Remove image"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setImage(null);
+                  }}
+                >
+                  <XIcon className="w-4 h-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <ImageIcon className="w-7 h-7" strokeWidth={1.5} />
+                <p>Tap to add the question image</p>
+                <p className="hidden sm:block text-xs">You can also paste or drop it here</p>
+              </>
+            )}
+            <input
+              type="file"
+              accept={IMAGE_TYPES.join(",")}
+              className="hidden"
+              onChange={(e) => {
+                pickImage(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </label>
+
+          {/* text-base on phones stops iOS zooming into the field */}
+          <Textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Optional: extra instructions, e.g. make it harder, use SI units…"
+            className="min-h-[64px] text-base sm:text-sm"
           />
-        </label>
 
-        <Textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Optional extra instructions, e.g. make the variants harder, use SI units, change the scenario…"
-          className="min-h-[70px]"
-        />
+          <div className="flex items-end gap-2 sm:justify-end sm:gap-3">
+            <SelectCompact
+              label="Thinking"
+              className="w-[40%] sm:w-[180px] shrink-0"
+              value={thinking}
+              onChange={changeThinking}
+              disabled={generating}
+              options={THINKING_MODES.map((mode) => ({
+                label: THINKING_INFO[mode].label,
+                value: mode,
+              }))}
+            />
+            <Button onClick={generate} disabled={!image || generating} className="gap-2 flex-1 sm:w-[160px] sm:flex-none">
+              {generating ? (
+                <Loader2Icon className="w-4 h-4 animate-spin" />
+              ) : (
+                <SparklesIcon className="w-4 h-4" />
+              )}
+              {generating ? "Generating…" : questions.length ? "Regenerate" : "Generate"}
+            </Button>
+          </div>
 
-        <div className="flex items-end gap-3">
-          <SelectCompact
-            label="Thinking"
-            className="w-[260px]"
-            value={thinking}
-            onChange={changeThinking}
-            disabled={generating}
-            options={THINKING_MODES.map((mode) => ({
-              label: THINKING_INFO[mode].label,
-              value: mode,
-            }))}
-          />
-          <Button onClick={generate} disabled={!image || generating} className="gap-2 flex-grow">
-            <SparklesIcon className="w-4 h-4" />
-            {generating ? "Generating…" : questions.length ? "Regenerate" : "Generate"}
-          </Button>
-        </div>
+          {generating && <GenerationProgress expectedMs={THINKING_INFO[thinking].expectedMs} />}
 
-        {generating && <GenerationProgress expectedMs={THINKING_INFO[thinking].expectedMs} />}
-
-        {!generating && questions.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {questions.map((q, index) => (
+          {!generating &&
+            questions.map((q, index) => (
               <div
                 key={q.id}
-                className={`rounded-md border p-3 ${selected[q.id] ? "border-primary" : "border-slate-200"}`}
+                className={`min-w-0 overflow-hidden rounded-lg border bg-white transition-colors ${
+                  selected[q.id] ? "border-primary ring-1 ring-primary" : "border-slate-200"
+                }`}
               >
-                <div className="flex items-center gap-2 mb-2">
+                {/* Whole header row toggles the checkbox, so it is easy to tap */}
+                <label
+                  htmlFor={`variant-${q.id}`}
+                  className="flex cursor-pointer items-center gap-3 border-b bg-slate-50 px-3 py-2.5"
+                >
                   <Checkbox
                     id={`variant-${q.id}`}
+                    className="h-5 w-5"
                     checked={!!selected[q.id]}
                     onCheckedChange={(checked) =>
                       setSelected((prev) => ({ ...prev, [q.id]: checked === true }))
                     }
                   />
-                  <label htmlFor={`variant-${q.id}`} className="font-semibold text-sm cursor-pointer">
-                    {labelFor(q, index, hasOriginal)}
-                  </label>
+                  <span className="text-sm font-semibold">{labelFor(q, index, hasOriginal)}</span>
                   {q.needsDiagram && (
-                    <span className="flex items-center gap-1 text-xs text-amber-600">
+                    <span className="ml-auto flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
                       <TriangleAlertIcon className="w-3 h-3" />
-                      Needs a diagram: add one with Edit
+                      Needs diagram
                     </span>
                   )}
-                  <EditMarkdownSheet text={q.text} onSave={(text) => updateQuestion(q.id, { text })}>
-                    <Button variant="outline" size="sm" className="ml-auto h-7 gap-1">
-                      <PencilIcon className="w-3 h-3" /> Question
-                    </Button>
-                  </EditMarkdownSheet>
-                  <EditMarkdownSheet text={q.ans} onSave={(ans) => updateQuestion(q.id, { ans })}>
-                    <Button variant="outline" size="sm" className="h-7 gap-1">
-                      <PencilIcon className="w-3 h-3" /> Answer
-                    </Button>
-                  </EditMarkdownSheet>
-                </div>
-                <div className="[&_ol]:list-decimal [&_ol]:list-outside [&_ol]:ml-4">
+                </label>
+
+                <CheckStrip check={checks[q.id]} onUndo={() => undoRecheck(q.id)} />
+
+                <div className="max-w-full overflow-x-auto break-words px-3 py-3 text-sm [&_ol]:list-decimal [&_ol]:list-outside [&_ol]:ml-4">
                   <Markdown text={q.text} />
                 </div>
-                <details className="mt-2 rounded bg-slate-50 p-2 text-sm">
-                  <summary className="cursor-pointer font-medium">
+
+                <details className="mx-3 mb-3 max-w-full overflow-x-auto break-words rounded-md bg-slate-50 px-3 py-2 text-sm">
+                  <summary className="cursor-pointer py-1 font-medium">
                     Answer: {q.ans.split("\n")[0].replace(/\\/g, "")}
+                    <span className="ml-1 font-normal text-slate-500">· solution</span>
                   </summary>
                   <Markdown text={q.ans} />
                 </details>
+
+                <div className="flex items-center gap-2 border-t px-3 py-2">
+                  <CopyQuestionButton question={q} />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                    onClick={() => recheck(q)}
+                    disabled={!!checks[q.id]?.loading}
+                    title="Recheck with AI"
+                    aria-label="Recheck with AI"
+                  >
+                    {checks[q.id]?.loading ? (
+                      <Loader2Icon className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ShieldCheckIcon className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <EditMarkdownSheet text={q.text} onSave={(text) => editQuestion(q.id, { text })}>
+                    <Button
+                      variant="outline"
+                      disabled={!!checks[q.id]?.loading}
+                      className="h-9 flex-1 gap-1.5 px-2 text-xs sm:text-sm"
+                    >
+                      <PencilIcon className="w-3.5 h-3.5" /> Edit question
+                    </Button>
+                  </EditMarkdownSheet>
+                  <EditMarkdownSheet text={q.ans} onSave={(ans) => editQuestion(q.id, { ans })}>
+                    <Button
+                      variant="outline"
+                      disabled={!!checks[q.id]?.loading}
+                      className="h-9 flex-1 gap-1.5 px-2 text-xs sm:text-sm"
+                    >
+                      <PencilIcon className="w-3.5 h-3.5" /> Edit answer
+                    </Button>
+                  </EditMarkdownSheet>
+                </div>
               </div>
             ))}
+        </div>
 
+        {!generating && questions.length > 0 && (
+          <div className="sticky bottom-0 mt-auto border-t bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-6">
             <Button
               onClick={upload}
-              disabled={uploading || selectedQuestions.length === 0}
-              className="gap-2 sticky bottom-0"
+              disabled={uploading || rechecking || selectedQuestions.length === 0}
+              className="h-11 w-full gap-2"
             >
               {uploading && <Loader2Icon className="w-4 h-4 animate-spin" />}
               Upload {selectedQuestions.length} selected
