@@ -101,14 +101,14 @@ const DashboardPage = (props: Props) => {
   };
 
   return (
-    <div className="h-screen text-primary">
+    <div className="min-h-screen overflow-x-hidden text-primary">
       <UploadHeader
         onUpload={onUpload}
         questions={questions}
         twoColumn={twoColumn}
       />
-      <div className="mt-4 border border-slate-200 w-full h-full">
-        <div className="flex">
+      <div className="mt-2 sm:mt-4 border border-slate-200 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-3">
           <UploadInput
             id="question-input"
             label="Upload Question Set"
@@ -139,12 +139,13 @@ const DashboardPage = (props: Props) => {
         </div>
 
         <div className="scrollbar-hide overflow-scroll border border-slate-200 text-slate-600 font-medium">
-          <div className="w-full p-3 border-b border-slate-200 font-bold ">
+          <div className="w-full p-3 border-b border-slate-200 font-bold flex items-center">
             Preview Mode
             <Button
               size={"sm"}
               variant={twoColumn ? "default" : "outline"}
-              className="ml-4"
+              className="ml-4 hidden md:inline-flex"
+              title="Two columns"
               onClick={() => {
                 setTwoColumn(!twoColumn);
               }}
@@ -153,8 +154,8 @@ const DashboardPage = (props: Props) => {
             </Button>
           </div>
           {questions.length === 0 ? (
-            <div className="w-full my-[100px] flex gap-4 flex-col items-center justify-center">
-              <EyeIcon className="w-[100px] h-[100px] " strokeWidth={1} />
+            <div className="w-full my-12 sm:my-[100px] flex gap-4 flex-col items-center justify-center">
+              <EyeIcon className="w-16 h-16 sm:w-[100px] sm:h-[100px]" strokeWidth={1} />
               <p className="max-w-[200px] text-center">
                 Upload a question set to see the preview
               </p>
@@ -163,8 +164,9 @@ const DashboardPage = (props: Props) => {
             <ol
               id="paper"
               className={cn(
-                "w-full pt-3 px-8 md:px-12 list-decimal text-black print:text-black [&_#preview]:!pt-0",
-                twoColumn && "columns-2"
+                "w-full pt-3 pl-8 pr-4 md:px-12 list-decimal text-black print:text-black [&_#preview]:!pt-0 [&_li]:break-words",
+                // Two columns are too narrow on a phone
+                twoColumn && "md:columns-2"
               )}
             >
               {questions.map((q, index) => (

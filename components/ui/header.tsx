@@ -23,17 +23,17 @@ type Props = {
 const Header = ({ active }: Props) => {
   const routes = useRoutes();
   return (
-    <div className="bg-white w-full px-3 md:px-6 py-2 items-center flex gap-4 text-sm font-bold">
+    <div className="bg-white w-full px-3 md:px-6 py-2 items-center flex gap-2 sm:gap-4 text-sm font-bold">
       <div
         onClick={() => window.location.reload()}
-        className="flex items-center justify-center gap-2 font-bold text-xl cursor-pointer"
+        className="flex min-w-0 items-center justify-center gap-2 font-bold text-lg sm:text-xl cursor-pointer"
       >
         <Image
           src={"/eplus-logo-min.png"}
           alt="education plus log"
           width={50}
           height={50}
-          className="w-[50px] object-contain aspect-square -mt-2"
+          className="w-10 sm:w-[50px] shrink-0 object-contain aspect-square -mt-2"
         />
         <div className="flex flex-col leading-4">
           Education+
@@ -43,8 +43,9 @@ const Header = ({ active }: Props) => {
       <AccountMenu className="ml-auto" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={"outline"}>
-            <MenuIcon className="w-4 h-4 mr-1" /> Menu
+          <Button variant={"outline"} className="shrink-0 px-3 sm:px-4" aria-label="Menu">
+            <MenuIcon className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Menu</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="bottom" align="end" className="p-1">

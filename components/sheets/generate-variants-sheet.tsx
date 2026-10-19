@@ -371,7 +371,7 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" className="gap-2">
-          <SparklesIcon className="w-4 h-4" />
+          <SparklesIcon className="w-4 h-4 shrink-0" />
           Generate
         </Button>
       </SheetTrigger>

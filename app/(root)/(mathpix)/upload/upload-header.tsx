@@ -34,12 +34,13 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
   const [selectedTag, setSelectedTag] = useState("");
 
   return (
-    <div className="px-6 py-3 flex flex-col lg:flex-row gap-8 items-center">
-      <div className="flex flex-wrap gap-4 items-center flex-grow">
+    <div className="px-4 sm:px-6 py-3 flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-center">
+      {/* Phones: two columns, long pickers full width. Wider screens: one wrapping row */}
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-4 sm:items-center flex-grow">
         <SelectCompact
           label="Class"
           placeholder="Select a class"
-          className="w-[300px] "
+          className="min-w-0 sm:w-[300px]"
           value={course}
           onChange={setCourse}
           options={courses.map((c) => ({
@@ -50,7 +51,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         <SelectCompact
           label="Subject"
           placeholder="Select a subject"
-          className="w-[300px]"
+          className="min-w-0 sm:w-[300px]"
           emptyState="Select a Class first"
           value={subject}
           onChange={setSubject}
@@ -62,7 +63,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         <SelectCompact
           label="Book"
           placeholder="Select a book"
-          className="w-[300px]"
+          className="col-span-2 min-w-0 sm:w-[300px]"
           value={book}
           onChange={setBook}
           options={books.map((b) => ({
@@ -74,7 +75,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         <SelectCompact
           label="Chapter"
           placeholder="Select a chapter"
-          className="w-[300px]"
+          className="col-span-2 min-w-0 sm:w-[300px]"
           value={chapter}
           onChange={setChapter}
           emptyState="Select a Book first"
@@ -89,7 +90,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         <SelectCompact
           label="Marks"
           placeholder="Select marks"
-          className="w-[140px]"
+          className="min-w-0 sm:w-[140px]"
           value={marks}
           onChange={setMarks}
           options={
@@ -101,7 +102,7 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
         />
         <SelectCompact
           label="Tags"
-          className="w-fit"
+          className="min-w-0 sm:w-fit"
           value={selectedTag}
           onChange={setSelectedTag}
           placeholder="Select tag"
@@ -112,20 +113,30 @@ const UploadHeader = ({ questions, onUpload, twoColumn }: Props) => {
           canUnselect
         />
       </div>
-      <div className="flex gap-4 ml-auto items-center whitespace-nowrap">
+      {/* Phones: totals, then Generate / Preview / Print sharing a row, then a full-width Upload */}
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4 lg:ml-auto lg:flex-nowrap lg:whitespace-nowrap max-sm:[&>button:not([data-upload])]:min-w-[96px] max-sm:[&>button:not([data-upload])]:flex-1 max-sm:[&>button:not([data-upload])]:px-2">
         <GenerateVariantsSheet
           chapter={chapter}
           marks={marks}
           tags={selectedTag ? [selectedTag] : []}
         />
-        <p>
-          Total Questions: <strong>{questions?.length || 0}</strong>
-          <br />
-          Total Ans: <strong>{questions?.map((q) => q.ans)?.filter(Boolean)?.length || 0}</strong>
-          <br />
-          Total Marks: <strong>{questions?.length * Number(marks)}</strong>
+        {/* One line above the buttons on phones, stacked beside them on wide screens */}
+        <p className="order-first flex w-full flex-wrap gap-x-3 text-sm sm:order-none lg:block lg:w-auto lg:text-base">
+          <span className="whitespace-nowrap">
+            Total Questions: <strong>{questions?.length || 0}</strong>
+          </span>
+          <br className="hidden lg:block" />
+          <span className="whitespace-nowrap">
+            Total Ans: <strong>{questions?.map((q) => q.ans)?.filter(Boolean)?.length || 0}</strong>
+          </span>
+          <br className="hidden lg:block" />
+          <span className="whitespace-nowrap">
+            Total Marks: <strong>{questions?.length * Number(marks)}</strong>
+          </span>
         </p>
         <Button
+          data-upload
+          className="order-last w-full sm:order-none sm:w-auto"
           disabled={questions.length === 0 || loading}
           onClick={async () => {
             if (chapter) {

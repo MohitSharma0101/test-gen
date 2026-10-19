@@ -16,10 +16,10 @@ const UploadInput = ({ id, icon, text, label, onChange }: Props) => {
   return (
     <label
       htmlFor={id}
-      className="w-1/2 p-10 cursor-pointer hover:bg-slate-200 border border-slate-200 flex gap-4 flex-col items-center justify-center text-slate-600 font-medium"
+      className="min-w-0 px-4 py-3 sm:p-10 cursor-pointer hover:bg-slate-200 border border-slate-200 flex gap-3 sm:gap-4 flex-row sm:flex-col items-center sm:justify-center text-slate-600 font-medium"
     >
-      {icon}
-      <p>{label}</p>
+      <span className="shrink-0 [&>svg]:h-8 [&>svg]:w-8 sm:[&>svg]:h-[100px] sm:[&>svg]:w-[100px]">{icon}</span>
+      <p className="flex-1 sm:flex-none text-sm sm:text-base sm:text-center">{label}</p>
       <input
         id={id}
         className="hidden"
