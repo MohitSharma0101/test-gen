@@ -101,6 +101,7 @@ export const generateVariants = async ({
   image,
   prompt,
   thinking,
+  model,
 }: TGenerateVariantsRequest): Promise<TGenerateVariantsResponse> => {
   const extra = prompt?.trim();
   const raw = await generateJson<RawResponse>({
@@ -115,6 +116,7 @@ export const generateVariants = async ({
     ],
     responseSchema: RESPONSE_SCHEMA,
     thinkingLevel: thinking,
+    model,
   });
 
   const questionType: TQuestionType = raw.questionType === "NUMERICAL" ? "NUMERICAL" : "MCQ";

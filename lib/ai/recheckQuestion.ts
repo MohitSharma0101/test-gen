@@ -88,6 +88,7 @@ export const recheckQuestion = async ({
   kind,
   originalText,
   image,
+  model,
 }: TRecheckRequest): Promise<TRecheckResponse> => {
   const context =
     kind === "original"
@@ -108,7 +109,7 @@ export const recheckQuestion = async ({
     ],
     responseSchema: RESPONSE_SCHEMA,
     thinkingLevel: RECHECK_THINKING,
-    model: process.env.GEMINI_RECHECK_MODEL || undefined,
+    model: model || process.env.GEMINI_RECHECK_MODEL || undefined,
   });
 
   const issues = (raw.issues ?? []).map((i) => i.trim()).filter(Boolean);

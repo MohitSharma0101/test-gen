@@ -34,6 +34,8 @@ import { uploadQuestionsInBatch } from "@/service/core.service";
 import {
   DEFAULT_THINKING_MODE,
   THINKING_MODES,
+  type TAiModel,
+  type TAiModelsResponse,
   type TGeneratedQuestion,
   type TGenerateVariantsResponse,
   type TQuestionType,
@@ -57,6 +59,7 @@ const THINKING_INFO: Record<TThinkingMode, { label: string; expectedMs: number }
 };
 
 const THINKING_STORAGE_KEY = "generate-variants-thinking";
+const MODEL_STORAGE_KEY = "generate-variants-model";
 
 // Shown as the progress bar fills up (threshold in %, message)
 const PROGRESS_MESSAGES: [number, string][] = [
@@ -213,6 +216,10 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
   const [imagePreview, setImagePreview] = useState("");
   const [prompt, setPrompt] = useState("");
   const [thinking, setThinking] = useState<TThinkingMode>(DEFAULT_THINKING_MODE);
+  const [models, setModels] = useState<TAiModel[]>([]);
+  const [defaultModel, setDefaultModel] = useState("");
+  const [model, setModel] = useState("");
+  const [modelsLoading, setModelsLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [questions, setQuestions] = useState<TGeneratedQuestion[]>([]);
@@ -237,6 +244,42 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
       if (saved && THINKING_MODES.includes(saved)) setThinking(saved);
     } catch {}
   }, []);
+
+  // Load the models Google offers for this key the first time the sheet opens
+  useEffect(() => {
+    if (!open || models.length || modelsLoading) return;
+    setModelsLoading(true);
+    api
+      .get<TAiModelsResponse>(ENDPOINT.aiModels)
+      .then(({ data }) => {
+        const list = data.models.some((m) => m.id === data.defaultModel)
+          ? data.models
+          : [{ id: data.defaultModel, label: data.defaultModel }, ...data.models];
+        setModels(list);
+        setDefaultModel(data.defaultModel);
+        let saved = "";
+        try {
+          saved = localStorage.getItem(MODEL_STORAGE_KEY) || "";
+        } catch {}
+        setModel(list.some((m) => m.id === saved) ? saved : data.defaultModel);
+      })
+      .catch((err) => toast.error(err?.message || "Could not load the Gemini models"))
+      .finally(() => setModelsLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const changeModel = (value: string) => {
+    if (!value) return;
+    setModel(value);
+    try {
+      localStorage.setItem(MODEL_STORAGE_KEY, value);
+    } catch {}
+  };
+
+  // The server default is sent as "no choice" so a change to GEMINI_MODEL still applies
+  const chosenModel = model && model !== defaultModel ? model : undefined;
+  // Gemma models have no thinking setting
+  const thinkingApplies = !model.startsWith("gemma-");
 
   const changeThinking = (value: string) => {
     if (!THINKING_MODES.includes(value as TThinkingMode)) return;
@@ -272,6 +315,7 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
         image: payload,
         prompt: prompt.trim() || undefined,
         thinking,
+        model: chosenModel,
       });
       setQuestions(data.questions);
       setQuestionType(data.questionType);
@@ -316,6 +360,7 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
         originalText: q.kind === "variant" ? original?.text : undefined,
         // The original is checked against the photo it was transcribed from
         image: q.kind === "original" && image ? await imageToBase64Jpeg(image) : undefined,
+        model: chosenModel,
       });
       if (data.question) updateQuestion(q.id, data.question);
       setChecks((prev) => ({
@@ -449,19 +494,34 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
             className="min-h-[64px] text-base sm:text-sm"
           />
 
-          <div className="flex items-end gap-2 sm:justify-end sm:gap-3">
+          {/* Phones: Model and Thinking side by side, full-width button below */}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end sm:justify-end sm:gap-3">
+            <SelectCompact
+              label="Model"
+              className="min-w-0 sm:w-[220px]"
+              triggerClassName="text-left"
+              value={model || undefined}
+              placeholder={modelsLoading ? "Loading…" : "Default"}
+              onChange={changeModel}
+              disabled={generating}
+              loading={modelsLoading}
+              options={models.map((m) => ({
+                label: m.id === defaultModel ? `${m.label} (default)` : m.label,
+                value: m.id,
+              }))}
+            />
             <SelectCompact
               label="Thinking"
-              className="w-[40%] sm:w-[180px] shrink-0"
+              className="min-w-0 sm:w-[160px]"
               value={thinking}
               onChange={changeThinking}
-              disabled={generating}
+              disabled={generating || !thinkingApplies}
               options={THINKING_MODES.map((mode) => ({
                 label: THINKING_INFO[mode].label,
                 value: mode,
               }))}
             />
-            <Button onClick={generate} disabled={!image || generating} className="gap-2 flex-1 sm:w-[160px] sm:flex-none">
+            <Button onClick={generate} disabled={!image || generating} className="col-span-2 gap-2 sm:w-[160px]">
               {generating ? (
                 <Loader2Icon className="w-4 h-4 animate-spin" />
               ) : (

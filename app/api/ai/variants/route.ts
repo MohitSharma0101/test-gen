@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAccount } from "@/lib/auth";
 import { generateVariants } from "@/lib/ai/generateVariants";
 import { GeminiError } from "@/lib/ai/gemini";
+import { resolveModel } from "@/lib/ai/models";
 import {
   DEFAULT_THINKING_MODE,
   THINKING_MODES,
@@ -28,7 +29,7 @@ export const POST = async (request: NextRequest) => {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const { image, prompt, thinking } = body ?? {};
+  const { image, prompt, thinking, model } = body ?? {};
   if (!image?.data || !IMAGE_TYPES.includes(image.mimeType)) {
     return NextResponse.json(
       { error: "Add a PNG, JPEG or WebP image of the question" },
@@ -46,6 +47,7 @@ export const POST = async (request: NextRequest) => {
       thinking: THINKING_MODES.includes(thinking as TThinkingMode)
         ? thinking
         : DEFAULT_THINKING_MODE,
+      model: await resolveModel(model),
     });
     return NextResponse.json(result, { status: 200 });
   } catch (err: any) {

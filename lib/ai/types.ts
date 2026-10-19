@@ -27,7 +27,12 @@ export type TGenerateVariantsRequest = {
   image: { mimeType: string; data: string }; // base64, no data: prefix
   prompt?: string;
   thinking?: TThinkingMode;
+  model?: string; // a Gemini/Gemma model id; empty means the server default
 };
+
+// The model picker in the Generate sheet
+export type TAiModel = { id: string; label: string };
+export type TAiModelsResponse = { defaultModel: string; models: TAiModel[] };
 
 export type TGenerateVariantsResponse = {
   questionType: TQuestionType;
@@ -43,6 +48,7 @@ export type TRecheckRequest = {
   kind: TGeneratedQuestion["kind"];
   originalText?: string; // for a variant: the question it was made from
   image?: { mimeType: string; data: string }; // for the original: the photo it was transcribed from
+  model?: string; // same model picked for generation; empty means GEMINI_RECHECK_MODEL or the default
 };
 
 // checked: same answer, solution refreshed
