@@ -23,7 +23,9 @@ export const FREE_MODELS: TAiModel[] = [
   { id: "gemma-4-26b-a4b-it", label: "Gemma 4 26B A4B" },
 ];
 
-// Picked in the sheet when nothing is remembered on this browser.
+// The single source for "no model chosen": the sheet picks it when nothing is
+// remembered on this browser, and generateJson falls back to it when neither a
+// request model nor GEMINI_MODEL is set.
 export const DEFAULT_FREE_MODEL = "gemini-3.1-flash-lite";
 
 export const isFreeModel = (id: string) => FREE_MODELS.some((m) => m.id === id);

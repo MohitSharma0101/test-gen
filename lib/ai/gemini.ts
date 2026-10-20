@@ -1,6 +1,5 @@
 // Server-only: calls the Gemini REST API with the key from GEMINI_API_KEY.
-
-export const DEFAULT_MODEL = "gemini-3.8-flash";
+import { DEFAULT_FREE_MODEL } from "./free-models";
 
 type GeminiPart =
   | { text: string }
@@ -75,7 +74,7 @@ const parseJson = <T>(text: string): T => {
 export const generateJson = async <T>(input: GenerateJsonInput): Promise<T> => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new GeminiError("GEMINI_API_KEY is not set on the server");
-  const model = input.model || process.env.GEMINI_MODEL || DEFAULT_MODEL;
+  const model = input.model || process.env.GEMINI_MODEL || DEFAULT_FREE_MODEL;
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
