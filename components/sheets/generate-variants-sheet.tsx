@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   CheckIcon,
@@ -28,6 +28,8 @@ import { Textarea } from "@/components/ui/textarea";
 import SelectCompact from "@/components/ui/select-compact";
 import Markdown from "@/components/ui/markdown";
 import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
+import ImageSourceSheet from "@/components/sheets/image-source-sheet";
+import { useIsTouchDevice } from "@/hooks/useIsTouchDevice";
 import { api, ENDPOINT } from "@/lib/api";
 import { imageToBase64Jpeg } from "@/lib/image";
 import { uploadQuestionsInBatch } from "@/service/core.service";
@@ -216,6 +218,10 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
   const [imagePreview, setImagePreview] = useState("");
   const [prompt, setPrompt] = useState("");
   const [thinking, setThinking] = useState<TThinkingMode>(DEFAULT_THINKING_MODE);
+  // Phones and tablets: ask "camera or gallery" before opening a picker
+  const isTouch = useIsTouchDevice();
+  const [sourceOpen, setSourceOpen] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [models, setModels] = useState<TAiModel[]>([]);
   const [defaultModel, setDefaultModel] = useState("");
   const [model, setModel] = useState("");
@@ -440,6 +446,13 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
 
           <label
             className="relative flex min-h-[112px] sm:min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50/50 p-3 sm:p-4 text-center text-sm text-slate-500 hover:bg-slate-50"
+            onClick={(e) => {
+              // Let the file input's own click and the remove button through
+              const target = e.target as HTMLElement;
+              if (!isTouch || target.tagName === "INPUT" || target.closest("button")) return;
+              e.preventDefault();
+              setSourceOpen(true);
+            }}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
@@ -476,6 +489,7 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
               </>
             )}
             <input
+              ref={fileInput}
               type="file"
               accept={IMAGE_TYPES.join(",")}
               className="hidden"
@@ -485,6 +499,15 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
               }}
             />
           </label>
+          <ImageSourceSheet
+            open={sourceOpen}
+            onOpenChange={setSourceOpen}
+            title="Add the question image"
+            onChooseFile={() => fileInput.current?.click()}
+            onPhoto={(file) => {
+              if (!pickImage([file])) toast.error("That photo format isn't supported. Try Choose image instead.");
+            }}
+          />
 
           {/* text-base on phones stops iOS zooming into the field */}
           <Textarea
