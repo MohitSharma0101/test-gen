@@ -32,7 +32,6 @@ export type TGenerateVariantsRequest = {
 
 // The model picker in the Generate sheet
 export type TAiModel = { id: string; label: string };
-export type TAiModelsResponse = { defaultModel: string; models: TAiModel[] };
 
 export type TGenerateVariantsResponse = {
   questionType: TQuestionType;

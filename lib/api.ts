@@ -23,7 +23,6 @@ export const ENDPOINT = {
   uploadSign: "uploads/sign",
   generateVariants: "ai/variants",
   recheckVariant: "ai/variants/recheck",
-  aiModels: "ai/models",
 
   //auth
   login: "auth/login",

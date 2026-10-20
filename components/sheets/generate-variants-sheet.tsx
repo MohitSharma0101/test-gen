@@ -36,14 +36,13 @@ import { uploadQuestionsInBatch } from "@/service/core.service";
 import {
   DEFAULT_THINKING_MODE,
   THINKING_MODES,
-  type TAiModel,
-  type TAiModelsResponse,
   type TGeneratedQuestion,
   type TGenerateVariantsResponse,
   type TQuestionType,
   type TRecheckResponse,
   type TThinkingMode,
 } from "@/lib/ai/types";
+import { DEFAULT_FREE_MODEL, FREE_MODELS, isFreeModel } from "@/lib/ai/free-models";
 
 type Props = {
   // From the upload header
@@ -222,10 +221,7 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
   const isTouch = useIsTouchDevice();
   const [sourceOpen, setSourceOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
-  const [models, setModels] = useState<TAiModel[]>([]);
-  const [defaultModel, setDefaultModel] = useState("");
-  const [model, setModel] = useState("");
-  const [modelsLoading, setModelsLoading] = useState(false);
+  const [model, setModel] = useState(DEFAULT_FREE_MODEL);
   const [generating, setGenerating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [questions, setQuestions] = useState<TGeneratedQuestion[]>([]);
@@ -251,28 +247,13 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
     } catch {}
   }, []);
 
-  // Load the models Google offers for this key the first time the sheet opens
+  // Remember the last model picked on this browser
   useEffect(() => {
-    if (!open || models.length || modelsLoading) return;
-    setModelsLoading(true);
-    api
-      .get<TAiModelsResponse>(ENDPOINT.aiModels)
-      .then(({ data }) => {
-        const list = data.models.some((m) => m.id === data.defaultModel)
-          ? data.models
-          : [{ id: data.defaultModel, label: data.defaultModel }, ...data.models];
-        setModels(list);
-        setDefaultModel(data.defaultModel);
-        let saved = "";
-        try {
-          saved = localStorage.getItem(MODEL_STORAGE_KEY) || "";
-        } catch {}
-        setModel(list.some((m) => m.id === saved) ? saved : data.defaultModel);
-      })
-      .catch((err) => toast.error(err?.message || "Could not load the Gemini models"))
-      .finally(() => setModelsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    try {
+      const saved = localStorage.getItem(MODEL_STORAGE_KEY) || "";
+      if (isFreeModel(saved)) setModel(saved);
+    } catch {}
+  }, []);
 
   const changeModel = (value: string) => {
     if (!value) return;
@@ -282,8 +263,7 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
     } catch {}
   };
 
-  // The server default is sent as "no choice" so a change to GEMINI_MODEL still applies
-  const chosenModel = model && model !== defaultModel ? model : undefined;
+  const chosenModel = model || undefined;
   // Gemma models have no thinking setting
   const thinkingApplies = !model.startsWith("gemma-");
 
@@ -523,13 +503,11 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
               label="Model"
               className="min-w-0 sm:w-[220px]"
               triggerClassName="text-left"
-              value={model || undefined}
-              placeholder={modelsLoading ? "Loading…" : "Default"}
+              value={model}
               onChange={changeModel}
               disabled={generating}
-              loading={modelsLoading}
-              options={models.map((m) => ({
-                label: m.id === defaultModel ? `${m.label} (default)` : m.label,
+              options={FREE_MODELS.map((m) => ({
+                label: m.id === DEFAULT_FREE_MODEL ? `${m.label} (default)` : m.label,
                 value: m.id,
               }))}
             />
