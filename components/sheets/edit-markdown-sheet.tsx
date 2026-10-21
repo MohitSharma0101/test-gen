@@ -26,14 +26,23 @@ const EditMarkdownSheet = ({ text, onSave, children, className }: Props) => {
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent side={"bottom"} className="max-h-[80dvh] pb-10 px-2 md:px-4">
-        <MarkdownEditor
-          defaultText={text}
-          onSave={(text) => {
-            onSave?.(text);
-            setOpen(false);
-          }}
-        />
+      {/* Editing markdown is a focused job, so a phone gets the whole screen.
+          The height is definite rather than a max so the editor inside can size
+          its panes from it; with an auto height they collapsed and it used to
+          fall back to a fixed 618px that overflowed the sheet. */}
+      <SheetContent
+        side={"bottom"}
+        className="flex h-[100dvh] flex-col gap-0 px-2 pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:h-[85dvh] md:px-4"
+      >
+        <div className="min-h-0 flex-1">
+          <MarkdownEditor
+            defaultText={text}
+            onSave={(text) => {
+              onSave?.(text);
+              setOpen(false);
+            }}
+          />
+        </div>
       </SheetContent>
     </Sheet>
   );

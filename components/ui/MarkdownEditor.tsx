@@ -12,6 +12,7 @@ import { Button } from "./button";
 import { ImagePlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { uploadImage } from "@/lib/uploadImage";
+import { useIsNarrowViewport } from "@/hooks/useIsNarrowViewport";
 
 type Props = {
   defaultText?: string;
@@ -49,6 +50,8 @@ const MarkdownEditor = ({ defaultText, onSave }: Props) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  // Two panes side by side need width a phone does not have
+  const direction = useIsNarrowViewport() ? "vertical" : "horizontal";
 
   // The preview re-renders its HTML on every change, so re-apply the overlay.
   useEffect(() => {
@@ -108,9 +111,19 @@ const MarkdownEditor = ({ defaultText, onSave }: Props) => {
   const isUploading = uploadingCount > 0;
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="border">
-      <ResizablePanel className="">
-        <h5 className="w-full p-4 border-b font-bold gap-2 flex items-center h-[60px]">
+    // Stacked on a phone, side by side from sm up. The group is remounted when
+    // the direction changes so the panels re-measure instead of keeping sizes
+    // from the other axis.
+    <ResizablePanelGroup
+      key={direction}
+      direction={direction}
+      className="h-full min-h-0 border"
+    >
+      {/* min-w-0 as well as min-h-0: a flex child defaults to min-width:auto, so
+          without it wide content stretches the pane instead of scrolling */}
+      <ResizablePanel className="flex min-h-0 min-w-0 flex-col">
+        {/* pr-10 keeps the Save button clear of the sheet's close button */}
+        <h5 className="flex h-[60px] w-full shrink-0 items-center gap-2 border-b p-4 pr-10 font-bold sm:pr-4">
           Editor
           <Button
             variant={"outline"}
@@ -142,7 +155,9 @@ const MarkdownEditor = ({ defaultText, onSave }: Props) => {
         </h5>
         <Textarea
           ref={textareaRef}
-          className={`resize-none rounded-none text-base h-full max-h-[618px] ${
+          // flex-1 + min-h-0 so it takes the height the sheet actually has.
+          // A fixed height here overflowed the sheet on a phone.
+          className={`min-h-0 flex-1 resize-none rounded-none text-base ${
             isDragging ? "ring-2 ring-primary ring-inset" : ""
           }`}
           placeholder="Enter your text here... Paste or drop an image to upload it."
@@ -168,9 +183,17 @@ const MarkdownEditor = ({ defaultText, onSave }: Props) => {
         />
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel className="[&_ol]:list-decimal [&_ol]:list-outside [&_ol]:ml-4">
-        <h5 className="w-full p-4 border-b font-bold flex items-center h-[60px]">Preview</h5>
-        <div ref={previewRef} className="h-[618px] overflow-y-scroll">
+      <ResizablePanel className="flex min-h-0 min-w-0 flex-col [&_ol]:list-decimal [&_ol]:list-outside [&_ol]:ml-4">
+        <h5 className="flex h-[60px] w-full shrink-0 items-center border-b p-4 font-bold">
+          Preview
+        </h5>
+        {/* A long equation renders as one unbreakable MathJax block, so the
+            preview scrolls sideways rather than widening the pane. Matches how
+            the generate sheet renders the same markdown. */}
+        <div
+          ref={previewRef}
+          className="min-h-0 w-full max-w-full flex-1 overflow-auto break-words"
+        >
           <Markdown text={text} />
         </div>
       </ResizablePanel>

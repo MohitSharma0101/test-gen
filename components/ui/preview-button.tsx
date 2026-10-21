@@ -11,6 +11,9 @@ import MCQAnsFrame from "../frames/mcq-ans-frame";
 import TeachersCopiesFrame from "../frames/teachers-copies-frame";
 import CopyQuestionsMd from "./copy--questions-md";
 import PresntFrame from "../frames/present-frame";
+import PaperPreview from "./paper-preview";
+import usePaper from "@/hooks/usePaper";
+import { cn } from "@/lib/utils";
 
 type Props = {
   questions: TQuestion[];
@@ -20,6 +23,10 @@ type Props = {
   onQuestionRemove?: (question: TQuestion) => void;
   editable?: boolean;
   variant?: ButtonProps["variant"];
+  // For a paper from a list, where the questions arrive with marks only. The
+  // full paper is fetched the first time the sheet is opened, so browsing a
+  // page of papers does not download every question in all of them.
+  paperId?: string;
 };
 
 const PreviewButton = ({
@@ -30,10 +37,19 @@ const PreviewButton = ({
   onQuestionRemove,
   editable,
   variant = "outline",
+  paperId,
 }: Props) => {
   const [twoColumn, setTwoColumn] = useState(defaultTwoColumn);
   const [loadPreview, setLoadPreview] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
+
+  // Only requested once the sheet has been opened
+  const { paper, loading: paperLoading } = usePaper({
+    id: paperId && open ? paperId : null,
+  });
+  const fullQuestions = paperId ? paper?.questions ?? [] : questions;
+  const waitingForPaper = Boolean(paperId) && paperLoading && fullQuestions.length === 0;
 
   useEffect(() => {
     if (defaultTwoColumn != twoColumn) {
@@ -42,7 +58,7 @@ const PreviewButton = ({
   }, [defaultTwoColumn]);
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
           disabled={questions.length === 0}
@@ -54,9 +70,25 @@ const PreviewButton = ({
       </SheetTrigger>
       <SheetContent
         side={"bottom"}
-        className="max-h-[90svh] px-2 pt-10 m-auto rounded max-w-screen-lg scrollbar-hide overflow-scroll"
+        className="m-auto flex h-[100svh] max-w-screen-lg flex-col gap-0 rounded px-2 pt-10 sm:h-[90svh]"
       >
-        <div className="flex gap-2 bg-white w-full mr-5 z-10 flex-wrap">
+        {/* A paper opened from a list is still on its way, and printing an
+            empty one would be worse than waiting for it */}
+        {waitingForPaper && (
+          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 text-sm text-slate-500">
+            <Loader2Icon className="h-4 w-4 animate-spin" />
+            Loading paper…
+          </div>
+        )}
+
+        {/* One scrolling row on a phone: these buttons used to wrap into three
+            rows and eat the height the preview needed. */}
+        <div
+          className={cn(
+            "z-10 -mx-2 flex shrink-0 gap-2 overflow-x-auto bg-white px-2 pb-2 scrollbar-hide [&>*]:shrink-0 sm:mx-0 sm:flex-wrap sm:overflow-x-visible sm:px-0",
+            waitingForPaper && "hidden"
+          )}
+        >
           <Print>
             <PrintTrigger
               className="px-6"
@@ -70,20 +102,20 @@ const PreviewButton = ({
               Print
             </PrintTrigger>
             <PrintContent>
-              <PaperFrame questions={questions} twoColumn={twoColumn} />
+              <PaperFrame questions={fullQuestions} twoColumn={twoColumn} />
             </PrintContent>
           </Print>
           <Print>
             <PrintTrigger>Print MCQ Answer</PrintTrigger>
             <PrintContent>
-              <MCQAnsFrame questions={questions} />
+              <MCQAnsFrame questions={fullQuestions} />
             </PrintContent>
           </Print>
           <Print>
             <PrintTrigger>Print Teachers Copy</PrintTrigger>
             <PrintContent>
               <TeachersCopiesFrame
-                questions={questions}
+                questions={fullQuestions}
                 twoColumn={twoColumn}
               />
             </PrintContent>
@@ -91,33 +123,38 @@ const PreviewButton = ({
           <Print>
             <PrintTrigger>Present</PrintTrigger>
             <PrintContent>
-              <PresntFrame questions={questions} />
+              <PresntFrame questions={fullQuestions} />
             </PrintContent>
           </Print>
-          <CopyQuestionsMd questions={questions} />
+          <CopyQuestionsMd questions={fullQuestions} />
 
           <Button
             variant={twoColumn ? "default" : "outline"}
             onClick={() => {
               setTwoColumn(!twoColumn);
             }}
-            className="ml-auto mr-4"
+            className="sm:ml-auto sm:mr-4"
+            aria-label="Two column layout"
           >
             <Columns2Icon className="w-4 h-4" />
           </Button>
         </div>
+        {/* The preview is the only thing that scrolls, so the toolbar stays put */}
+        <div className={cn("min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide", waitingForPaper && "hidden")}>
         {loadPreview ? (
-          <PaperFrame
-            questions={questions}
-            twoColumn={twoColumn}
-            editable={editable}
-            onQuestionRemove={onQuestionRemove}
-          />
+          <PaperPreview>
+            <PaperFrame
+              questions={fullQuestions}
+              twoColumn={twoColumn}
+              editable={editable}
+              onQuestionRemove={onQuestionRemove}
+            />
+          </PaperPreview>
         ) : (
           <Button
             disabled={isPending}
             variant={"outline"}
-            className=" w-full flex items-center justify-center h-[600px] text-base border border-dashed border-slate-400 bg-slate-50 rounded-xl my-6"
+            className="my-6 flex h-[320px] w-full items-center justify-center rounded-xl border border-dashed border-slate-400 bg-slate-50 text-base sm:h-[600px]"
             onClick={() => {
               startTransition(() => {
                 setLoadPreview(true);
@@ -132,6 +169,7 @@ const PreviewButton = ({
             Load Preview
           </Button>
         )}
+        </div>
       </SheetContent>
     </Sheet>
   );
