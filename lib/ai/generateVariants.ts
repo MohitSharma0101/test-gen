@@ -19,12 +19,30 @@ export const FORMAT_RULES = `Formatting for every "text" and "solution" (it is r
 
 "answer": for an MCQ only the correct option letter, one of a, b, c, d. For a numerical only the final number, without units.
 "solution": a detailed step-by-step solution that ends with the final answer.
-"needsDiagram": true if the question cannot be understood without a figure. In that case still describe in the text every value a student needs.`;
+
+FIGURES
+A question you are transcribing, or leaving as it is, keeps its own wording - including any reference to a figure. Never add a description to it.
+A question you write yourself, or reword, must stand on its own without a figure:
+- Do not write "in the figure shown", "as shown in the diagram" or "from the given graph". The student will not have that picture.
+- Name the arrangement in a short phrase, the way a textbook does when it prints no figure: "a block on a smooth $30^{\\circ}$ incline", "two resistors in parallel across a $12\\,\\mathrm{V}$ cell", "a particle at the midpoint of the rod". One clause is usually enough.
+- Carry over only the values the student actually needs, with units.
+- Keep it brief. Such a question may run a little longer than the one it came from - roughly one extra clause or short sentence - and no more. Do not spell out every length, angle, contact point and direction; a student who knows the topic will picture the standard setup.
+- If it cannot be stated this briefly, change the scenario to one that can.
+
+"needsDiagram": true when the question cannot be understood without a figure. A transcribed question takes whatever the photo shows: if it depends on a figure that was printed with it, set true. A question you wrote yourself should almost always be false, since you worded it to stand on its own; set true only when the question type genuinely requires a picture, such as reading values off a graph or an irregular shape.
+"needsSolutionDiagram": true only when the solution cannot be followed without a figure, for example a ray diagram or a free-body sketch that the working constantly refers to. Set false whenever the written steps stand on their own.
+
+DRAWING BRIEFS
+The teacher draws the figures in a separate image tool, so for each question also write what that figure should contain. These are instructions to an artist, not part of the question, and the student never sees them.
+"diagramBrief": the figure for the question. Name each object and where it sits relative to the others, the orientation, and which values are labelled. Under 60 words, one paragraph, plain prose, no LaTeX and no markdown. Do not restate the question, do not mention the options, and never give away or label the quantity the question asks for.
+  Example: "A right triangle acting as an incline, rising to the right at 30 degrees from a hatched horizontal floor. A small square block rests on the slope, labelled 4 kg. A string runs from the block up the slope, over a small circular pulley at the apex, then straight down to a second square block hanging in mid-air, labelled 6 kg. Mark the 30 degree angle at the bottom-left corner."
+"solutionDiagramBrief": the figure for the worked solution, which may show the working - force arrows, components, construction lines, ray paths - and may label intermediate quantities. Same length and style limits.
+For either one, return an empty string if a figure would add nothing. Write a brief whenever a figure would genuinely help, even if you set the matching needsDiagram flag to false.`;
 
 const SYSTEM_INSTRUCTION = `You are an experienced question setter for Indian JEE and NEET coaching.
 You receive a photo of one question. Do two things:
-1. Transcribe that question exactly as "original", including its options and the correct answer with a solution.
-2. Write exactly ${VARIANT_COUNT} new "variants" that test the same concept at the same difficulty, using different values and, where it helps, a changed scenario. Each variant must be fully solvable and, for MCQs, have exactly one correct option. Make the wrong options plausible.
+1. Transcribe that question exactly as "original", including its options and the correct answer with a solution. Word for word: copy what the photo says and nothing else. Do not reword it, do not shorten it, do not add anything, and if it refers to a figure leave that reference exactly as printed. The teacher attaches the figure separately.
+2. Write exactly ${VARIANT_COUNT} new "variants" that test the same concept at the same difficulty, using different values and, where it helps, a changed scenario. Each variant must be fully solvable and, for MCQs, have exactly one correct option. Make the wrong options plausible. Unlike the original, a variant is yours to word, so write it to stand on its own without a figure - briefly. See the rules on figures below.
 
 Keep the question type of the original: an MCQ stays an MCQ with four options; a numerical (integer or decimal answer) stays numerical with no options.
 
@@ -37,9 +55,20 @@ const QUESTION_SCHEMA = {
     answer: { type: "STRING" },
     solution: { type: "STRING" },
     needsDiagram: { type: "BOOLEAN" },
+    needsSolutionDiagram: { type: "BOOLEAN" },
+    diagramBrief: { type: "STRING" },
+    solutionDiagramBrief: { type: "STRING" },
   },
-  required: ["text", "answer", "solution", "needsDiagram"],
-  propertyOrdering: ["text", "answer", "solution", "needsDiagram"],
+  required: [
+    "text", "answer", "solution",
+    "needsDiagram", "needsSolutionDiagram",
+    "diagramBrief", "solutionDiagramBrief",
+  ],
+  propertyOrdering: [
+    "text", "answer", "solution",
+    "needsDiagram", "needsSolutionDiagram",
+    "diagramBrief", "solutionDiagramBrief",
+  ],
 };
 
 const RESPONSE_SCHEMA = {
@@ -58,6 +87,9 @@ type RawQuestion = {
   answer?: string;
   solution?: string;
   needsDiagram?: boolean;
+  needsSolutionDiagram?: boolean;
+  diagramBrief?: string;
+  solutionDiagramBrief?: string;
 };
 
 type RawResponse = {
@@ -78,6 +110,12 @@ export const formatAnswer = (answer: string, type: TQuestionType) => {
   return first;
 };
 
+// The brief is pasted into a prompt, so it is capped and stripped of markup
+const MAX_BRIEF = 600;
+
+const brief = (value: unknown) =>
+  typeof value === "string" ? value.trim().replace(/s+/g, " ").slice(0, MAX_BRIEF) : "";
+
 const toQuestion = (
   raw: RawQuestion | undefined,
   kind: TGeneratedQuestion["kind"],
@@ -93,7 +131,9 @@ const toQuestion = (
     text,
     ans: solution ? `${answer}\n\n${solution}` : answer,
     needsDiagram: !!raw?.needsDiagram,
-    diagram: null,
+    needsSolutionDiagram: !!raw?.needsSolutionDiagram,
+    diagramBrief: brief(raw?.diagramBrief),
+    solutionDiagramBrief: brief(raw?.solutionDiagramBrief),
   };
 };
 

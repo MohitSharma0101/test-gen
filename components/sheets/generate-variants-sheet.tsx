@@ -8,6 +8,7 @@ import {
   ImageIcon,
   Loader2Icon,
   PencilIcon,
+  ShapesIcon,
   SparklesIcon,
   TriangleAlertIcon,
   ShieldCheckIcon,
@@ -29,6 +30,7 @@ import SelectCompact from "@/components/ui/select-compact";
 import Markdown from "@/components/ui/markdown";
 import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
 import ImageSourceSheet from "@/components/sheets/image-source-sheet";
+import DiagramPromptSheet from "@/components/sheets/diagram-prompt-sheet";
 import { useIsTouchDevice } from "@/hooks/useIsTouchDevice";
 import { api, ENDPOINT } from "@/lib/api";
 import { imageToBase64Jpeg } from "@/lib/image";
@@ -228,6 +230,8 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [questionType, setQuestionType] = useState<TQuestionType>("MCQ");
   const [checks, setChecks] = useState<Record<string, TCheckState>>({});
+  // The question whose diagram prompts are showing
+  const [promptsFor, setPromptsFor] = useState<string | null>(null);
 
   useEffect(() => {
     if (!image) {
@@ -348,7 +352,16 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
         image: q.kind === "original" && image ? await imageToBase64Jpeg(image) : undefined,
         model: chosenModel,
       });
-      if (data.question) updateQuestion(q.id, data.question);
+      if (data.question) {
+        // A rewritten question makes the saved drawing brief describe something
+        // that is no longer there, so it is dropped and the prompt falls back
+        // to its generic wording.
+        const reworded = data.question.text.trim() !== q.text.trim();
+        updateQuestion(q.id, {
+          ...data.question,
+          ...(reworded ? { diagramBrief: "", solutionDiagramBrief: "" } : {}),
+        });
+      }
       setChecks((prev) => ({
         ...prev,
         [q.id]: { loading: false, result: data, previous: data.question ? q : undefined },
@@ -489,6 +502,18 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
             }}
           />
 
+          <DiagramPromptSheet
+            open={!!promptsFor}
+            onOpenChange={(next) => !next && setPromptsFor(null)}
+            question={questions.find((q) => q.id === promptsFor) ?? null}
+            questionType={questionType}
+            label={(() => {
+              const index = questions.findIndex((q) => q.id === promptsFor);
+              const q = questions[index];
+              return q ? labelFor(q, index, hasOriginal) : "";
+            })()}
+          />
+
           {/* text-base on phones stops iOS zooming into the field */}
           <Textarea
             value={prompt}
@@ -556,10 +581,14 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
                     }
                   />
                   <span className="text-sm font-semibold">{labelFor(q, index, hasOriginal)}</span>
-                  {q.needsDiagram && (
+                  {(q.needsDiagram || q.needsSolutionDiagram) && (
                     <span className="ml-auto flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
                       <TriangleAlertIcon className="w-3 h-3" />
-                      Needs diagram
+                      {q.needsDiagram && q.needsSolutionDiagram
+                        ? "Needs diagrams"
+                        : q.needsSolutionDiagram
+                          ? "Answer needs diagram"
+                          : "Needs diagram"}
                     </span>
                   )}
                 </label>
@@ -594,6 +623,13 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
                     ) : (
                       <ShieldCheckIcon className="w-4 h-4" />
                     )}
+                  </Button>
+                  <Button
+                    variant={q.needsDiagram || q.needsSolutionDiagram ? "default" : "outline"}
+                    onClick={() => setPromptsFor(q.id)}
+                    className="h-9 flex-1 gap-1.5 px-2 text-xs sm:text-sm"
+                  >
+                    <ShapesIcon className="w-3.5 h-3.5" /> Diagram
                   </Button>
                   <EditMarkdownSheet text={q.text} onSave={(text) => editQuestion(q.id, { text })}>
                     <Button

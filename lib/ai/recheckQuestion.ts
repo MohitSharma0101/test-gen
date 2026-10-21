@@ -44,10 +44,11 @@ const RESPONSE_SCHEMA = {
     solution: { type: "STRING" },
     answer: { type: "STRING" },
     needsDiagram: { type: "BOOLEAN" },
+    needsSolutionDiagram: { type: "BOOLEAN" },
     summary: { type: "STRING" },
   },
-  required: ["analysis", "issues", "verdict", "text", "solution", "answer", "needsDiagram", "summary"],
-  propertyOrdering: ["analysis", "issues", "verdict", "text", "solution", "answer", "needsDiagram", "summary"],
+  required: ["analysis", "issues", "verdict", "text", "solution", "answer", "needsDiagram", "needsSolutionDiagram", "summary"],
+  propertyOrdering: ["analysis", "issues", "verdict", "text", "solution", "answer", "needsDiagram", "needsSolutionDiagram", "summary"],
 };
 
 type RawRecheck = {
@@ -57,6 +58,7 @@ type RawRecheck = {
   solution?: string;
   answer?: string;
   needsDiagram?: boolean;
+  needsSolutionDiagram?: boolean;
   summary?: string;
 };
 
@@ -130,6 +132,7 @@ export const recheckQuestion = async ({
     text: newText,
     ans: `${newAnswer}\n\n${solution}`,
     needsDiagram: !!raw.needsDiagram,
+    needsSolutionDiagram: !!raw.needsSolutionDiagram,
   };
   const changed = !sameAnswer(answerKey, newAnswer, questionType);
 

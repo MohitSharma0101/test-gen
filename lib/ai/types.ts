@@ -7,20 +7,21 @@ export const THINKING_MODES = ["low", "medium", "high"] as const;
 export type TThinkingMode = (typeof THINKING_MODES)[number];
 export const DEFAULT_THINKING_MODE: TThinkingMode = "medium";
 
-// Phase 2 will fill this with a generated or cropped diagram.
-export type TGeneratedDiagram = {
-  url?: string; // set once uploaded
-  dataUrl?: string; // local preview before upload
-};
-
 export type TGeneratedQuestion = {
   id: string;
   kind: "original" | "variant";
   // Same fields as TQuestion, so they can be uploaded as-is
   text: string;
   ans: string; // line 1: "(b\)" (escaped so "(c)" is not shown as ©) or the numeric value; then the detailed solution
+  // Diagrams are drawn outside the app: the sheet hands over a prompt to paste
+  // into an image model, and the picture comes back through the editor.
   needsDiagram: boolean;
-  diagram: TGeneratedDiagram | null;
+  needsSolutionDiagram: boolean;
+  // What to draw, in words, written during generation and saved here so the
+  // Copy prompt button needs no call of its own. Empty means the prompt falls
+  // back to its generic wording.
+  diagramBrief: string;
+  solutionDiagramBrief: string;
 };
 
 export type TGenerateVariantsRequest = {
@@ -63,5 +64,8 @@ export type TRecheckResponse = {
   previousAnswer?: string;
   newAnswer?: string;
   // Missing when status is "manual"
-  question?: Pick<TGeneratedQuestion, "text" | "ans" | "needsDiagram">;
+  question?: Pick<
+    TGeneratedQuestion,
+    "text" | "ans" | "needsDiagram" | "needsSolutionDiagram"
+  >;
 };
