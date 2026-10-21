@@ -4,9 +4,18 @@ import Question, { TQuestion } from "@/models/Question";
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { questions } = (await request.json()) as { questions: TQuestion[] };
+    // The client sends ids. Full question objects are still accepted so an
+    // older tab that is still open keeps working.
+    const { ids, questions } = (await request.json()) as {
+      ids?: string[];
+      questions?: TQuestion[];
+    };
 
-    if (!questions || questions?.length <= 0) {
+    const questionIds = (ids?.length ? ids : questions?.map((q) => q._id) ?? []).filter(
+      Boolean
+    );
+
+    if (questionIds.length <= 0) {
       return NextResponse.json(
         {
           status: "error",
@@ -17,8 +26,6 @@ export const POST = async (request: NextRequest) => {
     }
 
     await dbConnect();
-
-    const questionIds = questions.map((q) => q._id);
     // Define the filter using the list of question IDs
     const filter = { _id: { $in: questionIds } };
 

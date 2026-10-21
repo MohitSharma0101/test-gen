@@ -99,3 +99,39 @@ tfoot.report-footer {
   display: inline-block;
   vertical-align: bottom;
 }
+
+/* mathpix-markdown-it puts "will-change: transform" inline on every #preview
+   wrapper it renders. A paper renders one per question text and per answer, so
+   a 30-question paper asks the browser for ~90 compositor layers and the GPU
+   textures that go with them, which is what makes scrolling stutter. Nothing
+   here animates a transform, so the hint is pure cost. !important is needed to
+   beat the inline style. */
+#preview {
+  will-change: auto !important;
+}
+
+/* Figures come out of the markdown renderer as a bare <img> with no size, so
+   without this a wide photo sets the width of whatever contains it. */
+#preview img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Skips layout and paint for rows that are off screen while leaving them in the
+   DOM, so a long question list behaves like a windowed list without being one.
+   "auto" in contain-intrinsic-size means the browser reuses each row's last
+   known height, so the scrollbar settles once a row has been seen.
+
+   Screen only, deliberately: printing has to lay out every page, and browsers
+   have had bugs skipping content-visibility content in print output. The print
+   path renders its own subtree anyway, so it never sees this.
+
+   Not used inside the paper preview: that scales the paper with a transform and
+   has to read its scrollHeight to size the scaled box, which would read an
+   estimate here and change as rows are scrolled into view. */
+@media screen {
+  .defer-offscreen {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 180px;
+  }
+}

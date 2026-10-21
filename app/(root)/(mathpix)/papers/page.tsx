@@ -158,6 +158,9 @@ const PapersPage = (props: Props) => {
                       <CalendarClockIcon className="w-5 h-5" />
                     </Button>
                     <PreviewButton
+                      // The list carries marks only; the full paper is fetched
+                      // when this is opened
+                      paperId={paper._id}
                       questions={paper.questions}
                       defaultTwoColumn
                       onPrint={() => postUpdateUsage(paper.questions)}

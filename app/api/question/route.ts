@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
+import { jsonRevalidated } from "@/lib/httpCache";
 import Question, { TQuestion } from "@/models/Question";
 import "@/models/Chapter";
 
@@ -53,21 +54,21 @@ export const GET = async (request: NextRequest) => {
         course: 1,
         title: 1,
       })
-      .exec();
+      // Nothing here needs Mongoose documents, only their JSON
+      .lean();
 
     const totalQuestions = await Question.countDocuments(query);
     const totalPages = Math.ceil(totalQuestions / limit);
 
-    return NextResponse.json(
-      {
-        status: "success",
-        questions: questions,
-        totalPages,
-        totalQuestions,
-        currentPage: page,
-      },
-      { status: 200 }
-    );
+    // Revisiting a page of questions is common and the list rarely changes
+    // between visits, so an unchanged page answers 304 instead of resending it
+    return jsonRevalidated(request, {
+      status: "success",
+      questions: questions,
+      totalPages,
+      totalQuestions,
+      currentPage: page,
+    });
   } catch (err: any) {
     return NextResponse.json(
       { status: "error", error: err.message ?? "Something went wrong" },

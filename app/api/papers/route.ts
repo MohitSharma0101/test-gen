@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import "@/models/Chapter";
 import "@/models/Question";
 import { TChapter } from "@/models/Chapter";
-import { nextError, nextSuccess } from "@/lib/nextUtils";
+import { nextError } from "@/lib/nextUtils";
+import { jsonRevalidated } from "@/lib/httpCache";
 import { PaperStatus } from "@/data/const";
 
 export const GET = async (request: NextRequest) => {
@@ -24,28 +25,36 @@ export const GET = async (request: NextRequest) => {
     if (status) query.status = status;
 
     await dbConnect();
+
+    // Fetching one paper means it is about to be read or printed, so it gets
+    // the whole thing. A list only shows each paper's title, question count and
+    // total marks, so sending every question's text, solution and chapter is
+    // about 300 documents per page that nothing reads - roughly 316 KB where
+    // 15 KB will do. Whatever opens a paper fetches it by id.
+    const forOnePaper = Boolean(id);
+    const questionsPopulate = forOnePaper
+      ? { path: "questions", populate: { path: "chapter", model: "Chapter" } }
+      : { path: "questions", select: "mark" };
+
     const papers = await Paper.find(query)
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit * 1)
-      .populate({
-        path: "questions",
-        populate: {
-          path: "chapter",
-          model: "Chapter",
-        },
-      })
+      .populate(questionsPopulate)
       .lean();
 
     const totalPapers = await Paper.countDocuments(query);
     const totalPages = Math.ceil(totalPapers / limit);
 
-    return nextSuccess({
+    return jsonRevalidated(request, {
       status: "success",
-      papers: papers,
-      totalPages,
-      totalPapers,
-      currentPage: page,
+      data: {
+        status: "success",
+        papers: papers,
+        totalPages,
+        totalPapers,
+        currentPage: page,
+      },
     });
   } catch (err: any) {
     return nextError(err.message);

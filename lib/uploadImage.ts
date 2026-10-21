@@ -9,8 +9,13 @@ type UploadTarget = {
   maxBytes: number;
 };
 
+// What storage accepts
 const MAX_BYTES = 5 * 1024 * 1024;
-const MAX_DIMENSION = 2400;
+// What a question figure is actually worth sending. A phone photo is 2-4 MB and
+// used to be uploaded untouched, because only files over the 5 MB limit were
+// re-encoded; at 0.4 Mbps that is a minute of upload for one figure.
+const TARGET_BYTES = 600 * 1024;
+const MAX_DIMENSION = 1600;
 
 const loadImage = (file: Blob) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
@@ -27,9 +32,10 @@ const loadImage = (file: Blob) =>
     img.src = url;
   });
 
-// Shrinks images over the size limit. Small images are uploaded untouched.
+// Shrinks anything bigger than a figure needs to be. Already-small images and
+// GIFs (which would lose their animation) are uploaded untouched.
 const shrinkIfNeeded = async (file: File): Promise<Blob> => {
-  if (file.size <= MAX_BYTES || file.type === "image/gif") return file;
+  if (file.size <= TARGET_BYTES || file.type === "image/gif") return file;
 
   const img = await loadImage(file);
   const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height));
@@ -42,12 +48,17 @@ const shrinkIfNeeded = async (file: File): Promise<Blob> => {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-  for (const quality of [0.9, 0.8, 0.65, 0.5]) {
+  let smallest: Blob | null = null;
+  for (const quality of [0.85, 0.75, 0.65, 0.5]) {
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob(resolve, "image/jpeg", quality)
     );
-    if (blob && blob.size <= MAX_BYTES) return blob;
+    if (!blob) continue;
+    smallest = blob;
+    if (blob.size <= TARGET_BYTES) return blob;
   }
+  // Never got under the target, but anything under the hard limit still uploads
+  if (smallest && smallest.size <= MAX_BYTES) return smallest;
   throw new Error("Image is too large even after shrinking (max 5 MB)");
 };
 

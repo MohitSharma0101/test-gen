@@ -137,9 +137,11 @@ export const savePaper = async (
   }
 };
 
+// Only the ids are needed to bump the counter, and a paper's worth of full
+// question objects is ~35 KB of upload on a link whose uplink is the slow half.
 export const postUpdateUsage = async (questions: TQuestion[]) => {
   return await api.post(ENDPOINT.questionsUsed, {
-    questions,
+    ids: questions.map((q) => q._id).filter(Boolean),
   });
 };
 

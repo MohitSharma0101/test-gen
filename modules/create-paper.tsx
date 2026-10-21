@@ -329,7 +329,7 @@ export default function CreatePaper({ defaultPaper }: TCreatePaperProps) {
                 questions?.map((q, index) => (
                   <label
                     key={index}
-                    className="cursor-pointer flex items-start hover:bg-slate-100 rounded md:p-2 text-sm md:text-base [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full "
+                    className="defer-offscreen cursor-pointer flex items-start hover:bg-slate-100 rounded md:p-2 text-sm md:text-base [&_#preview]:!px-0 [&_#preview]:!max-w-[300px] md:[&_#preview]:!max-w-full "
                   >
                     <div className="mt-[14px] flex flex-col items-center justify-center gap-4">
                       <div className="flex flex-col gap-2">
