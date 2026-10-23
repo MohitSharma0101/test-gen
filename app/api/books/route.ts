@@ -7,10 +7,18 @@ export const GET = async (request: NextRequest) => {
     const searchParams = request.nextUrl.searchParams;
     const course = searchParams.get("course");
     const subject = searchParams.get("subject");
+    // A paper can draw on several subjects at once, so a comma separated list
+    // is accepted alongside the single `subject`
+    const subjects = searchParams.get("subjects");
 
     const query: any = {};
     if (course) query.course = course;
-    if (subject) query.subject = subject;
+    const subjectList = (subjects ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (subjectList.length) query.subject = { $in: subjectList };
+    else if (subject) query.subject = subject;
 
     await dbConnect();
     const books = await Book.find(query);

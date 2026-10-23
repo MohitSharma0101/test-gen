@@ -50,7 +50,7 @@ export function addQueryToUrl(url: string, key: string, value: string | number):
 }
 
 export function segregateQuestionsBySubject(questions: TQuestion[], defaultSubject: string = "-"): SubjectQuestions[] {
-  const subjectMap = questions.reduce((acc, question, index) => {
+  const subjectMap = questions.reduce((acc, question) => {
     let subject: string | undefined;
 
     if (typeof question.chapter === "string") {
@@ -61,9 +61,6 @@ export function segregateQuestionsBySubject(questions: TQuestion[], defaultSubje
       subject = defaultSubject;
     }
 
-    // Add continuous index to each question
-    question.index = index + 1;
-
     if (!acc[subject]) {
       acc[subject] = [];
     }
@@ -73,9 +70,18 @@ export function segregateQuestionsBySubject(questions: TQuestion[], defaultSubje
     return acc;
   }, {} as { [subject: string]: TQuestion[] });
 
+  // Numbered after grouping, not before: the paper runs 1..n straight through,
+  // and each subject's own stretch of it is unbroken. Numbering first and
+  // grouping afterwards left every subject with gaps - Physics 1, 4, 7 - on
+  // any paper that had more than one.
+  let number = 0;
   return Object.keys(subjectMap).map((subject) => ({
     subject,
-    questions: subjectMap[subject],
+    questions: subjectMap[subject].map((question) => {
+      number += 1;
+      question.index = number;
+      return question;
+    }),
   }));
 }
 
@@ -121,7 +127,9 @@ export function getUniqueElementsById<T extends { id?: string; _id?: string }>(a
 
 export const sortQuestionsByMarks = (questions?: TQuestion[]) => {
   if (!questions) return [];
-  return questions.sort((a, b) => (a.mark || 0) - (b.mark || 0));
+  // On a copy: the frames sort the very array a page is holding in state, and
+  // sorting in place reordered the list the teacher was looking at
+  return [...questions].sort((a, b) => (a.mark || 0) - (b.mark || 0));
 };
 
 export const getWhatsappURL = (phone?: string, message?: string) => {

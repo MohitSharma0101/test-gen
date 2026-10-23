@@ -9,11 +9,19 @@ export const GET = async (request: NextRequest) => {
     const course = searchParams.get("course");
     const subject = searchParams.get("subject");
     const book = searchParams.get("book");
+    // Generating a paper draws on chapters from several books at once, so a
+    // comma separated list is accepted alongside the single `book`
+    const books = searchParams.get("books");
 
     const query: any = {};
     if (course) query.course = course;
     if (subject) query.subject = subject;
-    if (book) query.book = book;
+    const bookIds = (books ?? "")
+      .split(",")
+      .map((b) => b.trim())
+      .filter(Boolean);
+    if (bookIds.length) query.book = { $in: bookIds };
+    else if (book) query.book = book;
 
     await dbConnect();
     const chapters = await Chapter.find(query).sort({ order: 1 });

@@ -2,6 +2,7 @@ import { toast } from "@/components/ui/use-toast";
 import { PaperStatus } from "@/data/const";
 import { api, ENDPOINT } from "@/lib/api";
 import { TAttendance } from "@/models/Attendance";
+import { TBook } from "@/models/Book";
 import { TChapter } from "@/models/Chapter";
 import { TPaper } from "@/models/Paper";
 import { TQuestion } from "@/models/Question";
@@ -56,6 +57,97 @@ export const fetchChapters = async (book?: string) => {
       },
     })
   ).data.chapters as TChapter[];
+};
+
+// Chapters of several books at once, for generating a paper across books
+export const fetchChaptersOfBooks = async (books: string[]) => {
+  if (!books.length) return [];
+  return (
+    await api.get(ENDPOINT.chapters, {
+      params: {
+        books: books.join(","),
+      },
+    })
+  ).data.chapters as TChapter[];
+};
+
+// One subject's share of a paper
+export type TGenerateSection = {
+  subject?: string;
+  chapterIds: string[];
+  maxQuestions: number;
+  marks?: number;
+  tags?: string[];
+  unusedOnly?: boolean;
+};
+
+export type TGeneratePaperParams = {
+  sections: TGenerateSection[];
+  seed?: number;
+  excludeQuestionIds?: string[];
+};
+
+export type TChapterDepth = {
+  chapter: string;
+  available: number;
+  picked: number;
+};
+
+export type TGeneratedSectionResult = {
+  subject?: string;
+  requested: number;
+  picked: number;
+  short: boolean;
+  depth: TChapterDepth[];
+};
+
+export type TGeneratePaperResult = {
+  questions: TQuestion[];
+  seed: number;
+  requested: number;
+  short: boolean;
+  sections: TGeneratedSectionResult[];
+  depth: TChapterDepth[];
+};
+
+export const generatePaper = async (params: TGeneratePaperParams) => {
+  const res = await api.post(ENDPOINT.generatePaper, params);
+  return res.data.data as TGeneratePaperResult;
+};
+
+export type TSectionAvailability = {
+  subject?: string;
+  available: number;
+  requested: number;
+  perChapter: { chapter: string; available: number }[];
+};
+
+export type TAvailability = {
+  available: number;
+  sections: TSectionAvailability[];
+  perChapter: { chapter: string; available: number }[];
+};
+
+// How many questions the current filters leave, without picking any
+export const fetchAvailability = async (sections: TGenerateSection[]) => {
+  const res = await api.post(ENDPOINT.generatePaper, {
+    sections,
+    countOnly: true,
+  });
+  return res.data.data as TAvailability;
+};
+
+// Books across several subjects at once, for a multi-subject paper
+export const fetchBooksOfSubjects = async (subjects: string[], course?: string) => {
+  if (!subjects.length) return [] as TBook[];
+  return (
+    await api.get(ENDPOINT.books, {
+      params: {
+        subjects: subjects.join(","),
+        course,
+      },
+    })
+  ).data.books as TBook[];
 };
 
 export const uploadQuestionsInBatch = async (questions: TQuestion[]) => {

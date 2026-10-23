@@ -13,6 +13,7 @@ import {
   IndianRupeeIcon,
   MessageCircleIcon,
   GraduationCapIcon,
+  WandSparklesIcon,
 } from "lucide-react";
 
 export const ROUTES = [
@@ -20,6 +21,11 @@ export const ROUTES = [
     label: "Create Paper",
     href: "/create-paper",
     icon: <FilePenLineIcon className="w-5 h-5 " strokeWidth={2} />,
+  },
+  {
+    label: "Generate Paper",
+    href: "/generate-paper",
+    icon: <WandSparklesIcon className="w-5 h-5 " strokeWidth={2} />,
   },
   {
     label: "Upload Paper",

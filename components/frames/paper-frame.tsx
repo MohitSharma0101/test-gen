@@ -43,7 +43,10 @@ const PaperFrame = ({
           key={sub}
           course={course || fallbackCourse}
           subject={sub || subject}
-          totalMarks={totalMarks}
+          // This page carries one subject, so it shows that subject's marks.
+          // The whole paper's total belongs on the answer key below, which
+          // does cover every subject.
+          totalMarks={getTotalMarks(q)}
           className="break-before-page"
         >
           <ol
