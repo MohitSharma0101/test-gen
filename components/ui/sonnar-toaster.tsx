@@ -20,6 +20,8 @@ const SonnerToaster = ({ ...props }: ToasterProps) => {
       }}
       position="top-center"
       richColors
+      duration={5000}
+      closeButton
       style={
         {
           "--normal-bg": "var(--popover)",
