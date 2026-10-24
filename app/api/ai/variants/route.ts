@@ -29,7 +29,7 @@ export const POST = async (request: NextRequest) => {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const { image, prompt, thinking, model } = body ?? {};
+  const { image, prompt, thinking, model, variantCount } = body ?? {};
   if (!image?.data || !IMAGE_TYPES.includes(image.mimeType)) {
     return NextResponse.json(
       { error: "Add a PNG, JPEG or WebP image of the question" },
@@ -48,6 +48,7 @@ export const POST = async (request: NextRequest) => {
         ? thinking
         : DEFAULT_THINKING_MODE,
       model: await resolveModel(model),
+      variantCount,
     });
     return NextResponse.json(result, { status: 200 });
   } catch (err: any) {

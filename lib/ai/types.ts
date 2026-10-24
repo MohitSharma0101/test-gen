@@ -29,6 +29,7 @@ export type TGenerateVariantsRequest = {
   prompt?: string;
   thinking?: TThinkingMode;
   model?: string; // a Gemini/Gemma model id; empty means the server default
+  variantCount?: number; // 1 to 4; defaults to DEFAULT_VARIANT_COUNT
 };
 
 // The model picker in the Generate sheet

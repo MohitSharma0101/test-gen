@@ -8,7 +8,14 @@ import type {
   TQuestionType,
 } from "./types";
 
-export const VARIANT_COUNT = 2;
+export const VARIANT_COUNTS = [1, 2, 3, 4] as const;
+export const DEFAULT_VARIANT_COUNT = 2;
+
+// A count from the browser is only used if it is one we offer
+export const resolveVariantCount = (value: unknown) =>
+  VARIANT_COUNTS.includes(Number(value) as (typeof VARIANT_COUNTS)[number])
+    ? Number(value)
+    : DEFAULT_VARIANT_COUNT;
 
 // Shared with the recheck prompt
 export const FORMAT_RULES = `Formatting for every "text" and "solution" (it is rendered with Mathpix Markdown):
@@ -59,10 +66,10 @@ The teacher draws the figures in a separate image tool, so for each question als
 "solutionDiagramBrief": the figure for the worked solution, which may show the working - force arrows, components, construction lines, ray paths - and may label intermediate quantities. Same length and style limits.
 For either one, return an empty string if a figure would add nothing. Write a brief whenever a figure would genuinely help, even if you set the matching needsDiagram flag to false.`;
 
-const SYSTEM_INSTRUCTION = `You are an experienced question setter for Indian JEE and NEET coaching.
+const systemInstruction = (variantCount: number) => `You are an experienced question setter for Indian JEE and NEET coaching.
 You receive a photo of one question. Do two things:
 1. Transcribe that question exactly as "original", including its options and the correct answer with a solution. Word for word: copy what the photo says and nothing else. Do not reword it, do not shorten it, do not add anything, and if it refers to a figure leave that reference exactly as printed. The teacher attaches the figure separately.
-2. Write exactly ${VARIANT_COUNT} new "variants" that test the same concept at the same difficulty, using different values and, where it helps, a changed scenario. Each variant must be fully solvable and, for MCQs, have exactly one correct option. Make the wrong options plausible. Unlike the original, a variant is yours to word, so write it to stand on its own without a figure - briefly. See the rules on figures below.
+2. Write exactly ${variantCount} new "variants" that test the same concept at the same difficulty, using different values and, where it helps, a changed scenario. Each variant must be fully solvable and, for MCQs, have exactly one correct option. Make the wrong options plausible. Unlike the original, a variant is yours to word, so write it to stand on its own without a figure - briefly. See the rules on figures below.
 
 Keep the question type of the original: an MCQ stays an MCQ with four options; a numerical (integer or decimal answer) stays numerical with no options.
 
@@ -162,10 +169,12 @@ export const generateVariants = async ({
   prompt,
   thinking,
   model,
+  variantCount,
 }: TGenerateVariantsRequest): Promise<TGenerateVariantsResponse> => {
+  const wanted = resolveVariantCount(variantCount);
   const extra = prompt?.trim();
   const raw = await generateJson<RawResponse>({
-    systemInstruction: SYSTEM_INSTRUCTION,
+    systemInstruction: systemInstruction(wanted),
     parts: [
       { inlineData: { mimeType: image.mimeType, data: image.data } },
       {
@@ -182,7 +191,7 @@ export const generateVariants = async ({
   const questionType: TQuestionType = raw.questionType === "NUMERICAL" ? "NUMERICAL" : "MCQ";
   const original = toQuestion(raw.original, "original", questionType);
   const variants = (raw.variants ?? [])
-    .slice(0, VARIANT_COUNT)
+    .slice(0, wanted)
     .map((v) => toQuestion(v, "variant", questionType))
     .filter((q): q is TGeneratedQuestion => !!q);
 
