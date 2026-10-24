@@ -56,7 +56,70 @@ const buildRequest = (model: string, input: GenerateJsonInput) => {
   };
 };
 
+// LaTeX in a JSON string has to arrive as "\\frac", and the model regularly
+// sends "\frac". That is still valid JSON - \f is the formfeed escape - so it
+// parses without complaint and the text silently loses the command: \frac
+// becomes "rac", \textbf becomes a tab plus "extbf", and the tab then makes
+// markdown render the line as a code block. \u is worse: "\upsilon" is not a
+// valid escape at all, so the whole reply fails to parse.
+//
+// So a backslash that starts one of those escapes is doubled before parsing,
+// unless it is already escaped. \n is deliberately left alone: these fields use
+// real newlines between options and in solutions.
+//
+// Scanned rather than matched with a regex: a pattern has to look behind itself
+// to tell a lone backslash from the second half of a pair, and it then misses
+// two lone escapes that sit next to each other - which "\,\text{V}" is.
+//
+// Backslashes only ever appear inside strings in JSON, so walking the whole
+// reply is safe.
+export const repairJsonEscapes = (text: string) => {
+  let out = "";
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch !== "\\") {
+      out += ch;
+      continue;
+    }
+
+    const next = text[i + 1];
+    // A trailing backslash cannot be an escape at all
+    if (next === undefined) {
+      out += "\\\\";
+      break;
+    }
+    // An escaped backslash is already correct; step over both
+    if (next === "\\") {
+      out += "\\\\";
+      i++;
+      continue;
+    }
+    // Escapes this app actually means: quotes, solidus, and the newlines that
+    // separate options and solution steps
+    if (next === '"' || next === "/" || next === "n") {
+      out += ch + next;
+      i++;
+      continue;
+    }
+    // A real unicode escape needs its four hex digits
+    if (next === "u" && /^[0-9a-fA-F]{4}$/.test(text.slice(i + 2, i + 6))) {
+      out += ch + next;
+      i++;
+      continue;
+    }
+    // Everything else is a LaTeX command the model forgot to escape: \frac,
+    // \textbf, \alpha. Some are valid JSON escapes and corrupt the text
+    // silently, the rest make the whole reply fail to parse.
+    out += "\\\\" + next;
+    i++;
+  }
+  return out;
+};
+
 const parseJson = <T>(text: string): T => {
+  try {
+    return JSON.parse(repairJsonEscapes(text)) as T;
+  } catch {}
   try {
     return JSON.parse(text) as T;
   } catch {}
@@ -64,8 +127,12 @@ const parseJson = <T>(text: string): T => {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start !== -1 && end > start) {
+    const object = text.slice(start, end + 1);
     try {
-      return JSON.parse(text.slice(start, end + 1)) as T;
+      return JSON.parse(repairJsonEscapes(object)) as T;
+    } catch {}
+    try {
+      return JSON.parse(object) as T;
     } catch {}
   }
   throw new GeminiError("Gemini's reply was not valid JSON. Try again.", 502);
