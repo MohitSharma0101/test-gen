@@ -63,7 +63,9 @@ export type TRecheckResponse = {
   issues: string[];
   previousAnswer?: string;
   newAnswer?: string;
-  // Missing when status is "manual"
+  // Missing when nothing should change: "manual" could not be verified, and
+  // "checked" means the question was already right, so it is left alone rather
+  // than replaced with a retyped copy of itself.
   question?: Pick<
     TGeneratedQuestion,
     "text" | "ans" | "needsDiagram" | "needsSolutionDiagram"

@@ -3,7 +3,12 @@
 // instead of agreeing with what is already there.
 import { generateJson } from "./gemini";
 import { FORMAT_RULES, formatAnswer } from "./generateVariants";
-import type { TQuestionType, TRecheckRequest, TRecheckResponse } from "./types";
+import type {
+  TQuestionType,
+  TRecheckRequest,
+  TRecheckResponse,
+  TRecheckStatus,
+} from "./types";
 
 const SYSTEM_INSTRUCTION = `You are a senior examiner who reviews questions for Indian JEE and NEET coaching before they are given to students.
 You receive ONE question without its answer key. Work through these fields in order:
@@ -25,6 +30,7 @@ You receive ONE question without its answer key. Work through these fields in or
 
 "text": the final question.
 - SOUND: the question as given, with only formatting corrected. Do not change its meaning, values, options or option order.
+- Correct formatting only where it is actually wrong. A question that already renders is left exactly as it is: re-typing maths that was fine is the most common way this step makes a question worse, because a command that lands outside $...$ is then printed to the student as raw backslashes. When you do touch the maths, re-read it against the rendering rules at the end of these instructions.
 - FIXED: the corrected question. Keep the same question type, concept and difficulty, and change as little as possible.
 - CANNOT_VERIFY: the question as given.
 
@@ -128,17 +134,29 @@ export const recheckQuestion = async ({
     };
   }
 
+  const changed = !sameAnswer(answerKey, newAnswer, questionType);
+  const status: TRecheckStatus =
+    raw.verdict === "FIXED" ? "question-fixed" : changed ? "answer-changed" : "checked";
+
+  // A question that came back sound with the answer we already had needs no
+  // change, so nothing is sent for the sheet to apply. Replacing good text with
+  // a freshly typed copy of itself is how a question picks up maths that no
+  // longer renders, and it is a change the teacher never asked for.
+  if (status === "checked") {
+    return { status, summary, issues };
+  }
+
+  // Only the key was wrong: the question itself was sound, so its text is
+  // echoed back untouched and only the answer and working change.
   const question = {
-    text: newText,
+    text: status === "question-fixed" ? newText : text,
     ans: `${newAnswer}\n\n${solution}`,
     needsDiagram: !!raw.needsDiagram,
     needsSolutionDiagram: !!raw.needsSolutionDiagram,
   };
-  const changed = !sameAnswer(answerKey, newAnswer, questionType);
 
   return {
-    status:
-      raw.verdict === "FIXED" ? "question-fixed" : changed ? "answer-changed" : "checked",
+    status,
     summary,
     issues,
     ...(changed ? { previousAnswer: answerKey, newAnswer } : {}),

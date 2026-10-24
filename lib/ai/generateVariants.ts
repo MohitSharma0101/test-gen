@@ -17,6 +17,26 @@ export const FORMAT_RULES = `Formatting for every "text" and "solution" (it is r
 - Do not number the question.
 - MCQ "text": the question, a blank line, then the four options, each on its own line separated by blank lines, written exactly as \\textbf{(a)} option, \\textbf{(b)} option, \\textbf{(c)} option, \\textbf{(d)} option.
 
+WHAT BREAKS THE RENDERER
+These are the only three ways this output goes wrong on screen. Check your text against each one before you answer.
+1. A LaTeX command outside math delimiters is printed to the student as raw characters. "Using \\frac{1}{2}mv^2 we get" and "the answer is \\boxed{42}" appear on screen exactly as typed, backslashes and braces included. Every backslash command must sit inside $...$ or $$...$$. If a sentence needs a symbol, put the symbol in maths: "the kinetic energy $\\frac{1}{2}mv^2$".
+2. Every $ must be one of a pair. A lone $ pairs with the next $ anywhere later in the text and silently eats everything between them, so the student loses a line of the question. Never write money as $10 - write "10 rupees" or "Rs 10" - and never put a bare $ inside \\text{...}.
+3. A code fence (three backticks) turns the block into a code box and shows the LaTeX source. Never use one, and never write a % comment: the % and the rest of the line stay visible.
+
+LATEX THAT THIS RENDERER SUPPORTS
+A command it does not know renders as blank space where the maths should be, so the equation silently disappears. Stay inside this list:
+- Structure: frac, dfrac, sqrt, sum, prod, int, lim, left, right, substack, underbrace, stackrel, xrightarrow, begin/end of aligned, array, cases, matrix, pmatrix, bmatrix
+- Text and style inside maths: text, mathrm, mathbf, mathbb, mathcal, textbf, boxed, vec, overrightarrow, hat, bar, overline, tilde
+- Functions: sin, cos, tan, cot, sec, csc, sinh, cosh, tanh, log, ln, exp, min, max, deg
+- Symbols: times, div, cdot, pm, mp, leq, geq, neq, approx, equiv, propto, infty, partial, nabla, angle, perp, parallel, rightarrow, leftarrow, leftrightarrow, implies, in, notin, cup, cap, sum, forall, exists
+- Greek: alpha, beta, gamma, delta, Delta, epsilon, varepsilon, theta, lambda, mu, nu, pi, rho, sigma, tau, phi, varphi, psi, omega, Omega
+- Chemistry: ce, for example $\\ce{H2SO4}$ and $\\ce{CaCO3 ->[\\Delta] CaO + CO2}$
+- Spacing: \\, and \\quad and \\qquad
+These are not available and leave a blank gap where the maths should be: degree, cancel, si, SI, ang, num, unit, intertext, require, includegraphics, and anything else from siunitx, cancel or mathtools.
+These parse but print "(???)" on screen, so do not number or cross-reference equations: label, eqref, ref.
+- Degrees are $30^{\\circ}$, never $30\\degree$. Units are $4\\,\\text{kg}$ or $9.8\\,\\mathrm{m/s^2}$. Temperature is $25^{\\circ}\\mathrm{C}$.
+- Papers are printed in black and white, so never colour anything.
+
 "answer": for an MCQ only the correct option letter, one of a, b, c, d. For a numerical only the final number, without units.
 "solution": a detailed step-by-step solution that ends with the final answer.
 
