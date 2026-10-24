@@ -71,6 +71,12 @@ export const fetchChaptersOfBooks = async (books: string[]) => {
   ).data.chapters as TChapter[];
 };
 
+// "At least 5 of this subject's questions must be Numerical"
+export type TGenerateRequirement = {
+  tag: string;
+  count: number;
+};
+
 // One subject's share of a paper
 export type TGenerateSection = {
   subject?: string;
@@ -79,6 +85,7 @@ export type TGenerateSection = {
   marks?: number;
   tags?: string[];
   unusedOnly?: boolean;
+  requirements?: TGenerateRequirement[];
 };
 
 export type TGeneratePaperParams = {
@@ -93,12 +100,19 @@ export type TChapterDepth = {
   picked: number;
 };
 
+export type TGeneratedRequirementResult = {
+  tag: string;
+  requested: number;
+  picked: number;
+};
+
 export type TGeneratedSectionResult = {
   subject?: string;
   requested: number;
   picked: number;
   short: boolean;
   depth: TChapterDepth[];
+  requirements?: TGeneratedRequirementResult[];
 };
 
 export type TGeneratePaperResult = {
@@ -115,11 +129,20 @@ export const generatePaper = async (params: TGeneratePaperParams) => {
   return res.data.data as TGeneratePaperResult;
 };
 
+export type TRequirementAvailability = {
+  tag: string;
+  requested: number;
+  available: number;
+};
+
 export type TSectionAvailability = {
   subject?: string;
   available: number;
   requested: number;
   perChapter: { chapter: string; available: number }[];
+  requirements?: TRequirementAvailability[];
+  // Every tag present in the chosen chapters, whether or not it is required
+  tagCounts?: { tag: string; available: number }[];
 };
 
 export type TAvailability = {

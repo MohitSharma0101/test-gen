@@ -23,6 +23,9 @@ const useAvailability = (sections: TGenerateSection[]) => {
       section.marks ?? null,
       section.tags ?? null,
       !!section.unusedOnly,
+      // Counted per tag too, so adding or resizing a quota asks again rather
+      // than leaving the old answer on screen
+      (section.requirements ?? []).map((r) => [r.tag, r.count]),
     ])
   );
   const latest = useRef(key);

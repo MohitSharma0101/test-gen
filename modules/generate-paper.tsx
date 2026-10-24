@@ -1,7 +1,7 @@
 "use client";
 
 import PaperFrame from "@/components/frames/paper-frame";
-import { TAGS } from "@/components/sheets/add-tag-sheet";
+import TagQuotaPicker from "@/components/ui/tag-quota-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ChapterPicker from "@/components/ui/chapter-picker";
@@ -48,7 +48,9 @@ type TSubjectPlan = {
   chapterIds: string[];
   count: string;
   marks: string;
-  tag: string;
+  // "5 of these must be Numerical". A quota, not a filter: whatever the
+  // quotas do not account for is drawn from every tag.
+  requirements: { tag: string; count: string }[];
   unusedOnly: boolean;
 };
 
@@ -56,7 +58,7 @@ const emptyPlan = (): TSubjectPlan => ({
   chapterIds: [],
   count: "30",
   marks: "",
-  tag: "",
+  requirements: [],
   unusedOnly: false,
 });
 
@@ -116,13 +118,16 @@ export default function GeneratePaper() {
           chapterIds: plans[s].chapterIds,
           maxQuestions: Number(plans[s].count) || 0,
           marks: plans[s].marks ? Number(plans[s].marks) : undefined,
-          tags: plans[s].tag ? [plans[s].tag] : undefined,
           unusedOnly: plans[s].unusedOnly,
+          requirements: plans[s].requirements
+            .filter((r) => r.tag && Number(r.count) > 0)
+            .map((r) => ({ tag: r.tag, count: Number(r.count) })),
         })),
     [subjects, plans]
   );
 
   const { availability, loading: counting } = useAvailability(sections);
+
   const {
     questions,
     result,
@@ -135,7 +140,20 @@ export default function GeneratePaper() {
   } = useGeneratePaper();
 
   const totalWanted = sections.reduce((sum, s) => sum + s.maxQuestions, 0);
-  const canGenerate = sections.length > 0 && totalWanted > 0 && !loading;
+  // Checked across every subject, not just the one on screen: a quota set on
+  // Chemistry and then left behind would otherwise block nothing
+  const subjectOverAllocated = subjects.filter((s) => {
+    const p = plans[s];
+    if (!p || p.chapterIds.length === 0) return false;
+    const required = p.requirements.reduce((sum, r) => sum + (Number(r.count) || 0), 0);
+    return required > (Number(p.count) || 0);
+  });
+
+  const canGenerate =
+    sections.length > 0 &&
+    totalWanted > 0 &&
+    subjectOverAllocated.length === 0 &&
+    !loading;
   const totalMarks = getTotalMarks(questions);
 
   const availableByChapter = useMemo(
@@ -146,10 +164,34 @@ export default function GeneratePaper() {
     () => new Map((availability?.sections ?? []).map((s) => [s.subject, s])),
     [availability]
   );
+
+  // How many questions carry this tag in the chapters picked for the subject.
+  // Undefined until the count comes back; a tag the chapters do not have at
+  // all is genuinely 0, which is the thing worth showing.
+  const requirementInfo = (subjectName: string, tag: string) => {
+    const info = availabilityBySubject.get(subjectName);
+    if (!info?.tagCounts) return undefined;
+    return info.tagCounts.find((t) => t.tag === tag)?.available ?? 0;
+  };
   const chapterById = useMemo(
     () => new Map(chapters.map((c) => [c._id, c])),
     [chapters]
   );
+
+  const shortWarnings = (availability?.sections ?? []).flatMap((s) => {
+    const lines: string[] = [];
+    if (s.available < s.requested) {
+      lines.push(`${s.subject}: only ${s.available} of ${s.requested}`);
+    }
+    (s.requirements ?? []).forEach((r) => {
+      if (r.available < r.requested) {
+        lines.push(
+          `${s.subject}: only ${r.available} ${r.tag} of ${r.requested} asked for`
+        );
+      }
+    });
+    return lines;
+  });
 
   const runGenerate = async (reroll?: boolean) => {
     const res = await generate({ sections, seed: undefined });
@@ -272,27 +314,29 @@ export default function GeneratePaper() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <SelectCompact
-            label="Marks"
-            placeholder="Any"
-            value={plan.marks}
-            onChange={(value) => setPlan({ marks: value })}
-            options={MARKS.map((mark) => ({
-              label: `${mark} mark`,
-              value: String(mark || 1),
-            }))}
-            canUnselect
-          />
-          <SelectCompact
-            label="Tag"
-            placeholder="Any"
-            value={plan.tag}
-            onChange={(value) => setPlan({ tag: value })}
-            options={TAGS.map((tag) => ({ label: tag, value: tag }))}
-            canUnselect
-          />
-        </div>
+        <SelectCompact
+          label="Marks"
+          placeholder="Any"
+          className="w-full"
+          value={plan.marks}
+          onChange={(value) => setPlan({ marks: value })}
+          options={MARKS.map((mark) => ({
+            label: `${mark} mark`,
+            value: String(mark || 1),
+          }))}
+          canUnselect
+        />
+
+        {/* Tag quotas, in place of the old tag filter: a filter made every
+            question carry the tag, which is not what a paper wants. "All of
+            them Numerical" is still expressible - it is a quota equal to the
+            total. */}
+        <TagQuotaPicker
+          quotas={plan.requirements}
+          onChange={(requirements) => setPlan({ requirements })}
+          total={Number(plan.count) || 0}
+          availableFor={(tag) => requirementInfo(activeSubject, tag)}
+        />
 
         {/* The row owns the click: a <label> around Checkbox's button would
             re-send the click to it and cancel the toggle out */}
@@ -396,13 +440,19 @@ export default function GeneratePaper() {
           )}
         </div>
 
-        {/* Which subject is short, before generating rather than after */}
-        {availability?.sections.some((s) => s.available < s.requested) && (
+        {/* What is short, before generating rather than after. Tag quotas get
+            their own line: hardly any question in the bank carries a tag, so
+            an unmeetable quota is the likeliest reason a paper comes up
+            short, and it is not obvious from the subject's own total. */}
+        {subjectOverAllocated.length > 0 && (
           <p className="text-[11px] text-amber-600 font-medium mb-2">
-            {availability.sections
-              .filter((s) => s.available < s.requested)
-              .map((s) => `${s.subject}: only ${s.available} of ${s.requested}`)
-              .join(" · ")}
+            {subjectOverAllocated.join(", ")}: the tags add up to more than the
+            subject&apos;s total
+          </p>
+        )}
+        {shortWarnings.length > 0 && (
+          <p className="text-[11px] text-amber-600 font-medium mb-2">
+            {shortWarnings.join(" · ")}
           </p>
         )}
 
@@ -601,9 +651,15 @@ export default function GeneratePaper() {
         }
         onSwap={() => {
           const planOf = subjectOf ? plans[subjectOf] : undefined;
+          // A question that is on the paper to satisfy a quota is replaced by
+          // another carrying that same tag, so swapping one out cannot quietly
+          // drop the subject below "5 Numerical".
+          const quotaTag = planOf?.requirements.find(
+            (r) => Number(r.count) > 0 && question.tags?.includes(r.tag)
+          )?.tag;
           swapQuestion(question, {
             marks: planOf?.marks ? Number(planOf.marks) : undefined,
-            tags: planOf?.tag ? [planOf.tag] : undefined,
+            tags: quotaTag ? [quotaTag] : undefined,
             unusedOnly: planOf?.unusedOnly,
           });
         }}

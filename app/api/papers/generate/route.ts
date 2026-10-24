@@ -13,6 +13,13 @@ import {
   type TChapterPool,
 } from "@/lib/paperGen";
 
+// "At least 5 of this subject's questions must be Numerical." A quota, not a
+// filter: the rest of the subject's share is drawn from everything.
+export type TGenerateRequirement = {
+  tag: string;
+  count: number;
+};
+
 // One subject's share of the paper: its chapters, how many questions it
 // contributes, and filters of its own when they differ from the rest.
 export type TGenerateSection = {
@@ -20,8 +27,12 @@ export type TGenerateSection = {
   chapterIds: string[];
   maxQuestions: number;
   marks?: number;
+  // A hard filter on the whole section. The generate page no longer sets it -
+  // it uses `requirements` - but swapping one question still asks for a
+  // replacement carrying the tag the original was there to satisfy.
   tags?: string[];
   unusedOnly?: boolean;
+  requirements?: TGenerateRequirement[];
 };
 
 export type TGeneratePaperRequest = {
@@ -34,17 +45,25 @@ export type TGeneratePaperRequest = {
   countOnly?: boolean;
 };
 
+export type TGeneratedRequirementResult = {
+  tag: string;
+  requested: number;
+  picked: number;
+};
+
 export type TGeneratedSectionResult = {
   subject?: string;
   requested: number;
   picked: number;
   short: boolean;
   depth: TChapterDepth[];
+  requirements?: TGeneratedRequirementResult[];
 };
 
 const MAX_QUESTIONS = 300;
 const MAX_CHAPTERS = 120;
 const MAX_SECTIONS = 8;
+const MAX_REQUIREMENTS = 6;
 
 export const POST = async (request: NextRequest) => {
   try {
@@ -103,26 +122,40 @@ export const POST = async (request: NextRequest) => {
       }
     }
 
-    const matchFor = (section: (typeof usable)[number]) => {
+    const matchFor = (section: (typeof usable)[number], tag?: string) => {
       const query: any = { chapter: { $in: section.objectIds } };
       if (section.marks) query.mark = Number(section.marks);
-      if (section.tags?.length) query.tags = { $in: section.tags };
+      if (tag) query.tags = tag;
+      else if (section.tags?.length) query.tags = { $in: section.tags };
       if (section.unusedOnly) query.timesUsed = 0;
       return query;
     };
 
+    // A section's own pool, plus one pool per tag it must include. The tagged
+    // pools are drawn from first; whatever the section still owes is taken
+    // from the main pool afterwards.
+    const requirementsOf = (section: (typeof usable)[number]) =>
+      (section.requirements ?? [])
+        .filter((r) => r?.tag && Number(r.count) > 0)
+        .slice(0, MAX_REQUIREMENTS);
+
     await dbConnect();
 
-    // One aggregation per subject, run together. A $facet would be a single
-    // round trip, but its branches cannot use an index - measured, it collection
-    // scans all of the questions and takes ~690 ms, where these run on the
-    // chapter index as covered scans and come back in ~35 ms for the lot.
-    // Only ids are collected: pulling the text of thousands of candidates to
-    // then keep ninety of them is the expensive way round.
-    const grouped = await Promise.all(
-      usable.map((section) =>
+    // One aggregation per subject plus one per tag quota, run together. A
+    // $facet would be a single round trip, but its branches cannot use an
+    // index - measured, it collection scans all of the questions and takes
+    // ~690 ms, where these run on the chapter index and come back in ~35 ms
+    // for the lot. Only ids are collected: pulling the text of thousands of
+    // candidates to then keep ninety of them is the expensive way round.
+    const plan = usable.flatMap((section, index) => [
+      { index, tag: undefined as string | undefined, section },
+      ...requirementsOf(section).map((r) => ({ index, tag: r.tag, section })),
+    ]);
+
+    const results = await Promise.all(
+      plan.map((entry) =>
         Question.aggregate<any>([
-          { $match: matchFor(section) },
+          { $match: matchFor(entry.section, entry.tag) },
           {
             $group: countOnly
               ? { _id: "$chapter", n: { $sum: 1 } }
@@ -132,9 +165,27 @@ export const POST = async (request: NextRequest) => {
       )
     );
 
-    const groupsFor = (index: number): any[] => grouped[index] ?? [];
+    const lookup = new Map<string, any[]>();
+    plan.forEach((entry, i) => lookup.set(`${entry.index}|${entry.tag ?? ""}`, results[i] ?? []));
+    const groupsFor = (index: number, tag?: string): any[] =>
+      lookup.get(`${index}|${tag ?? ""}`) ?? [];
 
     if (countOnly) {
+      // Every tag's supply in one pass per subject, so the quota picker can
+      // show how many Numerical questions there are before one is asked for.
+      // Unwinding is cheaper here than a query per tag, and this runs only
+      // for counts, never when a paper is actually generated.
+      const tagSupply = await Promise.all(
+        usable.map((section) =>
+          Question.aggregate<{ _id: string; n: number }>([
+            { $match: matchFor(section) },
+            { $unwind: "$tags" },
+            { $match: { tags: { $nin: ["", null] } } },
+            { $group: { _id: "$tags", n: { $sum: 1 } } },
+          ])
+        )
+      );
+
       const perSection = usable.map((section, index) => {
         const groups = groupsFor(index);
         return {
@@ -144,6 +195,18 @@ export const POST = async (request: NextRequest) => {
           perChapter: groups.map((g) => ({
             chapter: String(g._id),
             available: g.n,
+          })),
+          // Counted per tag as well: hardly any question in the bank carries
+          // one, so "5 Numerical" is unsatisfiable in most chapters and the
+          // page has to be able to say so before the paper is generated.
+          requirements: requirementsOf(section).map((r) => ({
+            tag: r.tag,
+            requested: Number(r.count) || 0,
+            available: groupsFor(index, r.tag).reduce((sum, g) => sum + g.n, 0),
+          })),
+          tagCounts: (tagSupply[index] ?? []).map((t) => ({
+            tag: String(t._id),
+            available: t.n,
           })),
         };
       });
@@ -166,30 +229,67 @@ export const POST = async (request: NextRequest) => {
     const orderedIds: string[] = [];
     const sectionResults: TGeneratedSectionResult[] = [];
 
-    usable.forEach((section, index) => {
-      const pools: TChapterPool[] = groupsFor(index).map((g) => ({
+    const poolsOf = (index: number, tag?: string): TChapterPool[] =>
+      groupsFor(index, tag).map((g) => ({
         chapter: String(g._id),
         ids: (g.ids ?? []).map((id: any) => String(id)),
       }));
 
+    usable.forEach((section, index) => {
       const wanted = Number(section.maxQuestions) || 0;
-      const { ids, depth, short } = selectQuestions({
-        pools,
-        maxQuestions: wanted,
+      const requirements = requirementsOf(section);
+      const sectionIds: string[] = [];
+      const requirementResults: TGeneratedRequirementResult[] = [];
+
+      // The tags this subject must include come first, each from its own pool.
+      // A quota that cannot be met takes what there is; the shortfall is not
+      // lost, because what the subject still owes is only worked out once
+      // these have run.
+      requirements.forEach((requirement, order) => {
+        const room = Math.max(0, wanted - sectionIds.length);
+        const want = Math.min(Number(requirement.count) || 0, room);
+        if (want === 0) {
+          requirementResults.push({ tag: requirement.tag, requested: 0, picked: 0 });
+          return;
+        }
+        const { ids } = selectQuestions({
+          pools: poolsOf(index, requirement.tag),
+          maxQuestions: want,
+          // Its own stream, so a quota is reproducible and adding one does
+          // not reshuffle the quotas before it
+          seed: sectionSeed(usedSeed, index * 16 + order + 1),
+          exclude: Array.from(taken),
+        });
+        ids.forEach((id) => taken.add(id));
+        sectionIds.push(...ids);
+        requirementResults.push({
+          tag: requirement.tag,
+          requested: Number(requirement.count) || 0,
+          picked: ids.length,
+        });
+      });
+
+      // Then the rest of the subject's share, from everything it may use
+      const remaining = Math.max(0, wanted - sectionIds.length);
+      const { ids, depth } = selectQuestions({
+        pools: poolsOf(index),
+        maxQuestions: remaining,
         seed: sectionSeed(usedSeed, index),
         exclude: Array.from(taken),
       });
-
       ids.forEach((id) => taken.add(id));
+      sectionIds.push(...ids);
+
       // Subjects stay in their own block rather than interleaving: a paper is
       // read, and sat, one subject at a time.
-      orderedIds.push(...ids);
+      orderedIds.push(...sectionIds);
       sectionResults.push({
         subject: section.subject,
         requested: wanted,
-        picked: ids.length,
-        short,
+        picked: sectionIds.length,
+        short: sectionIds.length < wanted,
         depth,
+        ...(requirementResults.length ? { requirements: requirementResults } : {}),
       });
     });
 
