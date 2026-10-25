@@ -35,3 +35,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Face recognition models (38MB, fetched by recognition/fetch_models.py)
+recognition/models/
+.env.bak

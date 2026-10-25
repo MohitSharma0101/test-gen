@@ -6,7 +6,7 @@ import { nextError, nextSuccess } from "@/lib/nextUtils";
 
 export const POST = async (request: NextRequest) => {
   try {
-    const { _id, batch, absentUsers, date } =
+    const { _id, batch, absentUsers, date, faceAudit } =
       (await request.json()) as TAttendance;
 
     if (!batch || !date) {
@@ -21,15 +21,16 @@ export const POST = async (request: NextRequest) => {
 
     await dbConnect();
 
+    // Only set faceAudit when this submission came from the photo flow, so a
+    // later manual edit does not wipe the record of what the machine suggested.
+    const payload: Record<string, any> = { batch, absentUsers, date };
+    if (faceAudit) payload.faceAudit = faceAudit;
+
     let result;
     if (_id) {
-      result = await Attendance.findByIdAndUpdate(
-        _id,
-        { batch, absentUsers, date },
-        { new: true }
-      );
+      result = await Attendance.findByIdAndUpdate(_id, payload, { new: true });
     } else {
-      result = await Attendance.create({ batch, absentUsers, date });
+      result = await Attendance.create(payload);
     }
 
     return NextResponse.json(
