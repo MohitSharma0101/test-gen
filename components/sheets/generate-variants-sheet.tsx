@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import React, { useEffect, useState } from "react";
 import {
   CheckIcon,
-  ImageIcon,
   Loader2Icon,
   PlusIcon,
   SparklesIcon,
@@ -20,15 +18,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import SelectCompact from "@/components/ui/select-compact";
-import ImageSourceSheet from "@/components/sheets/image-source-sheet";
 import VariantTabContent from "@/components/sheets/variant-tab-content";
-import { useIsTouchDevice } from "@/hooks/useIsTouchDevice";
 import { useVariantBatchStore, type TVariantTab } from "@/stores/variantBatchStore";
-import { DEFAULT_FREE_MODEL, FREE_MODELS, isFreeModel } from "@/lib/ai/free-models";
-import { THINKING_MODES, type TThinkingMode } from "@/lib/ai/types";
-import { DEFAULT_VARIANT_COUNT, VARIANT_COUNTS } from "@/lib/ai/generateVariants";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -38,19 +29,10 @@ type Props = {
   tags: string[];
 };
 
-const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
-
-const THINKING_LABELS: Record<TThinkingMode, string> = {
-  low: "Fast",
-  medium: "Balanced",
-  high: "Deep (slowest)",
-};
-
-const THINKING_STORAGE_KEY = "generate-variants-thinking";
-const MODEL_STORAGE_KEY = "generate-variants-model";
-
 // A tab says where it is at a glance: the photo is still queued, being read,
 // ready to review, or it failed.
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
 const TabChip = ({
   tab,
   active,
@@ -96,67 +78,36 @@ const TabChip = ({
 
 const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
   const [open, setOpen] = useState(false);
-  // Phones and tablets: ask "camera or gallery" before opening a picker
-  const isTouch = useIsTouchDevice();
-  const [sourceOpen, setSourceOpen] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
 
   const tabs = useVariantBatchStore((s) => s.tabs);
   const activeId = useVariantBatchStore((s) => s.activeId);
-  const model = useVariantBatchStore((s) => s.model);
-  const thinking = useVariantBatchStore((s) => s.thinking);
-  const prompt = useVariantBatchStore((s) => s.prompt);
-  const variantCount = useVariantBatchStore((s) => s.variantCount);
-  const addPhotos = useVariantBatchStore((s) => s.addPhotos);
+  const addTab = useVariantBatchStore((s) => s.addTab);
+  const setPhoto = useVariantBatchStore((s) => s.setPhoto);
   const setActive = useVariantBatchStore((s) => s.setActive);
   const removeTab = useVariantBatchStore((s) => s.removeTab);
-  const setModel = useVariantBatchStore((s) => s.setModel);
-  const setThinking = useVariantBatchStore((s) => s.setThinking);
-  const setPrompt = useVariantBatchStore((s) => s.setPrompt);
-  const setVariantCount = useVariantBatchStore((s) => s.setVariantCount);
 
-  // Remember the last thinking mode and model on this browser
-  useEffect(() => {
-    try {
-      const savedThinking = localStorage.getItem(THINKING_STORAGE_KEY) as TThinkingMode | null;
-      if (savedThinking && THINKING_MODES.includes(savedThinking)) setThinking(savedThinking);
-      const savedModel = localStorage.getItem(MODEL_STORAGE_KEY) || "";
-      if (isFreeModel(savedModel)) setModel(savedModel);
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const changeModel = (value: string) => {
-    if (!value) return;
-    setModel(value);
-    try {
-      localStorage.setItem(MODEL_STORAGE_KEY, value);
-    } catch {}
-  };
-
-  const changeThinking = (value: string) => {
-    if (!THINKING_MODES.includes(value as TThinkingMode)) return;
-    setThinking(value as TThinkingMode);
-    try {
-      localStorage.setItem(THINKING_STORAGE_KEY, value);
-    } catch {}
-  };
-
-  // Every photo picked becomes its own tab and starts generating straight away
-  const pickImages = (files: FileList | File[] | null | undefined) => {
-    const picked = Array.from(files || []).filter((f) => IMAGE_TYPES.includes(f.type));
-    if (picked.length) {
-      addPhotos(picked);
-      setAdding(false);
-    }
-    return picked.length > 0;
-  };
-
-  // Gemma models have no thinking setting
-  const thinkingApplies = !model.startsWith("gemma-");
-  const showPicker = adding || tabs.length === 0;
+  // The tab owns its photo and settings, so adding one only makes the tab -
+  // the teacher picks the photo inside it and presses Generate when ready
   const active = tabs.find((t) => t.id === activeId) ?? tabs[0];
+
+  // Opening the sheet on an empty batch should land on a form, not a blank pane
+  useEffect(() => {
+    if (open && tabs.length === 0) addTab();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // A pasted screenshot fills the open tab's photo. It does not start the
+  // generation: pressing Generate stays the only thing that does.
+  const pasteImage = (e: React.ClipboardEvent) => {
+    // A paste inside the markdown editor is its own; it handles its images
+    if (e.defaultPrevented) return;
+    const photo = Array.from(e.clipboardData?.files ?? []).find((f) =>
+      IMAGE_TYPES.includes(f.type)
+    );
+    if (!photo) return;
+    e.preventDefault();
+    setPhoto(active?.id ?? addTab(), photo);
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -169,92 +120,15 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
       <SheetContent
         side="right"
         className="flex w-full max-w-full flex-col gap-0 overflow-x-hidden p-0 sm:max-w-none md:w-1/2 md:max-w-none"
-        onPaste={(e) => {
-          // Pastes inside a nested editor bubble up here; the editor handles its own images
-          if (e.defaultPrevented) return;
-          if (pickImages(e.clipboardData?.files)) e.preventDefault();
-        }}
+        onPaste={pasteImage}
       >
         <div className="flex shrink-0 flex-col gap-3 border-b p-4 sm:p-6">
           <SheetHeader className="space-y-1 pr-8 text-left sm:text-left">
             <SheetTitle className="text-base sm:text-lg">Generate question variants</SheetTitle>
             <SheetDescription className="text-xs sm:text-sm">
-              Each one gets its own tab and starts generating
+              Each question gets its own tab
             </SheetDescription>
           </SheetHeader>
-
-          <input
-            ref={fileInput}
-            type="file"
-            accept={IMAGE_TYPES.join(",")}
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              pickImages(e.target.files);
-              e.target.value = "";
-            }}
-          />
-
-          {showPicker && (
-            <div className="flex flex-col gap-3">
-              <Button
-                variant="outline"
-                onClick={() => (isTouch ? setSourceOpen(true) : fileInput.current?.click())}
-                className="h-24 flex-col gap-2 border-dashed text-sm"
-              >
-                <ImageIcon className="h-6 w-6" strokeWidth={1.5} />
-                Add question photos
-              </Button>
-
-              {/* text-base on phones stops iOS zooming into the field */}
-              <Textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Optional: extra instructions for every photo, e.g. make it harder, use SI units…"
-                className="min-h-[64px] text-base sm:text-sm"
-              />
-
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end sm:gap-3">
-                <SelectCompact
-                  label="Model"
-                  className="min-w-0 sm:w-[220px]"
-                  triggerClassName="text-left"
-                  value={model}
-                  onChange={changeModel}
-                  options={FREE_MODELS.map((m) => ({
-                    label: m.id === DEFAULT_FREE_MODEL ? `${m.label} (default)` : m.label,
-                    value: m.id,
-                  }))}
-                />
-                <SelectCompact
-                  label="Thinking"
-                  className="min-w-0 sm:w-[160px]"
-                  value={thinking}
-                  onChange={changeThinking}
-                  disabled={!thinkingApplies}
-                  options={THINKING_MODES.map((mode) => ({
-                    label: THINKING_LABELS[mode],
-                    value: mode,
-                  }))}
-                />
-                <SelectCompact
-                  label="Variants"
-                  className="min-w-0 sm:w-[120px]"
-                  value={String(variantCount)}
-                  onChange={(value) => setVariantCount(Number(value))}
-                  options={VARIANT_COUNTS.map((count) => ({
-                    label: count === DEFAULT_VARIANT_COUNT ? `${count} (default)` : String(count),
-                    value: String(count),
-                  }))}
-                />
-                {tabs.length > 0 && (
-                  <Button variant="ghost" onClick={() => setAdding(false)} className="col-span-2">
-                    Done
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
 
           {tabs.length > 0 && (
             // One scrolling row: five tabs will not fit across a phone
@@ -268,16 +142,14 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
                   onRemove={() => removeTab(tab.id)}
                 />
               ))}
-              {!showPicker && (
-                <Button
-                  variant="outline"
-                  onClick={() => setAdding(true)}
-                  aria-label="Add another photo"
-                  className="h-9 w-9 shrink-0 rounded-full p-0"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                onClick={() => addTab()}
+                aria-label="Add another question"
+                className="h-9 w-9 shrink-0 rounded-full p-0"
+              >
+                <PlusIcon className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </div>
@@ -294,25 +166,13 @@ const GenerateVariantsSheet = ({ chapter, marks, tags }: Props) => {
               tags={tags}
             />
           ) : (
-            !showPicker && (
-              <p className="p-6 text-center text-sm text-slate-500">
-                Add a photo to get started.
-              </p>
-            )
+            <div className="p-6 text-center">
+              <Button variant="outline" onClick={() => addTab()} className="gap-2">
+                <PlusIcon className="h-4 w-4" /> Add a question
+              </Button>
+            </div>
           )}
         </div>
-
-        <ImageSourceSheet
-          open={sourceOpen}
-          onOpenChange={setSourceOpen}
-          title="Add a question photo"
-          onChooseFile={() => fileInput.current?.click()}
-          onPhoto={(file) => {
-            if (!pickImages([file])) {
-              toast.error("That photo format isn't supported. Try Choose image instead.");
-            }
-          }}
-        />
       </SheetContent>
     </Sheet>
   );

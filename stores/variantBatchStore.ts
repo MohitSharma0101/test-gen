@@ -11,7 +11,7 @@ import type {
   TThinkingMode,
 } from "@/lib/ai/types";
 import { DEFAULT_THINKING_MODE } from "@/lib/ai/types";
-import { DEFAULT_FREE_MODEL } from "@/lib/ai/free-models";
+import { DEFAULT_FREE_MODEL, isFreeModel } from "@/lib/ai/free-models";
 import { DEFAULT_VARIANT_COUNT } from "@/lib/ai/generateVariants";
 
 // One tab is one source photo and the questions generated from it.
@@ -20,13 +20,32 @@ import { DEFAULT_VARIANT_COUNT } from "@/lib/ai/generateVariants";
 // open tab is mounted, so a generation owned by a component would be thrown
 // away the moment the teacher switched tabs to review something else - which is
 // the entire point of having tabs.
-export type TTabStatus = "queued" | "generating" | "ready" | "failed" | "uploaded";
+export type TTabStatus =
+  | "draft" // has its form, waiting for a photo or for Generate to be pressed
+  | "queued"
+  | "generating"
+  | "ready"
+  | "failed"
+  | "uploaded";
 
-export type TVariantTab = {
+// The inputs a photo was generated with. They live per tab so a tab can be
+// regenerated with different settings without touching its neighbours, and so
+// coming back to a tab shows what produced it.
+export type TTabSettings = {
+  model: string;
+  thinking: TThinkingMode;
+  prompt: string;
+  variantCount: number;
+};
+
+export type TVariantTab = TTabSettings & {
   id: string;
   label: string;
   status: TTabStatus;
   error?: string;
+  // When the current generation began, so a progress bar can pick up where it
+  // actually is rather than restarting whenever the tab is opened
+  startedAt?: number;
   questionType: TQuestionType;
   questions: TGeneratedQuestion[];
   // Which questions are ticked for upload, by question id
@@ -48,7 +67,11 @@ type TState = {
 };
 
 type TActions = {
+  addTab: () => string;
   addPhotos: (files: File[]) => void;
+  setPhoto: (id: string, file: File) => void;
+  updateSettings: (id: string, change: Partial<TTabSettings>) => void;
+  generate: (id: string) => void;
   setActive: (id: string) => void;
   removeTab: (id: string) => void;
   retry: (id: string) => void;
@@ -97,14 +120,14 @@ export const useVariantBatchStore = create<TState & TActions>()(
         if (!next) return;
 
         inFlight++;
-        patch(next.id, { status: "generating", error: undefined });
+        patch(next.id, { status: "generating", error: undefined, startedAt: Date.now() });
 
         (async () => {
           try {
             const file = images.get(next.id);
             if (!file) throw new Error("The photo for this tab is no longer available");
             const image = await imageToBase64Jpeg(file);
-            const { prompt, thinking, model, variantCount } = get();
+            const { prompt, thinking, model, variantCount } = next;
             const { data } = await api.post<TGenerateVariantsResponse>(
               ENDPOINT.generateVariants,
               {
@@ -117,6 +140,7 @@ export const useVariantBatchStore = create<TState & TActions>()(
             );
             patch(next.id, {
               status: "ready",
+              startedAt: undefined,
               questionType: data.questionType,
               questions: data.questions,
               // Variants start ticked; the original starts unticked
@@ -129,6 +153,7 @@ export const useVariantBatchStore = create<TState & TActions>()(
             // that the next tab needs. The tab offers the teacher a retry.
             patch(next.id, {
               status: "failed",
+              startedAt: undefined,
               error: err?.message || "Could not generate variants",
             });
           } finally {
@@ -148,26 +173,65 @@ export const useVariantBatchStore = create<TState & TActions>()(
         prompt: "",
         variantCount: DEFAULT_VARIANT_COUNT,
 
+        // A tab with its form, waiting for a photo. Nothing runs until the
+        // teacher presses Generate.
+        addTab: () => {
+          const { model, thinking, prompt, variantCount } = get();
+          const id = newId();
+          set((s) => ({
+            tabs: [
+              ...s.tabs,
+              {
+                id,
+                label: `Q${s.tabs.length + 1}`,
+                status: "draft" as TTabStatus,
+                questionType: "MCQ" as TQuestionType,
+                questions: [],
+                selected: {},
+                hasImage: false,
+                model,
+                thinking,
+                prompt,
+                variantCount,
+              },
+            ],
+            activeId: id,
+          }));
+          return id;
+        },
+
+        setPhoto: (id, file) => {
+          images.set(id, file);
+          patch(id, { hasImage: true, status: "draft", error: undefined });
+        },
+
+        // Several photos at once still get a tab each, but each one waits for
+        // its own Generate
         addPhotos: (files) => {
           if (!files.length) return;
+          // A new tab starts from the settings last used, then owns them
+          const { model, thinking, prompt, variantCount } = get();
           const added = files.map((file, i) => {
             const id = newId();
             images.set(id, file);
             return {
               id,
               label: `Q${get().tabs.length + i + 1}`,
-              status: "queued" as TTabStatus,
+              status: "draft" as TTabStatus,
               questionType: "MCQ" as TQuestionType,
               questions: [],
               selected: {},
               hasImage: true,
+              model,
+              thinking,
+              prompt,
+              variantCount,
             };
           });
           set((s) => ({
             tabs: [...s.tabs, ...added],
-            activeId: s.activeId ?? added[0].id,
+            activeId: added[0].id,
           }));
-          pump();
         },
 
         setActive: (id) => set({ activeId: id }),
@@ -180,6 +244,19 @@ export const useVariantBatchStore = create<TState & TActions>()(
               s.activeId === id ? tabs.find((t) => t.status === "ready")?.id ?? tabs[0]?.id ?? null : s.activeId;
             return { tabs, activeId };
           });
+        },
+
+        // Changing a tab's settings also updates what the next new tab starts
+        // from, so the teacher does not have to set the same thing twice
+        updateSettings: (id, change) => {
+          patch(id, change);
+          set((s) => ({ ...s, ...change }));
+        },
+
+        generate: (id) => {
+          if (!images.has(id)) return;
+          patch(id, { status: "queued", error: undefined, questions: [], selected: {} });
+          pump();
         },
 
         retry: (id) => {
@@ -258,16 +335,23 @@ export const useVariantBatchStore = create<TState & TActions>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-        // A tab that was mid-generation when the page died has no photo any
-        // more, so it cannot resume. Mark it so the tab can ask for one rather
-        // than spinning for ever.
+        // A model that was offered when this was saved may not be any more,
+        // and a tab stuck on one would be refused by the server
+        const usable = (model: string) => (isFreeModel(model) ? model : DEFAULT_FREE_MODEL);
+        state.model = usable(state.model);
+
+        // Photos are not kept, so a tab that had not finished comes back as a
+        // draft waiting for its photo rather than spinning or claiming to have
+        // failed. Tabs with questions keep them.
         state.tabs = state.tabs
           .filter((t) => t.status !== "uploaded")
-          .map((t) =>
-            t.status === "ready"
-              ? { ...t, hasImage: false }
-              : { ...t, status: "failed", hasImage: false, error: "Add the photo again to generate this one" }
-          );
+          .map((t) => ({
+            ...t,
+            model: usable(t.model),
+            hasImage: false,
+            startedAt: undefined,
+            ...(t.status === "ready" ? {} : { status: "draft" as TTabStatus, error: undefined }),
+          }));
       },
     }
   )

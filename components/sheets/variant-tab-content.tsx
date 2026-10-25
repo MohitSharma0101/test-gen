@@ -1,32 +1,54 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   CheckIcon,
+  ChevronDownIcon,
   CopyIcon,
+  ImageIcon,
   Loader2Icon,
   PencilIcon,
   RotateCwIcon,
   ShapesIcon,
   ShieldCheckIcon,
+  SparklesIcon,
   TriangleAlertIcon,
   Undo2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import Markdown from "@/components/ui/markdown";
+import ImageSourceSheet from "@/components/sheets/image-source-sheet";
+import { useIsTouchDevice } from "@/hooks/useIsTouchDevice";
+import SelectCompact from "@/components/ui/select-compact";
+import { Textarea } from "@/components/ui/textarea";
 import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
 import DiagramPromptSheet from "@/components/sheets/diagram-prompt-sheet";
 import { api, ENDPOINT } from "@/lib/api";
 import { imageToBase64Jpeg } from "@/lib/image";
 import { uploadQuestionsInBatch } from "@/service/core.service";
-import { useVariantBatchStore } from "@/stores/variantBatchStore";
 import {
+  useVariantBatchStore,
+  type TTabSettings,
+  type TVariantTab,
+} from "@/stores/variantBatchStore";
+import { DEFAULT_FREE_MODEL, FREE_MODELS } from "@/lib/ai/free-models";
+import { DEFAULT_VARIANT_COUNT, VARIANT_COUNTS } from "@/lib/ai/generateVariants";
+import {
+  THINKING_MODES,
   type TGeneratedQuestion,
   type TRecheckResponse,
   type TThinkingMode,
 } from "@/lib/ai/types";
+
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+const THINKING_LABELS: Record<TThinkingMode, string> = {
+  low: "Fast",
+  medium: "Balanced",
+  high: "Deep (slowest)",
+};
 
 type Props = {
   tabId: string;
@@ -55,14 +77,23 @@ const PROGRESS_MESSAGES: [number, string][] = [
 
 // Gemini gives no progress events, so the bar follows the expected time for
 // the chosen thinking mode: fast at first, then slowing down near the end.
-const GenerationProgress = ({ expectedMs }: { expectedMs: number }) => {
-  const [elapsed, setElapsed] = useState(0);
+// startedAt comes from the store, not from when this mounted: generation keeps
+// running while the teacher is on another tab, so coming back has to show how
+// far along it actually is rather than starting the bar again from zero.
+const GenerationProgress = ({
+  expectedMs,
+  startedAt,
+}: {
+  expectedMs: number;
+  startedAt: number;
+}) => {
+  const [elapsed, setElapsed] = useState(() => Date.now() - startedAt);
 
   useEffect(() => {
-    const start = Date.now();
-    const timer = setInterval(() => setElapsed(Date.now() - start), 200);
+    setElapsed(Date.now() - startedAt);
+    const timer = setInterval(() => setElapsed(Date.now() - startedAt), 200);
     return () => clearInterval(timer);
-  }, []);
+  }, [startedAt]);
 
   const percent = 95 * (1 - Math.exp((-1.8 * elapsed) / expectedMs));
   const message =
@@ -191,14 +222,191 @@ const CheckStrip = ({ check, onUndo }: { check?: TCheckState; onUndo: () => void
 const labelFor = (q: TGeneratedQuestion, index: number, hasOriginal: boolean) =>
   q.kind === "original" ? "Original" : `Variant ${hasOriginal ? index : index + 1}`;
 
+// The photo this tab came from, with the settings it was generated with. It
+// collapses once there are questions to review, because on a phone the review
+// is what the teacher came for - but it is still there to change and run again.
+const TabInputs = ({
+  tab,
+  busy,
+  onChange,
+  onGenerate,
+}: {
+  tab: TVariantTab;
+  busy: boolean;
+  onChange: (change: Partial<TTabSettings>) => void;
+  onGenerate: () => void;
+}) => {
+  const setPhoto = useVariantBatchStore((s) => s.setPhoto);
+  const file = useVariantBatchStore((s) => s.imageFor)(tab.id);
+  const [preview, setPreview] = useState("");
+  const [open, setOpen] = useState(tab.questions.length === 0);
+  const [sourceOpen, setSourceOpen] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const isTouch = useIsTouchDevice();
+
+  const pick = (files: FileList | File[] | null | undefined) => {
+    const picked = Array.from(files || []).find((f) => IMAGE_TYPES.includes(f.type));
+    if (picked) setPhoto(tab.id, picked);
+    return !!picked;
+  };
+  const choose = () => (isTouch ? setSourceOpen(true) : fileInput.current?.click());
+
+  useEffect(() => {
+    if (!file) {
+      setPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  const thinkingApplies = !tab.model.startsWith("gemma-");
+
+  return (
+    <div className="rounded-lg border border-slate-200">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-3 p-2 text-left"
+      >
+        {preview ? (
+          <img src={preview} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
+        ) : (
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-slate-100">
+            <ImageIcon className="h-5 w-5 text-slate-400" strokeWidth={1.5} />
+          </span>
+        )}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium">{tab.label}</span>
+          <span className="block truncate text-xs text-slate-500">
+            {preview
+              ? `${tab.variantCount} variant${tab.variantCount > 1 ? "s" : ""} · ${tab.model.replace(/^gemini-|^gemma-/, "")}`
+              : "Add a photo to begin"}
+          </span>
+        </span>
+        <ChevronDownIcon
+          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="flex flex-col gap-3 border-t p-3">
+          <input
+            ref={fileInput}
+            type="file"
+            accept={IMAGE_TYPES.join(",")}
+            className="hidden"
+            onChange={(e) => {
+              pick(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          {preview ? (
+            <button type="button" onClick={choose} className="w-full" disabled={busy}>
+              <img
+                src={preview}
+                alt="Question photo, tap to replace"
+                className="max-h-48 w-full rounded object-contain"
+              />
+            </button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={choose}
+              disabled={busy}
+              className="h-24 flex-col gap-2 border-dashed text-sm"
+            >
+              <ImageIcon className="h-6 w-6" strokeWidth={1.5} />
+              Add question photo
+            </Button>
+          )}
+
+          {/* text-base on phones stops iOS zooming into the field */}
+          <Textarea
+            value={tab.prompt}
+            onChange={(e) => onChange({ prompt: e.target.value })}
+            disabled={busy}
+            placeholder="Optional: extra instructions, e.g. make it harder, use SI units…"
+            className="min-h-[56px] text-base sm:text-sm"
+          />
+
+          <div className="grid grid-cols-2 gap-2">
+            <SelectCompact
+              label="Model"
+              className="min-w-0"
+              triggerClassName="text-left"
+              value={tab.model}
+              disabled={busy}
+              onChange={(value) => value && onChange({ model: value })}
+              options={FREE_MODELS.map((m) => ({
+                label: m.id === DEFAULT_FREE_MODEL ? `${m.label} (default)` : m.label,
+                value: m.id,
+              }))}
+            />
+            <SelectCompact
+              label="Thinking"
+              className="min-w-0"
+              value={tab.thinking}
+              disabled={busy || !thinkingApplies}
+              onChange={(value) => onChange({ thinking: value as TThinkingMode })}
+              options={THINKING_MODES.map((mode) => ({
+                label: THINKING_LABELS[mode],
+                value: mode,
+              }))}
+            />
+            <SelectCompact
+              label="Variants"
+              className="min-w-0"
+              value={String(tab.variantCount)}
+              disabled={busy}
+              onChange={(value) => onChange({ variantCount: Number(value) })}
+              options={VARIANT_COUNTS.map((count) => ({
+                label: String(count),
+                value: String(count),
+              }))}
+            />
+            <Button
+              onClick={onGenerate}
+              disabled={busy || !tab.hasImage}
+              className="mt-auto h-9 gap-1.5 text-xs sm:text-sm"
+            >
+              {busy ? (
+                <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
+              ) : tab.questions.length ? (
+                <RotateCwIcon className="h-3.5 w-3.5" />
+              ) : (
+                <SparklesIcon className="h-3.5 w-3.5" />
+              )}
+              {tab.questions.length ? "Regenerate" : "Generate"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <ImageSourceSheet
+        open={sourceOpen}
+        onOpenChange={setSourceOpen}
+        title="Add the question photo"
+        onChooseFile={() => fileInput.current?.click()}
+        onPhoto={(photo) => {
+          if (!pick([photo])) {
+            toast.error("That photo format isn't supported. Try Choose image instead.");
+          }
+        }}
+      />
+    </div>
+  );
+};
+
 // One tab's questions: generated by the store, reviewed and uploaded here.
 // Nothing in this component survives switching tabs, so anything worth keeping
 // lives in the store instead.
 const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
   const tab = useVariantBatchStore((s) => s.tabs.find((t) => t.id === tabId));
-  const thinking = useVariantBatchStore((s) => s.thinking);
-  const model = useVariantBatchStore((s) => s.model);
   const setSelected = useVariantBatchStore((s) => s.setSelected);
+  const updateSettings = useVariantBatchStore((s) => s.updateSettings);
+  const generate = useVariantBatchStore((s) => s.generate);
   const updateInStore = useVariantBatchStore((s) => s.updateQuestion);
   const markUploaded = useVariantBatchStore((s) => s.markUploaded);
   const retry = useVariantBatchStore((s) => s.retry);
@@ -211,7 +419,8 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
 
   if (!tab) return null;
 
-  const { questions, questionType, selected, status } = tab;
+  const { questions, questionType, selected, status, model, thinking } = tab;
+  const busy = status === "queued" || status === "generating";
   const hasOriginal = questions.some((q) => q.kind === "original");
   const selectedQuestions = questions.filter((q) => selected[q.id]);
   const rechecking = Object.values(checks).some((c) => c.loading);
@@ -277,6 +486,8 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
     clearCheck(id);
   };
 
+  const onGenerate = () => generate(tabId);
+
   const upload = async () => {
     if (!chapter) {
       toast.error("Select a Class, Subject, Book and Chapter in the header first");
@@ -306,36 +517,42 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
     }
   };
 
-  if (status === "queued" || status === "generating") {
-    return (
-      <div className="flex flex-col gap-4 p-4 sm:p-6">
-        <GenerationProgress expectedMs={THINKING_INFO[thinking].expectedMs} />
-      </div>
-    );
-  }
-
-  if (status === "failed") {
-    return (
-      <div className="flex flex-col items-center gap-3 p-6 text-center">
-        <TriangleAlertIcon className="h-8 w-8 text-amber-500" strokeWidth={1.5} />
-        <p className="text-sm text-slate-600">{tab.error || "This one could not be generated."}</p>
-        {tab.hasImage ? (
-          <Button variant="outline" onClick={() => retry(tabId)} className="gap-2">
-            <RotateCwIcon className="h-4 w-4" /> Try again
-          </Button>
-        ) : (
-          <p className="text-xs text-slate-500">
-            The photo is no longer in memory. Add it again from the Generate panel.
-          </p>
-        )}
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="flex flex-col gap-4 p-4 sm:p-6">
-        {questions.length === 0 && (
+        {/* The photo and the settings that produced this tab stay with it, so
+            coming back shows what was asked for and lets it be asked again */}
+        <TabInputs
+          tab={tab}
+          busy={busy}
+          onChange={(change) => updateSettings(tabId, change)}
+          onGenerate={onGenerate}
+        />
+
+        {busy && (
+          <GenerationProgress
+            expectedMs={THINKING_INFO[thinking].expectedMs}
+            startedAt={tab.startedAt ?? Date.now()}
+          />
+        )}
+
+        {status === "failed" && (
+          <div className="flex flex-col items-center gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-center">
+            <TriangleAlertIcon className="h-6 w-6 text-amber-500" strokeWidth={1.5} />
+            <p className="text-sm text-amber-800">
+              {tab.error || "This one could not be generated."}
+            </p>
+            {tab.hasImage ? (
+              <Button variant="outline" onClick={() => retry(tabId)} className="gap-2">
+                <RotateCwIcon className="h-4 w-4" /> Try again
+              </Button>
+            ) : (
+              <p className="text-xs text-amber-700">Add the photo again to generate this one.</p>
+            )}
+          </div>
+        )}
+
+        {status === "ready" && questions.length === 0 && (
           <p className="text-sm text-slate-500">No questions came back for this photo.</p>
         )}
         {        questions.map((q, index) => (
@@ -415,7 +632,7 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
                   disabled={!!checks[q.id]?.loading}
                   className="h-9 flex-1 gap-1.5 px-2 text-xs sm:text-sm"
                 >
-                  <PencilIcon className="w-3.5 h-3.5" /> Edit question
+                  <PencilIcon className="w-3.5 h-3.5" /> Edit Ques.
                 </Button>
               </EditMarkdownSheet>
               <EditMarkdownSheet text={q.ans} onSave={(ans) => editQuestion(q.id, { ans })}>
@@ -424,7 +641,7 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
                   disabled={!!checks[q.id]?.loading}
                   className="h-9 flex-1 gap-1.5 px-2 text-xs sm:text-sm"
                 >
-                  <PencilIcon className="w-3.5 h-3.5" /> Edit answer
+                  <PencilIcon className="w-3.5 h-3.5" /> Edit Ans
                 </Button>
               </EditMarkdownSheet>
             </div>
@@ -444,7 +661,7 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
         })()}
       />
 
-      {questions.length > 0 && (
+      {status === "ready" && questions.length > 0 && (
         <div className="sticky bottom-0 mt-auto border-t bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-6">
           <Button
             onClick={upload}
