@@ -1,5 +1,11 @@
 # Open items — recognition service
 
+> **Superseded by `api/` (Vercel Python functions).** This folder still works
+> for local development (`uvicorn main:app`), but the logic now lives twice:
+> here and in `api/_face.py`. Delete this folder once the Vercel deployment is
+> verified end to end, or the two will drift.
+
+
 Paused mid-way. Nothing in this folder has been executed, so treat all of it as
 a first draft until the Docker build runs.
 

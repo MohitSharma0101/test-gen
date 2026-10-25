@@ -4,8 +4,21 @@
 // signatures travel with each recognise call rather than the container
 // reaching into the database itself.
 
-const BASE_URL = process.env.FACE_SERVICE_URL?.replace(/\/$/, "");
+// Two shapes are supported:
+//   FACE_SERVICE_URL set  -> a standalone service, e.g. http://localhost:8080
+//                            during development, with /embed and /recognize
+//   FACE_SERVICE_URL unset -> the Python functions in this same deployment,
+//                            at /api/embed and /api/recognize
+const EXTERNAL_URL = process.env.FACE_SERVICE_URL?.replace(/\/$/, "");
+const SELF_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "";
 const SECRET = process.env.FACE_SERVICE_SECRET;
+
+const BASE_URL = EXTERNAL_URL || SELF_URL;
+
+// Functions deployed alongside the app sit under /api; a standalone service
+// serves the routes at its root.
+const path = (name: "embed" | "recognize") =>
+  EXTERNAL_URL ? `/${name}` : `/api/${name}`;
 
 export const FACE_SERVICE_CONFIGURED = !!BASE_URL;
 
@@ -87,7 +100,7 @@ export const embedFaces = async (images: File[]) => {
     form.append("images", image, image.name || `shot-${index}.jpg`);
   });
 
-  return post<{ results: EmbedResult[] }>("/embed", form);
+  return post<{ results: EmbedResult[] }>(path("embed"), form);
 };
 
 // Attendance: class photos in, who was seen out.
@@ -98,5 +111,5 @@ export const recognizeFaces = async (images: File[], roster: RosterEntry[]) => {
   });
   form.append("roster", JSON.stringify(roster));
 
-  return post<RecognizeResult>("/recognize", form);
+  return post<RecognizeResult>(path("recognize"), form);
 };

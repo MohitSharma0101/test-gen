@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/embed.py": {
+      "memory": 1769,
+      "maxDuration": 60
+    },
+    "api/recognize.py": {
+      "memory": 1769,
+      "maxDuration": 60
+    },
+    "app/api/attendance/capture/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/face/enroll/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
