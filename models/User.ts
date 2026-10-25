@@ -17,6 +17,8 @@ export type TUser = {
   dob?: string;
   batchIds?: (string | TBatch)[];
   feeSummary?: TFeeSummary | string;
+  faceEnrolledAt?: string;
+  faceSignatureCount?: number;
 };
 
 export type TUserWithFeeSummary = Omit<TUser, "feeSummary" | "batchIds"> & {
@@ -69,6 +71,15 @@ export const UserSchema = new mongoose.Schema<TUser>(
     feeSummary: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "FeeSummary",
+    },
+    // Counters only. The signatures themselves are in FaceSignature so this
+    // document stays light for list queries.
+    faceEnrolledAt: {
+      type: Date,
+    },
+    faceSignatureCount: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

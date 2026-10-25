@@ -2,6 +2,7 @@
 
 import AddUserSheet from "@/components/sheets/add-user-sheet";
 import EditUserSheet from "@/components/sheets/edit-user-sheet";
+import EnrollFaceSheet from "@/components/sheets/enroll-face-sheet";
 import DataTable from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import CallButton from "@/components/ui/call-button";
@@ -11,8 +12,18 @@ import useUsers from "@/hooks/useUsers";
 import { getDateFromISO } from "@/lib/utils";
 import { TBatch } from "@/models/Batch";
 import { TUser } from "@/models/User";
-import { Edit2Icon } from "lucide-react";
+import { CheckCircle2Icon, Edit2Icon, ScanFaceIcon } from "lucide-react";
 import React, { useState } from "react";
+
+// Below this, matching accuracy drops sharply, so a thin enrollment is shown
+// as "Weak" rather than passing as done. Kept in step with the API route.
+const MIN_SIGNATURES = 5;
+
+const STATE_STYLES = {
+  none: "border-slate-300 bg-slate-100 text-slate-500 hover:bg-slate-200",
+  weak: "border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200",
+  ok: "border-green-300 bg-green-100 text-green-800 hover:bg-green-200",
+} as const;
 
 const UserPage = () => {
   const [query, setQuery] = useState("");
@@ -25,6 +36,7 @@ const UserPage = () => {
   );
 
   const [selectedUser, setSelectedUser] = useState<TUser>();
+  const [faceUser, setFaceUser] = useState<TUser>();
 
   const columns = [
     {
@@ -38,6 +50,42 @@ const UserPage = () => {
           <Edit2Icon className="w-4 h-4" />
         </Button>
       ),
+    },
+    {
+      header: "Face",
+      render: (user: TUser) => {
+        const count = user.faceSignatureCount ?? 0;
+        const state = !count ? "none" : count < MIN_SIGNATURES ? "weak" : "ok";
+
+        return (
+          <button
+            type="button"
+            onClick={() => setFaceUser(user)}
+            title={
+              count
+                ? `${count} signature${count === 1 ? "" : "s"}${
+                    user.faceEnrolledAt
+                      ? ` · enrolled ${getDateFromISO(user.faceEnrolledAt)}`
+                      : ""
+                  }`
+                : "Not enrolled — click to enroll"
+            }
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${STATE_STYLES[state]}`}
+          >
+            {state === "ok" ? (
+              <CheckCircle2Icon className="h-3.5 w-3.5" />
+            ) : (
+              <ScanFaceIcon className="h-3.5 w-3.5" />
+            )}
+            {state === "none"
+              ? "Not enrolled"
+              : state === "weak"
+              ? `Weak · ${count}`
+              : `Enrolled · ${count}`}
+          </button>
+        );
+      },
+      className: "min-w-[130px]",
     },
     {
       header: "Id",
@@ -156,6 +204,16 @@ const UserPage = () => {
             if (!_open) setSelectedUser(undefined);
           }}
           defaultUser={selectedUser}
+          onSuccess={refreshUsers}
+        />
+      )}
+      {faceUser && (
+        <EnrollFaceSheet
+          open={!!faceUser}
+          onOpenChange={(_open) => {
+            if (!_open) setFaceUser(undefined);
+          }}
+          user={faceUser}
           onSuccess={refreshUsers}
         />
       )}

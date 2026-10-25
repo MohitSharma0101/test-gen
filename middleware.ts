@@ -40,7 +40,10 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// apply middleware only to API routes
+// Apply middleware only to API routes, excluding the Python functions.
+// Those are separate runtimes rather than Next routes, and matching them here
+// keeps the request inside Next, which has no such route and returns a 500.
+// They do their own auth with the x-face-secret header.
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: ["/api/((?!embed|recognize).*)"],
 };

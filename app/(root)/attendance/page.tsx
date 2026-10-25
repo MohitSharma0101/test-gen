@@ -9,9 +9,12 @@ import useBatches from "@/hooks/useBatches";
 import WhatsappOutlineIcon from "@/icons/whatsapp-outline";
 import Clock from "@/lib/clock";
 import { cn, redirectToWhatsapp } from "@/lib/utils";
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, ScanFaceIcon } from "lucide-react";
 import { SquareMousePointerIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import FaceAttendanceSheet from "@/components/sheets/face-attendance-sheet";
+import { toast } from "@/components/ui/use-toast";
+import { TFaceAudit } from "@/models/Attendance";
 
 type Props = {};
 
@@ -22,6 +25,10 @@ const AttendancePage = (props: Props) => {
   const [absentUsers, setAbsentUsers] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(Clock.getDate());
   const [enableWARedirection, setEnableWARedirection] = useState(false);
+  const [faceSheetOpen, setFaceSheetOpen] = useState(false);
+  // Set only by the photo flow. Submitted alongside the final absent list so
+  // the machine's suggestion can be compared against the teacher's decision.
+  const [faceAudit, setFaceAudit] = useState<TFaceAudit>();
 
   const isDisabled = selectedDate != Clock.getDate();
 
@@ -35,9 +42,10 @@ const AttendancePage = (props: Props) => {
   }, [attendance]);
 
   const onSubmit = async () => {
-    await markAttendance(absentUsers);
+    await markAttendance(absentUsers, faceAudit);
     setSelectedBatchId("");
     setAbsentUsers([]);
+    setFaceAudit(undefined);
   };
 
   return (
@@ -67,6 +75,7 @@ const AttendancePage = (props: Props) => {
             onChange={(value) => {
               setSelectedBatchId(value);
               setAbsentUsers([]);
+              setFaceAudit(undefined);
             }}
             value={selectedBatchId}
             className="flex-grow lg:w-[300px]"
@@ -79,6 +88,17 @@ const AttendancePage = (props: Props) => {
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            onClick={() => setFaceSheetOpen(true)}
+            disabled={isDisabled || !selectedBatchId}
+            title="Mark attendance from class photos"
+          >
+            <ScanFaceIcon className="size-4" />
+            Photos
+          </Button>
           <Button size="sm" onClick={onSubmit} disabled={isDisabled}>
             Submit
           </Button>
@@ -153,6 +173,22 @@ const AttendancePage = (props: Props) => {
           </div>
         )}
       </div>
+      <FaceAttendanceSheet
+        open={faceSheetOpen}
+        onOpenChange={setFaceSheetOpen}
+        batchId={selectedBatchId}
+        date={selectedDate}
+        onApply={(absentUserIds, audit) => {
+          setFaceAudit(audit);
+          // Fills the list only. The teacher still reviews the rows and presses
+          // Submit, so nothing is recorded without a human confirming it.
+          setAbsentUsers(absentUserIds);
+          toast({
+            title: `${absentUserIds.length} marked absent — review and Submit`,
+            variant: "success",
+          });
+        }}
+      />
     </div>
   );
 };

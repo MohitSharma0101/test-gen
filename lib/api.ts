@@ -24,6 +24,9 @@ export const ENDPOINT = {
   uploadSign: "uploads/sign",
   generateVariants: "ai/variants",
   recheckVariant: "ai/variants/recheck",
+  faceEnroll: "face/enroll",
+  attendanceCapture: "attendance/capture",
+  faceCorrection: "face/correction",
 
   //auth
   login: "auth/login",

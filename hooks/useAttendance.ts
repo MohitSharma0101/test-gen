@@ -3,6 +3,7 @@
 import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
 import { fetchAttendance, TAttendanceRes } from "@/service/core.service";
+import { TFaceAudit } from "@/models/Attendance";
 import { useCallback, useEffect, useState } from "react";
 
 type config = {
@@ -40,13 +41,19 @@ const useAttendance = ({ batchId, date, shouldLoad = true }: config = {}) => {
     }
   }, [getAttendance, shouldLoad]);
 
-  const markAttendance = async (absentUsers: string[]) => {
+  // faceAudit is passed only when the photo flow produced this list, so the
+  // machine's suggestion can be compared against what the teacher submitted.
+  const markAttendance = async (
+    absentUsers: string[],
+    faceAudit?: TFaceAudit
+  ) => {
     try {
       await api.post(ENDPOINT.attendance, {
         _id: attendance?._id,
         batch: batchId,
         absentUsers,
         date,
+        ...(faceAudit ? { faceAudit } : {}),
       });
 
       toast({
