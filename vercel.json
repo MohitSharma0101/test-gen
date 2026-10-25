@@ -2,10 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/embed.py": {
+      "includeFiles": "api/_face.py",
       "memory": 1024,
       "maxDuration": 60
     },
     "api/recognize.py": {
+      "includeFiles": "api/_face.py",
       "memory": 1024,
       "maxDuration": 60
     },

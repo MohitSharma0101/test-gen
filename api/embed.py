@@ -4,11 +4,18 @@ One face per photo. A photo with none, or more than one, is rejected rather
 than guessed at, so a bystander never ends up enrolled as the student.
 """
 
+import os
+import sys
 from typing import List
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 
-from _face import check_secret, extract_faces, load_image
+# The entrypoint is imported from the task root, so this file's own folder is
+# not on the import path and a bare `from _face import ...` raises
+# ModuleNotFoundError at runtime.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from _face import check_secret, extract_faces, load_image  # noqa: E402
 
 app = FastAPI()
 

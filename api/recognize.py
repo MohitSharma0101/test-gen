@@ -7,11 +7,23 @@ accurate since there are far fewer people to confuse someone with.
 """
 
 import json
+import os
+import sys
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 
-from _face import check_secret, extract_faces, load_image, match_roster
+# The entrypoint is imported from the task root, so this file's own folder is
+# not on the import path and a bare `from _face import ...` raises
+# ModuleNotFoundError at runtime.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from _face import (  # noqa: E402
+    check_secret,
+    extract_faces,
+    load_image,
+    match_roster,
+)
 
 app = FastAPI()
 
