@@ -93,9 +93,11 @@ export const MSG_TEMPLATES_META = {
 };
 
 export const PAPER_DURATION_OPTIONS = [
-  { label: "180 min", value: "180" },
-  { label: "90 min", value: "90" },
-  { label: "60 min", value: "60" },
+  { label: "180 min (3 hr)", value: "180" },
+  { label: "120 min (2 hr)", value: "120" },
+  { label: "90 min (1 hr 30 min)", value: "90" },
+  { label: "75 min (1 hr 15 min)", value: "75" },
+  { label: "60 min (1 hr)", value: "60" },
   { label: "45 min", value: "45" },
   { label: "30 min", value: "30" },
   { label: "20 min", value: "20" },
