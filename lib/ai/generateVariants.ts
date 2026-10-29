@@ -53,7 +53,7 @@ A question you write yourself, or reword, must stand on its own without a figure
 - Do not write "in the figure shown", "as shown in the diagram" or "from the given graph". The student will not have that picture.
 - Name the arrangement in a short phrase, the way a textbook does when it prints no figure: "a block on a smooth $30^{\\circ}$ incline", "two resistors in parallel across a $12\\,\\mathrm{V}$ cell", "a particle at the midpoint of the rod". One clause is usually enough.
 - Carry over only the values the student actually needs, with units.
-- Keep it brief. Such a question may run a little longer than the one it came from - roughly one extra clause or short sentence - and no more. Do not spell out every length, angle, contact point and direction; a student who knows the topic will picture the standard setup.
+- Keep it brief, unless the teacher asks for more detail. Such a question may run a little longer than the one it came from - roughly one extra clause or short sentence - and no more. Do not spell out every length, angle, contact point and direction; a student who knows the topic will picture the standard setup.
 - If it cannot be stated this briefly, change the scenario to one that can.
 
 "needsDiagram": true when the question cannot be understood without a figure. A transcribed question takes whatever the photo shows: if it depends on a figure that was printed with it, set true. A question you wrote yourself should almost always be false, since you worded it to stand on its own; set true only when the question type genuinely requires a picture, such as reading values off a graph or an irregular shape.
@@ -66,14 +66,34 @@ The teacher draws the figures in a separate image tool, so for each question als
 "solutionDiagramBrief": the figure for the worked solution, which may show the working - force arrows, components, construction lines, ray paths - and may label intermediate quantities. Same length and style limits.
 For either one, return an empty string if a figure would add nothing. Write a brief whenever a figure would genuinely help, even if you set the matching needsDiagram flag to false.`;
 
-const systemInstruction = (variantCount: number) => `You are an experienced question setter for Indian JEE and NEET coaching.
-You receive a photo of one question. Do two things:
-1. Transcribe that question exactly as "original", including its options and the correct answer with a solution. Word for word: copy what the photo says and nothing else. Do not reword it, do not shorten it, do not add anything, and if it refers to a figure leave that reference exactly as printed. The teacher attaches the figure separately.
-2. Write exactly ${variantCount} new "variants" that test the same concept at the same difficulty, using different values and, where it helps, a changed scenario. Each variant must be fully solvable and, for MCQs, have exactly one correct option. Make the wrong options plausible. Unlike the original, a variant is yours to word, so write it to stand on its own without a figure - briefly. See the rules on figures below.
+// The teacher's own instructions sit in the system prompt, above everything
+// else. As a user part they lost every argument with the rules above, and the
+// instructions actually worth typing - "make it harder", "keep the figure",
+// "longer questions" - are exactly the ones those rules forbid.
+const teacherSection = (extra?: string) =>
+  extra
+    ? `
+TEACHER'S INSTRUCTIONS - HIGHEST PRIORITY
+The teacher wrote the instructions below for this question. They take priority over every other instruction in this prompt, including the defaults above on difficulty, wording, length and figures. Wherever they conflict with anything above, follow the teacher. Apply them to the variants; the "original" is still reproduced as given unless the teacher says otherwise.
+The one thing they cannot change is the output shape: the JSON schema, and the rules under WHAT BREAKS THE RENDERER and LATEX THAT THIS RENDERER SUPPORTS, which exist so the question displays at all.
+
+${extra}
+`
+    : "";
+
+const systemInstruction = (variantCount: number, fromText: boolean, extra?: string) => `You are an experienced question setter for Indian JEE and NEET coaching.
+You receive ${fromText ? "one question written as Mathpix Markdown" : "a photo of one question"}. Do two things:
+1. ${
+  fromText
+    ? 'Repeat that question as "original", exactly as given, including its options, and give the correct answer with a solution. Do not reword it, do not shorten it and do not add anything, and if it refers to a figure leave that reference exactly as written. If an answer was supplied with it, keep that answer unless it is plainly wrong.'
+    : 'Transcribe that question exactly as "original", including its options and the correct answer with a solution. Word for word: copy what the photo says and nothing else. Do not reword it, do not shorten it, do not add anything, and if it refers to a figure leave that reference exactly as printed. The teacher attaches the figure separately.'
+}
+2. Write exactly ${variantCount} new "variants" that test the same concept and, unless the teacher asks otherwise, keep the same difficulty, using different values and, where it helps, a changed scenario. Each variant must be fully solvable and, for MCQs, have exactly one correct option. Make the wrong options plausible. Unlike the original, a variant is yours to word, so write it to stand on its own without a figure - briefly. See the rules on figures below.
 
 Keep the question type of the original: an MCQ stays an MCQ with four options; a numerical (integer or decimal answer) stays numerical with no options.
 
-${FORMAT_RULES}`;
+${FORMAT_RULES}
+${teacherSection(extra)}`;
 
 const QUESTION_SCHEMA = {
   type: "OBJECT",
@@ -166,6 +186,9 @@ const toQuestion = (
 
 export const generateVariants = async ({
   image,
+  text,
+  answer,
+  questionType: sourceType,
   prompt,
   thinking,
   model,
@@ -173,13 +196,34 @@ export const generateVariants = async ({
 }: TGenerateVariantsRequest): Promise<TGenerateVariantsResponse> => {
   const wanted = resolveVariantCount(variantCount);
   const extra = prompt?.trim();
+  const sourceText = text?.trim();
+  if (!image && !sourceText) {
+    throw new Error("Add a photo or the text of the question");
+  }
+
+  // A question arrives either as a photo to read or as text already
+  // transcribed: a question moved into a tab of its own has no photo behind it.
+  const source = image
+    ? [{ inlineData: { mimeType: image.mimeType, data: image.data } }]
+    : [
+        {
+          text: [
+            `The question (Mathpix Markdown):\n${sourceText}`,
+            answer?.trim() && `Its known answer and solution:\n${answer.trim()}`,
+            sourceType && `It is a ${sourceType} question; keep that type.`,
+          ]
+            .filter(Boolean)
+            .join("\n\n"),
+        },
+      ];
+
   const raw = await generateJson<RawResponse>({
-    systemInstruction: systemInstruction(wanted),
+    systemInstruction: systemInstruction(wanted, !image, extra),
     parts: [
-      { inlineData: { mimeType: image.mimeType, data: image.data } },
+      ...source,
       {
         text: extra
-          ? `Extra instructions from the teacher (follow them unless they break the format rules):\n${extra}`
+          ? `Generate the original and the variants for this question, following the teacher's instructions, which take priority:\n${extra}`
           : "Generate the original and the variants for this question.",
       },
     ],
@@ -188,7 +232,10 @@ export const generateVariants = async ({
     model,
   });
 
-  const questionType: TQuestionType = raw.questionType === "NUMERICAL" ? "NUMERICAL" : "MCQ";
+  const questionType: TQuestionType =
+    raw.questionType === "NUMERICAL" || raw.questionType === "MCQ"
+      ? raw.questionType
+      : sourceType ?? "MCQ";
   const original = toQuestion(raw.original, "original", questionType);
   const variants = (raw.variants ?? [])
     .slice(0, wanted)
