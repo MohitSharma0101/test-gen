@@ -38,9 +38,22 @@ export type TTabSettings = {
   variantCount: number;
 };
 
+// A tab generates either from a photo or from the text of a question. Text
+// comes from a question this batch already produced and that the teacher sent
+// to a tab of its own to work on further.
+export type TTabSource = "image" | "text";
+
 export type TVariantTab = TTabSettings & {
   id: string;
   label: string;
+  source: TTabSource;
+  // Mathpix Markdown of the question, for a text tab. Unlike a photo this does
+  // survive a reload, so such a tab can still be generated afterwards.
+  sourceText: string;
+  // What is known about the question the text came from, passed through so the
+  // answer and the question type are not guessed again
+  sourceAnswer?: string;
+  sourceType?: TQuestionType;
   status: TTabStatus;
   error?: string;
   // When the current generation began, so a progress bar can pick up where it
@@ -68,6 +81,17 @@ type TState = {
 
 type TActions = {
   addTab: () => string;
+  // Moves a generated question into a tab of its own, where it can be given
+  // its own prompt and model and generated from its text
+  addTextTab: (source: {
+    text: string;
+    answer?: string;
+    questionType?: TQuestionType;
+    label?: string;
+  }) => string;
+  setSourceText: (id: string, text: string) => void;
+  // Every tab can do both; this is only which one it generates from
+  setSource: (id: string, source: TTabSource) => void;
   addPhotos: (files: File[]) => void;
   setPhoto: (id: string, file: File) => void;
   updateSettings: (id: string, change: Partial<TTabSettings>) => void;
@@ -113,10 +137,14 @@ export const useVariantBatchStore = create<TState & TActions>()(
           tabs: s.tabs.map((t) => (t.id === id ? { ...t, ...change } : t)),
         }));
 
+      // A tab can run once it has what it generates from
+      const ready = (tab: TVariantTab) =>
+        tab.source === "text" ? !!tab.sourceText.trim() : images.has(tab.id);
+
       // Starts whatever is queued, up to the concurrency limit
       const pump = () => {
         if (inFlight >= MAX_IN_FLIGHT) return;
-        const next = get().tabs.find((t) => t.status === "queued" && images.has(t.id));
+        const next = get().tabs.find((t) => t.status === "queued" && ready(t));
         if (!next) return;
 
         inFlight++;
@@ -124,14 +152,18 @@ export const useVariantBatchStore = create<TState & TActions>()(
 
         (async () => {
           try {
-            const file = images.get(next.id);
-            if (!file) throw new Error("The photo for this tab is no longer available");
-            const image = await imageToBase64Jpeg(file);
+            const file = next.source === "image" ? images.get(next.id) : undefined;
+            if (next.source === "image" && !file) {
+              throw new Error("The photo for this tab is no longer available");
+            }
             const { prompt, thinking, model, variantCount } = next;
             const { data } = await api.post<TGenerateVariantsResponse>(
               ENDPOINT.generateVariants,
               {
-                image,
+                image: file ? await imageToBase64Jpeg(file) : undefined,
+                text: next.source === "text" ? next.sourceText.trim() : undefined,
+                answer: next.source === "text" ? next.sourceAnswer : undefined,
+                questionType: next.source === "text" ? next.sourceType : undefined,
                 prompt: prompt.trim() || undefined,
                 thinking,
                 model: model || undefined,
@@ -185,6 +217,8 @@ export const useVariantBatchStore = create<TState & TActions>()(
                 id,
                 label: `Q${s.tabs.length + 1}`,
                 status: "draft" as TTabStatus,
+                source: "image" as TTabSource,
+                sourceText: "",
                 questionType: "MCQ" as TQuestionType,
                 questions: [],
                 selected: {},
@@ -200,9 +234,50 @@ export const useVariantBatchStore = create<TState & TActions>()(
           return id;
         },
 
+        // The question is already transcribed, so the tab starts from its text
+        // with no photo. Nothing runs until Generate is pressed, which is what
+        // gives the teacher room to add a prompt and pick a model first.
+        addTextTab: ({ text, answer, questionType, label }) => {
+          const { model, thinking, variantCount } = get();
+          const id = newId();
+          set((s) => ({
+            tabs: [
+              ...s.tabs,
+              {
+                id,
+                label: label || `Q${s.tabs.length + 1}`,
+                status: "draft" as TTabStatus,
+                source: "text" as TTabSource,
+                sourceText: text,
+                sourceAnswer: answer,
+                sourceType: questionType,
+                questionType: questionType ?? ("MCQ" as TQuestionType),
+                questions: [],
+                selected: {},
+                hasImage: false,
+                model,
+                thinking,
+                // Its own prompt, empty: the batch prompt described the photo
+                // this question came from, not what to do with it next
+                prompt: "",
+                variantCount,
+              },
+            ],
+            activeId: id,
+          }));
+          return id;
+        },
+
+        setSourceText: (id, sourceText) =>
+          patch(id, { sourceText, status: "draft", error: undefined }),
+
+        setSource: (id, source) => patch(id, { source, error: undefined }),
+
         setPhoto: (id, file) => {
           images.set(id, file);
-          patch(id, { hasImage: true, status: "draft", error: undefined });
+          // Adding a photo is also how a tab is switched to generating from
+          // one, since that is what the teacher just reached for
+          patch(id, { hasImage: true, status: "draft", error: undefined, source: "image" });
         },
 
         // Several photos at once still get a tab each, but each one waits for
@@ -218,6 +293,8 @@ export const useVariantBatchStore = create<TState & TActions>()(
               id,
               label: `Q${get().tabs.length + i + 1}`,
               status: "draft" as TTabStatus,
+              source: "image" as TTabSource,
+              sourceText: "",
               questionType: "MCQ" as TQuestionType,
               questions: [],
               selected: {},
@@ -254,20 +331,22 @@ export const useVariantBatchStore = create<TState & TActions>()(
         },
 
         generate: (id) => {
-          if (!images.has(id)) return;
+          const tab = get().tabs.find((t) => t.id === id);
+          if (!tab || !ready(tab)) return;
           patch(id, { status: "queued", error: undefined, questions: [], selected: {} });
           pump();
         },
 
         retry: (id) => {
-          if (!images.has(id)) return;
+          const tab = get().tabs.find((t) => t.id === id);
+          if (!tab || !ready(tab)) return;
           patch(id, { status: "queued", error: undefined });
           pump();
         },
 
         replacePhoto: (id, file) => {
           images.set(id, file);
-          patch(id, { status: "queued", error: undefined, hasImage: true });
+          patch(id, { status: "queued", error: undefined, hasImage: true, source: "image" });
           pump();
         },
 
@@ -350,7 +429,11 @@ export const useVariantBatchStore = create<TState & TActions>()(
             model: usable(t.model),
             hasImage: false,
             startedAt: undefined,
+            // A text tab still has its text, so it can be generated again as
+            // it stands; a photo tab waits for its photo
             ...(t.status === "ready" ? {} : { status: "draft" as TTabStatus, error: undefined }),
+            source: t.source ?? ("image" as TTabSource),
+            sourceText: t.sourceText ?? "",
           }));
       },
     }

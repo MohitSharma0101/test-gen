@@ -25,7 +25,13 @@ export type TGeneratedQuestion = {
 };
 
 export type TGenerateVariantsRequest = {
-  image: { mimeType: string; data: string }; // base64, no data: prefix
+  // A question comes in either as a photo or as Mathpix Markdown text - a
+  // question moved into its own tab has already been transcribed, so there is
+  // no photo left to send.
+  image?: { mimeType: string; data: string }; // base64, no data: prefix
+  text?: string; // Mathpix Markdown of the question, used when there is no photo
+  answer?: string; // the known answer and solution, when the text came from a question we generated
+  questionType?: TQuestionType; // what the source question was, so the type is kept
   prompt?: string;
   thinking?: TThinkingMode;
   model?: string; // a Gemini/Gemma model id; empty means the server default

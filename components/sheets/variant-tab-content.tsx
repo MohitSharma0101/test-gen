@@ -6,12 +6,14 @@ import {
   CheckIcon,
   ChevronDownIcon,
   CopyIcon,
+  FileTextIcon,
   ImageIcon,
   Loader2Icon,
   PencilIcon,
   RotateCwIcon,
   ShapesIcon,
   ShieldCheckIcon,
+  SplitIcon,
   SparklesIcon,
   TriangleAlertIcon,
   Undo2Icon,
@@ -118,7 +120,13 @@ const GenerationProgress = ({
 };
 
 // Copies the raw markdown of the question followed by its answer
-const CopyQuestionButton = ({ question }: { question: TGeneratedQuestion }) => {
+const CopyQuestionButton = ({
+  question,
+  className,
+}: {
+  question: TGeneratedQuestion;
+  className?: string;
+}) => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -141,7 +149,7 @@ const CopyQuestionButton = ({ question }: { question: TGeneratedQuestion }) => {
     <Button
       variant="outline"
       size="icon"
-      className="h-9 w-9 shrink-0"
+      className={className ?? "h-9 w-9 shrink-0"}
       onClick={copy}
       title="Copy question and answer"
       aria-label="Copy question and answer"
@@ -237,7 +245,10 @@ const TabInputs = ({
   onGenerate: () => void;
 }) => {
   const setPhoto = useVariantBatchStore((s) => s.setPhoto);
+  const setSourceText = useVariantBatchStore((s) => s.setSourceText);
+  const setSource = useVariantBatchStore((s) => s.setSource);
   const file = useVariantBatchStore((s) => s.imageFor)(tab.id);
+  const fromText = tab.source === "text";
   const [preview, setPreview] = useState("");
   const [open, setOpen] = useState(tab.questions.length === 0);
   const [sourceOpen, setSourceOpen] = useState(false);
@@ -270,7 +281,11 @@ const TabInputs = ({
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-3 p-2 text-left"
       >
-        {preview ? (
+        {fromText ? (
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-slate-100">
+            <FileTextIcon className="h-5 w-5 text-slate-400" strokeWidth={1.5} />
+          </span>
+        ) : preview ? (
           <img src={preview} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
         ) : (
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-slate-100">
@@ -280,9 +295,11 @@ const TabInputs = ({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">{tab.label}</span>
           <span className="block truncate text-xs text-slate-500">
-            {preview
-              ? `${tab.variantCount} variant${tab.variantCount > 1 ? "s" : ""} · ${tab.model.replace(/^gemini-|^gemma-/, "")}`
-              : "Add a photo to begin"}
+            {(fromText ? tab.sourceText.trim() : preview)
+              ? `${fromText ? "Text" : "Photo"} · ${tab.variantCount} variant${tab.variantCount > 1 ? "s" : ""} · ${tab.model.replace(/^gemini-|^gemma-/, "")}`
+              : fromText
+                ? "Add the question text to begin"
+                : "Add a photo to begin"}
           </span>
         </span>
         <ChevronDownIcon
@@ -302,7 +319,49 @@ const TabInputs = ({
               e.target.value = "";
             }}
           />
-          {preview ? (
+          {/* A tab holds both a photo and a question's text; this is which
+              one it generates from. A photo is what most questions start as,
+              so that is where a new tab sits. */}
+          <div className="grid grid-cols-2 gap-1 rounded-md bg-slate-100 p-1">
+            {(["image", "text"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                disabled={busy}
+                onClick={() => setSource(tab.id, option)}
+                className={`flex h-8 items-center justify-center gap-1.5 rounded text-xs font-medium transition-colors disabled:opacity-60 ${
+                  (option === "text") === fromText
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500"
+                }`}
+              >
+                {option === "image" ? (
+                  <ImageIcon className="h-3.5 w-3.5" strokeWidth={1.5} />
+                ) : (
+                  <FileTextIcon className="h-3.5 w-3.5" strokeWidth={1.5} />
+                )}
+                {option === "image" ? "Photo" : "Text"}
+              </button>
+            ))}
+          </div>
+
+          {fromText ? (
+            // The question is already written out, so there is nothing to
+            // read from a photo: the text itself is what is generated from,
+            // and it is editable in case the teacher wants to tweak it first.
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium text-slate-600">
+                Question text (Mathpix Markdown)
+              </span>
+              <Textarea
+                value={tab.sourceText}
+                onChange={(e) => setSourceText(tab.id, e.target.value)}
+                disabled={busy}
+                placeholder="Paste or type the question, maths in $...$"
+                className="min-h-[120px] font-mono text-base sm:text-sm"
+              />
+            </label>
+          ) : preview ? (
             <button type="button" onClick={choose} className="w-full" disabled={busy}>
               <img
                 src={preview}
@@ -368,7 +427,7 @@ const TabInputs = ({
             />
             <Button
               onClick={onGenerate}
-              disabled={busy || !tab.hasImage}
+              disabled={busy || (fromText ? !tab.sourceText.trim() : !tab.hasImage)}
               className="mt-auto h-9 gap-1.5 text-xs sm:text-sm"
             >
               {busy ? (
@@ -410,6 +469,7 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
   const updateInStore = useVariantBatchStore((s) => s.updateQuestion);
   const markUploaded = useVariantBatchStore((s) => s.markUploaded);
   const retry = useVariantBatchStore((s) => s.retry);
+  const addTextTab = useVariantBatchStore((s) => s.addTextTab);
   const imageFor = useVariantBatchStore((s) => s.imageFor);
 
   // Transient: a recheck result describes a reply, not work worth keeping
@@ -488,6 +548,19 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
 
   const onGenerate = () => generate(tabId);
 
+  // Sends one generated question into a tab of its own. Nothing generates yet:
+  // the point of the new tab is to add a prompt and pick a model for this one
+  // question, then generate from its text - there is no photo behind it.
+  const moveToTab = (q: TGeneratedQuestion, label: string) => {
+    addTextTab({
+      text: q.text,
+      answer: q.ans,
+      questionType,
+      label: `${tab.label}·${label.replace("Variant ", "V").replace("Original", "O")}`,
+    });
+    toast.success(`${label} moved to its own tab - add a prompt and generate`);
+  };
+
   const upload = async () => {
     if (!chapter) {
       toast.error("Select a Class, Subject, Book and Chapter in the header first");
@@ -542,7 +615,7 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
             <p className="text-sm text-amber-800">
               {tab.error || "This one could not be generated."}
             </p>
-            {tab.hasImage ? (
+            {tab.hasImage || (tab.source === "text" && tab.sourceText.trim()) ? (
               <Button variant="outline" onClick={() => retry(tabId)} className="gap-2">
                 <RotateCwIcon className="h-4 w-4" /> Try again
               </Button>
@@ -562,31 +635,65 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
               selected[q.id] ? "border-primary ring-1 ring-primary" : "border-slate-200"
             }`}
           >
-            {/* Whole header row toggles the checkbox, so it is easy to tap */}
-            <label
-              htmlFor={`variant-${q.id}`}
-              className="flex cursor-pointer items-center gap-3 border-b bg-slate-50 px-3 py-2.5"
-            >
-              <Checkbox
-                id={`variant-${q.id}`}
-                className="h-5 w-5"
-                checked={!!selected[q.id]}
-                onCheckedChange={(checked) =>
-                  setSelected(tabId, q.id, checked === true)
-                }
-              />
-              <span className="text-sm font-semibold">{labelFor(q, index, hasOriginal)}</span>
-              {(q.needsDiagram || q.needsSolutionDiagram) && (
-                <span className="ml-auto flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                  <TriangleAlertIcon className="w-3 h-3" />
-                  {q.needsDiagram && q.needsSolutionDiagram
-                    ? "Needs diagrams"
-                    : q.needsSolutionDiagram
-                      ? "Answer needs diagram"
-                      : "Needs diagram"}
-                </span>
-              )}
-            </label>
+            <div className="flex items-center gap-2 border-b bg-slate-50 px-3 py-2">
+              {/* The name side of the row toggles the checkbox, so it is easy
+                  to tap; the icons opposite it are their own buttons */}
+              <label
+                htmlFor={`variant-${q.id}`}
+                className="flex min-w-0 flex-1 cursor-pointer items-center gap-3"
+              >
+                <Checkbox
+                  id={`variant-${q.id}`}
+                  className="h-5 w-5"
+                  checked={!!selected[q.id]}
+                  onCheckedChange={(checked) =>
+                    setSelected(tabId, q.id, checked === true)
+                  }
+                />
+                <span className="text-sm font-semibold">{labelFor(q, index, hasOriginal)}</span>
+                {(q.needsDiagram || q.needsSolutionDiagram) && (
+                  <span className="flex min-w-0 items-center gap-1 truncate rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                    <TriangleAlertIcon className="w-3 h-3 shrink-0" />
+                    <span className="truncate">
+                      {q.needsDiagram && q.needsSolutionDiagram
+                        ? "Needs diagrams"
+                        : q.needsSolutionDiagram
+                          ? "Answer needs diagram"
+                          : "Needs diagram"}
+                    </span>
+                  </span>
+                )}
+              </label>
+
+              <div className="flex shrink-0 items-center gap-1">
+                <CopyQuestionButton question={q} className="h-8 w-8 shrink-0" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => recheck(q)}
+                  disabled={!!checks[q.id]?.loading}
+                  title="Recheck with AI"
+                  aria-label="Recheck with AI"
+                >
+                  {checks[q.id]?.loading ? (
+                    <Loader2Icon className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ShieldCheckIcon className="w-4 h-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => moveToTab(q, labelFor(q, index, hasOriginal))}
+                  title="Generate variants of this in a new tab"
+                  aria-label="Generate variants of this in a new tab"
+                >
+                  <SplitIcon className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
 
             <CheckStrip check={checks[q.id]} onUndo={() => undoRecheck(q.id)} />
 
@@ -603,22 +710,6 @@ const VariantTabContent = ({ tabId, chapter, marks, tags }: Props) => {
             </details>
 
             <div className="flex items-center gap-2 border-t px-3 py-2">
-              <CopyQuestionButton question={q} />
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 shrink-0"
-                onClick={() => recheck(q)}
-                disabled={!!checks[q.id]?.loading}
-                title="Recheck with AI"
-                aria-label="Recheck with AI"
-              >
-                {checks[q.id]?.loading ? (
-                  <Loader2Icon className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ShieldCheckIcon className="w-4 h-4" />
-                )}
-              </Button>
               <Button
                 variant={q.needsDiagram || q.needsSolutionDiagram ? "default" : "outline"}
                 onClick={() => setPromptsFor(q.id)}
