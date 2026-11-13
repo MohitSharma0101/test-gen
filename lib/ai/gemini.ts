@@ -1,11 +1,11 @@
 // Server-only: calls the Gemini REST API with the key from GEMINI_API_KEY.
 import { DEFAULT_FREE_MODEL } from "./free-models";
 
-type GeminiPart =
+export type GeminiPart =
   | { text: string }
   | { inlineData: { mimeType: string; data: string } };
 
-type GenerateJsonInput = {
+export type GenerateJsonInput = {
   systemInstruction: string;
   parts: GeminiPart[];
   responseSchema: Record<string, unknown>;
@@ -116,7 +116,7 @@ export const repairJsonEscapes = (text: string) => {
   return out;
 };
 
-const parseJson = <T>(text: string): T => {
+export const parseJson = <T>(text: string): T => {
   try {
     return JSON.parse(repairJsonEscapes(text)) as T;
   } catch {}
@@ -138,7 +138,7 @@ const parseJson = <T>(text: string): T => {
   throw new GeminiError("Gemini's reply was not valid JSON. Try again.", 502);
 };
 
-export const generateJson = async <T>(input: GenerateJsonInput): Promise<T> => {
+export const generateGeminiJson = async <T>(input: GenerateJsonInput): Promise<T> => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new GeminiError("GEMINI_API_KEY is not set on the server");
   const model = input.model || process.env.GEMINI_MODEL || DEFAULT_FREE_MODEL;

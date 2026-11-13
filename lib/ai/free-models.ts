@@ -29,3 +29,14 @@ export const FREE_MODELS: TAiModel[] = [
 export const DEFAULT_FREE_MODEL = "gemini-3.1-flash-lite";
 
 export const isFreeModel = (id: string) => FREE_MODELS.some((m) => m.id === id);
+
+// Billed per token on the Claude API (ANTHROPIC_API_KEY). Kept apart from the
+// free list so the picker can say which ones cost money.
+export const PAID_MODELS: TAiModel[] = [
+  { id: "claude-haiku-5-5", label: "Claude Haiku 5.5 (paid)" },
+];
+
+// Everything the picker offers and the API routes accept
+export const AI_MODELS: TAiModel[] = [...FREE_MODELS, ...PAID_MODELS];
+
+export const isOfferedModel = (id: string) => AI_MODELS.some((m) => m.id === id);

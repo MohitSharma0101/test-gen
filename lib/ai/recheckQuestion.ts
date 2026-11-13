@@ -1,7 +1,7 @@
-// Server-only: rechecks one generated question with a single Gemini call.
-// Gemini never sees our answer key, so it solves the question on its own
-// instead of agreeing with what is already there.
-import { generateJson } from "./gemini";
+// Server-only: rechecks one generated question with a single model call.
+// A variant is solved again without seeing our answer key, so the model works
+// it out on its own instead of agreeing with what is already there.
+import { generateJson } from "./llm";
 import { FORMAT_RULES, formatAnswer } from "./generateVariants";
 import type {
   TQuestionType,
@@ -87,30 +87,100 @@ const sameAnswer = (a: string, b: string, type: TQuestionType) => {
   return x === y;
 };
 
-const RECHECK_THINKING = "high";
+// Medium rather than high: thinking is most of what a recheck costs, and
+// medium still solves the question from scratch
+const RECHECK_THINKING = "medium";
 
-export const recheckQuestion = async ({
+// The original is a real exam question, so it is not solved again: the only
+// thing that can go wrong with it here is the transcription. Comparing text
+// against the photo needs little thinking and returns no solution, which is
+// where a full recheck spends its tokens.
+const TRANSCRIPTION_INSTRUCTION = `You check transcriptions of questions for Indian JEE and NEET coaching.
+You receive a question that was transcribed from a real exam paper, and usually the photo it was transcribed from. Do not solve the question and do not judge whether it is correct: only check that the transcription is faithful and renders.
+
+"issues": every transcription or formatting problem, one short sentence each; an empty list if there are none. Look for wrong or missing numbers, units, signs, symbols, subscripts and powers, missing or reordered options, missing sentences, and breaks of the formatting rules below.
+
+"verdict":
+- "SOUND" if the transcription matches the photo and follows the formatting rules.
+- "FIXED" if you corrected the transcription or its formatting.
+- "CANNOT_VERIFY" if the photo is unreadable or does not show this question.
+Without a photo, check the formatting only.
+
+"text": for FIXED, the corrected question in full. Copy the photo word for word, keep the option order, and change nothing that was already right: re-typing maths that was fine is the most common way this step breaks a question. For SOUND or CANNOT_VERIFY, an empty string.
+"summary": one short sentence for the teacher saying what you checked or corrected.
+
+${FORMAT_RULES}`;
+
+const TRANSCRIPTION_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    issues: { type: "ARRAY", items: { type: "STRING" } },
+    verdict: { type: "STRING", enum: ["SOUND", "FIXED", "CANNOT_VERIFY"] },
+    text: { type: "STRING" },
+    summary: { type: "STRING" },
+  },
+  required: ["issues", "verdict", "text", "summary"],
+  propertyOrdering: ["issues", "verdict", "text", "summary"],
+};
+
+const checkTranscription = async ({
   text,
-  answerKey,
   questionType,
-  kind,
-  originalText,
   image,
   model,
 }: TRecheckRequest): Promise<TRecheckResponse> => {
-  const context =
-    kind === "original"
-      ? image
-        ? "This question was transcribed from the attached photo. If the transcription differs from the photo, correct it to match the photo; otherwise never change the question's wording or values."
-        : "This question was transcribed from a photo of a real exam question. Never change its wording or values; only fix formatting."
-      : originalText
-        ? `This question is a variant written from the original question below. It must test the same concept at the same difficulty.\n\nOriginal question:\n${originalText}`
-        : "";
+  const raw = await generateJson<RawRecheck>({
+    systemInstruction: TRANSCRIPTION_INSTRUCTION,
+    parts: [
+      ...(image ? [{ inlineData: { mimeType: image.mimeType, data: image.data } }] : []),
+      {
+        text: `Question type: ${questionType === "NUMERICAL" ? "numerical" : "MCQ"}.\n${
+          image ? "The photo it was transcribed from is attached." : "No photo is available."
+        }\n\nTranscription to check:\n${text}`,
+      },
+    ],
+    responseSchema: TRANSCRIPTION_SCHEMA,
+    thinkingLevel: "low",
+    model: model || process.env.GEMINI_RECHECK_MODEL || undefined,
+  });
+
+  const issues = (raw.issues ?? []).map((i) => i.trim()).filter(Boolean);
+  const summary = raw.summary?.trim() || "";
+  const newText = raw.text?.trim();
+
+  if (raw.verdict === "CANNOT_VERIFY") {
+    return {
+      status: "manual",
+      summary: summary || "The transcription could not be checked against the photo.",
+      issues,
+      transcriptionOnly: true,
+    };
+  }
+  // Sound, or "fixed" into the same text: nothing to apply
+  if (raw.verdict !== "FIXED" || !newText || newText === text.trim()) {
+    return { status: "checked", summary, issues, transcriptionOnly: true };
+  }
+  // Only the text changes; the answer and solution the original already has stay
+  return {
+    status: "question-fixed",
+    summary,
+    issues,
+    transcriptionOnly: true,
+    question: { text: newText },
+  };
+};
+
+export const recheckQuestion = async (request: TRecheckRequest): Promise<TRecheckResponse> => {
+  if (request.kind === "original") return checkTranscription(request);
+
+  const { text, answerKey, questionType, originalText, model } = request;
+  const context = originalText
+    ? `This question is a variant written from the original question below. It must test the same concept at the same difficulty.\n\nOriginal question:\n${originalText}`
+    : "";
 
   const raw = await generateJson<RawRecheck>({
     systemInstruction: SYSTEM_INSTRUCTION,
     parts: [
-      ...(image ? [{ inlineData: { mimeType: image.mimeType, data: image.data } }] : []),
       {
         text: `Question type: ${questionType === "NUMERICAL" ? "numerical" : "MCQ"}.\n${context}\n\nQuestion to review:\n${text}`,
       },
@@ -129,7 +199,7 @@ export const recheckQuestion = async ({
   if (raw.verdict === "CANNOT_VERIFY" || !newText || !solution || !newAnswer) {
     return {
       status: "manual",
-      summary: summary || "Gemini could not verify this question.",
+      summary: summary || "The model could not verify this question.",
       issues,
     };
   }

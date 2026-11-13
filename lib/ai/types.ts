@@ -2,10 +2,14 @@
 
 export type TQuestionType = "MCQ" | "NUMERICAL";
 
-// Gemini's thinking level: more thinking is slower but usually more accurate.
+// How much the model thinks (Gemini's thinking level, Claude's effort): more is
+// slower and costs more output tokens, but is usually more accurate.
 export const THINKING_MODES = ["low", "medium", "high"] as const;
 export type TThinkingMode = (typeof THINKING_MODES)[number];
-export const DEFAULT_THINKING_MODE: TThinkingMode = "medium";
+// Generating is mostly transcribing and changing values, which low handles;
+// thinking is most of the bill, and every answer is checked by Recheck anyway.
+// A teacher can still raise it for a hard question.
+export const DEFAULT_THINKING_MODE: TThinkingMode = "low";
 
 export type TGeneratedQuestion = {
   id: string;
@@ -68,13 +72,15 @@ export type TRecheckResponse = {
   status: TRecheckStatus;
   summary: string;
   issues: string[];
+  // Set for the original: only its transcription was checked, not its answer
+  transcriptionOnly?: boolean;
   previousAnswer?: string;
   newAnswer?: string;
   // Missing when nothing should change: "manual" could not be verified, and
   // "checked" means the question was already right, so it is left alone rather
   // than replaced with a retyped copy of itself.
-  question?: Pick<
-    TGeneratedQuestion,
-    "text" | "ans" | "needsDiagram" | "needsSolutionDiagram"
-  >;
+  // A transcription check of the original returns only the corrected text,
+  // so the answer, solution and diagram flags it already has are kept.
+  question?: Pick<TGeneratedQuestion, "text"> &
+    Partial<Pick<TGeneratedQuestion, "ans" | "needsDiagram" | "needsSolutionDiagram">>;
 };

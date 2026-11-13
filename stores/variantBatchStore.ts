@@ -11,7 +11,7 @@ import type {
   TThinkingMode,
 } from "@/lib/ai/types";
 import { DEFAULT_THINKING_MODE } from "@/lib/ai/types";
-import { DEFAULT_FREE_MODEL, isFreeModel } from "@/lib/ai/free-models";
+import { DEFAULT_FREE_MODEL, isOfferedModel } from "@/lib/ai/free-models";
 import { DEFAULT_VARIANT_COUNT } from "@/lib/ai/generateVariants";
 
 // One tab is one source photo and the questions generated from it.
@@ -416,7 +416,7 @@ export const useVariantBatchStore = create<TState & TActions>()(
         if (!state) return;
         // A model that was offered when this was saved may not be any more,
         // and a tab stuck on one would be refused by the server
-        const usable = (model: string) => (isFreeModel(model) ? model : DEFAULT_FREE_MODEL);
+        const usable = (model: string) => (isOfferedModel(model) ? model : DEFAULT_FREE_MODEL);
         state.model = usable(state.model);
 
         // Photos are not kept, so a tab that had not finished comes back as a

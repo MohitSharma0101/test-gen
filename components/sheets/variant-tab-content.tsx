@@ -35,7 +35,7 @@ import {
   type TTabSettings,
   type TVariantTab,
 } from "@/stores/variantBatchStore";
-import { DEFAULT_FREE_MODEL, FREE_MODELS } from "@/lib/ai/free-models";
+import { AI_MODELS, DEFAULT_FREE_MODEL } from "@/lib/ai/free-models";
 import { DEFAULT_VARIANT_COUNT, VARIANT_COUNTS } from "@/lib/ai/generateVariants";
 import {
   THINKING_MODES,
@@ -69,8 +69,8 @@ const THINKING_INFO: Record<TThinkingMode, { expectedMs: number }> = {
 // Shown as the progress bar fills up (threshold in %, message)
 const PROGRESS_MESSAGES: [number, string][] = [
   [0, "Reading your question…"],
-  [12, "Gemini is thinking…"],
-  [28, "Gemini is cooking up fresh values…"],
+  [12, "Thinking…"],
+  [28, "Cooking up fresh values…"],
   [45, "Checking the maths…"],
   [60, "Writing detailed solutions…"],
   [75, "Almost done…"],
@@ -176,6 +176,16 @@ const CHECK_STYLES: Record<TRecheckResponse["status"], string> = {
 };
 
 const checkTitle = (result: TRecheckResponse) => {
+  if (result.transcriptionOnly) {
+    switch (result.status) {
+      case "question-fixed":
+        return "Recently checked: transcription corrected";
+      case "manual":
+        return "Check the transcription manually";
+      default:
+        return "Recently checked: transcription matches";
+    }
+  }
   switch (result.status) {
     case "checked":
       return "Recently checked: answer confirmed";
@@ -194,7 +204,7 @@ const CheckStrip = ({ check, onUndo }: { check?: TCheckState; onUndo: () => void
     return (
       <div className="flex items-center gap-2 border-b bg-slate-50 px-3 py-2 text-xs text-slate-600">
         <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
-        Gemini is solving and checking this question…
+        Checking this question…
       </div>
     );
   }
@@ -398,7 +408,7 @@ const TabInputs = ({
               value={tab.model}
               disabled={busy}
               onChange={(value) => value && onChange({ model: value })}
-              options={FREE_MODELS.map((m) => ({
+              options={AI_MODELS.map((m) => ({
                 label: m.id === DEFAULT_FREE_MODEL ? `${m.label} (default)` : m.label,
                 value: m.id,
               }))}

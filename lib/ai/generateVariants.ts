@@ -1,6 +1,6 @@
 // Server-only: turns a question photo into the original question plus variants.
 import crypto from "crypto";
-import { generateJson } from "./gemini";
+import { generateJson } from "./llm";
 import type {
   TGenerateVariantsRequest,
   TGenerateVariantsResponse,
