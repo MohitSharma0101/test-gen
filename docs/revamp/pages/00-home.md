@@ -30,10 +30,24 @@ Simple "start here" page — no charts, nothing to configure.
 1. **Greeting**: "Good morning, Manoj" + today's date, computed on the
    server in `Asia/Kolkata` (the institute's time zone) so it is right on
    first paint, no flicker.
-2. **Quick actions** — 4 big buttons for the most frequent jobs, available
-   to every role: Create paper, Generate paper, Take attendance, Send
-   message. 2×2 on phone, 4 across on tablet/desktop. Brand-filled
-   primary for "Create paper", soft tiles for the rest.
+2. **Jump back in** — the **last 4 pages this person opened**, newest
+   first (product decision, replaces a fixed set of quick actions).
+   - Recorded by `components/visit-tracker.tsx` (mounted in the signed-in
+     layout) on every navigation; sub-pages count as their parent
+     (`/papers/edit/x` → Papers, `/batch/archive` → Batches). Home itself
+     isn't recorded.
+   - Stored in a `recent_pages` cookie (paths only, per device, 1 year) so
+     the server renders the right buttons on first paint — no swap after
+     hydration. A tiny client component re-reads the cookie on mount to
+     cover Next's client router cache (coming straight back to Home within
+     ~30 s).
+   - Filtered by role on render (a teacher never gets an admin-only page,
+     even from a shared device's cookie).
+   - Until there are 4, the row is topped up with defaults (Create paper,
+     Generate paper, Take attendance, Send message). Heading reads
+     "Quick actions" with no history, "Jump back in" once there is some.
+   - The newest is the brand-filled button. Buttons are server-rendered and
+     only reordered on the client, so no icons or route data ship as JS.
 3. **Recent papers** — the 4 newest papers (admin: all authors; teacher:
    their own, same rule as `usePapers`/`useAuthors`; teachers who aren't a
    known author don't get the section, as on the Papers page). Each row:
@@ -81,6 +95,7 @@ picks these up too (same list, same order).
 | `/` page JS | 5.57 kB | 870 B |
 | `/` first-load JS | 128 kB | 98.1 kB (−23 %) |
 | Client fetches for Home content | 0 (static links) | 0 (recent papers read on the server) |
+| `/` first-load JS with Jump back in | — | 98.7 kB (first client version was 114 kB; moved rendering to the server) |
 | Account DB reads per request | 1 (layout) | 1 (layout + page share via `cache()`) |
 
 ## Done checklist
@@ -100,4 +115,7 @@ commit.
       visible brand focus ring
 - [x] Reduced motion: all reveals/hover moves are `motion-safe`
 - [x] `next build` passes; no new lint warnings
+- [x] Jump back in: new device → defaults; visits recorded newest-first,
+      capped at 4, re-visit moves to front, correct after browser Back,
+      admin-only pages dropped for a teacher with the same cookie
 - [ ] Real data check on staging: greeting name, author filter, paper links

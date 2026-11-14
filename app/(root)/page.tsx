@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { ChevronRightIcon } from "lucide-react";
 import { getAccount } from "@/lib/auth";
 import { Role } from "@/data/const";
@@ -9,46 +10,17 @@ import { AUTHORS } from "@/models/Author";
 import { cn } from "@/lib/utils";
 import { greetingFor, longDate } from "./_home/greeting";
 import { RecentPapers, RecentPapersSkeleton } from "./_home/recent-papers";
+import { QuickActionCard } from "./_home/quick-actions";
+import { QuickActionsRow } from "./_home/quick-actions-row";
+import { RECENT_PAGES_COOKIE, parseRecentPages } from "@/lib/recentPages";
 
 export const metadata: Metadata = {
   title: "Home · Education+",
 };
 
-// The jobs teachers do most, open to every role. Order = importance.
-const QUICK_ACTIONS = ["/create-paper", "/generate-paper", "/attendance", "/send-message"];
-
-const QUICK_LABELS: Record<string, string> = {
-  "/create-paper": "Create paper",
-  "/generate-paper": "Generate paper",
-  "/attendance": "Take attendance",
-  "/send-message": "Send message",
-};
-
 // Fades each block in on first paint, a little after the one before it
 const reveal = "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:fill-mode-both motion-safe:duration-300";
 const delay = (ms: number) => ({ animationDelay: `${ms}ms` });
-
-const QuickAction = ({ route, primary }: { route: TRoute; primary: boolean }) => (
-  <Link
-    href={route.href}
-    className={cn(
-      "group flex min-h-[4.5rem] items-center gap-3 rounded-2xl p-3 transition-[transform,box-shadow,background-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 active:scale-[0.98] motion-safe:hover:-translate-y-0.5 sm:flex-col sm:items-start sm:gap-4 sm:p-4",
-      primary
-        ? "bg-brand text-brand-foreground shadow-sm hover:shadow-md"
-        : "border bg-card shadow-sm hover:border-brand/30 hover:shadow-md"
-    )}
-  >
-    <span
-      className={cn(
-        "flex size-10 shrink-0 items-center justify-center rounded-xl",
-        primary ? "bg-white/15" : ROUTE_GROUPS[route.group].tile
-      )}
-    >
-      <route.Icon className="size-5" strokeWidth={2} aria-hidden="true" />
-    </span>
-    <span className="text-sm font-bold leading-tight sm:text-base">{QUICK_LABELS[route.href] ?? route.label}</span>
-  </Link>
-);
 
 const ToolTile = ({ route }: { route: TRoute }) => (
   <Link
@@ -84,9 +56,7 @@ export default async function Home() {
   const now = new Date();
   const firstName = (account?.name || account?.username || "").split(" ")[0];
 
-  const quick = QUICK_ACTIONS.map((href) => routes.find((r) => r.href === href)).filter(
-    (r): r is TRoute => Boolean(r)
-  );
+  const recentPages = parseRecentPages(cookies().get(RECENT_PAGES_COOKIE)?.value);
   const groups = (Object.keys(ROUTE_GROUPS) as TRouteGroup[])
     .map((group) => ({ group, items: routes.filter((r) => r.group === group) }))
     .filter((g) => g.items.length > 0);
@@ -101,11 +71,12 @@ export default async function Home() {
         </h1>
       </header>
 
-      <section aria-label="Quick actions" className={cn("mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4", reveal)} style={delay(60)}>
-        {quick.map((route, i) => (
-          <QuickAction key={route.href} route={route} primary={i === 0} />
-        ))}
-      </section>
+      <div className={reveal} style={delay(60)}>
+        <QuickActionsRow
+          initialRecent={recentPages}
+          cards={Object.fromEntries(routes.map((r) => [r.href, <QuickActionCard key={r.href} route={r} />]))}
+        />
+      </div>
 
       {/* min-w-0 on the columns: grid items default to min-width:auto, so a long
           paper title would widen the column instead of truncating */}
