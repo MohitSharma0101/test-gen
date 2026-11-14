@@ -1,9 +1,10 @@
 "use client";
 
-import { Sheet, SheetContent } from "../ui/sheet";
 import React, { useState } from "react";
+import { Loader2Icon } from "lucide-react";
 import { Button } from "../ui/button";
 import LabelInput from "../ui/label-input";
+import { ResponsiveDrawer } from "../ui/responsive-drawer";
 import { TUser } from "@/models/User";
 import { api, ENDPOINT } from "@/lib/api";
 import { toast } from "../ui/use-toast";
@@ -16,35 +17,49 @@ type Props = {
   onSuccess?: () => void;
 };
 
-const inputConfig = [
-  { label: "Name", key: "name" },
-  { label: "Email", key: "email" },
-  { label: "Phone", key: "phone" },
-  { label: "DOB (YYYY-MM-DD)", key: "dob" },
-  { label: "Father Name", key: "fatherName" },
-  { label: "Mother Name", key: "motherName" },
-  { label: "Parent Phone", key: "parentPhone" },
-  { label: "School", key: "school" },
-] satisfies {
+type TField = {
   label: string;
   key: keyof TUser;
-}[];
+  type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  placeholder?: string;
+};
 
-const EditUserSheet = ({
-  defaultUser,
-  open,
-  selectedBatchIds,
-  onOpenChange,
-  onSuccess,
-}: Props) => {
+// Grouped the way the information is thought about; same fields as before
+const SECTIONS: { title: string; fields: TField[] }[] = [
+  {
+    title: "Student",
+    fields: [
+      { label: "Name", key: "name", placeholder: "Full name" },
+      { label: "Phone", key: "phone", type: "tel", inputMode: "tel", placeholder: "10-digit number" },
+      { label: "Email", key: "email", type: "email", inputMode: "email", placeholder: "name@example.com" },
+      // Free text in this format, as before: a calendar is slow for a birth year
+      { label: "Date of birth", key: "dob", inputMode: "numeric", placeholder: "YYYY-MM-DD" },
+    ],
+  },
+  {
+    title: "Parents",
+    fields: [
+      { label: "Father's name", key: "fatherName" },
+      { label: "Mother's name", key: "motherName" },
+      { label: "Parent phone", key: "parentPhone", type: "tel", inputMode: "tel", placeholder: "Used for WhatsApp and calls" },
+    ],
+  },
+  { title: "School", fields: [{ label: "School", key: "school" }] },
+];
+
+const EditUserSheet = ({ defaultUser, open, selectedBatchIds, onOpenChange, onSuccess }: Props) => {
   const [user, setUser] = useState(defaultUser);
+  const [saving, setSaving] = useState(false);
   const editMode = !!defaultUser;
+  const canSave = Boolean(user?.name?.trim()) && !saving;
 
   const onUpdateUser = async () => {
-    if (!user) return;
+    if (!user || !canSave) return;
+    setSaving(true);
     try {
       const payload = {
-        name: user.name,
+        name: user.name?.trim(),
         dob: user.dob,
         parentPhone: user.parentPhone,
         phone: user.phone,
@@ -56,59 +71,71 @@ const EditUserSheet = ({
       if (editMode) {
         await api.put(ENDPOINT.users, { _id: user._id, ...payload });
       } else {
-        await api.post(ENDPOINT.users, {
-          user: payload,
-          batchIds: selectedBatchIds,
-        });
+        await api.post(ENDPOINT.users, { user: payload, batchIds: selectedBatchIds });
       }
       onSuccess?.();
-      toast({
-        title: editMode ? "User updated!" : "User Added",
-        variant: "success",
-      });
+      toast({ title: editMode ? "Student updated" : "Student added", variant: "success" });
+      onOpenChange(false);
     } catch (err) {
-      console.log(err);
+      // Stays open so what was typed isn't lost
       toast({
-        title: "Unable to update user!",
+        title: (err as Error)?.message || (editMode ? "Couldn't update the student" : "Couldn't add the student"),
         variant: "destructive",
       });
     } finally {
-      onOpenChange(false);
+      setSaving(false);
     }
   };
 
-  const onUserChange = (key: keyof TUser, value: string) => {
-    setUser((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+  const onUserChange = (key: keyof TUser, value: string) => setUser((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side={"right"}
-        className="p-0 flex flex-col gap-2 max-h-screen"
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={editMode ? "Edit student" : "Add a student"}
+      description={editMode ? `${defaultUser?.name ?? ""}${defaultUser?.userId ? ` · ${defaultUser.userId}` : ""}` : "Only the name is required."}
+      footer={
+        <div className="flex gap-2">
+          <Button variant="outline" className="h-11" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button variant="brand" className="h-11 flex-1 gap-2" onClick={onUpdateUser} disabled={!canSave}>
+            {saving && <Loader2Icon className="size-4 animate-spin" />}
+            {editMode ? "Save changes" : "Add student"}
+          </Button>
+        </div>
+      }
+    >
+      <form
+        className="space-y-5 p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onUpdateUser();
+        }}
       >
-        <div className="text-base font-medium px-2 py-3 bg-gray-200">
-          {editMode ? "Edit" : "Add"} User
-        </div>
-        <div className="flex flex-col gap-2 px-3 flex-grow overflow-auto">
-          {inputConfig.map((config) => (
-            <LabelInput
-              key={config.key}
-              label={config.label}
-              placeholder="Enter value"
-              value={user?.[config.key]}
-              onChange={(e) => onUserChange(config.key, e.target.value)}
-            />
-          ))}
-        </div>
-        <Button className="mb-2 mx-2" onClick={onUpdateUser}>
-          Submit
-        </Button>
-      </SheetContent>
-    </Sheet>
+        {SECTIONS.map((section) => (
+          <fieldset key={section.title} className="space-y-3">
+            <legend className="mb-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">{section.title}</legend>
+            {section.fields.map((field) => (
+              <LabelInput
+                key={field.key}
+                label={field.label}
+                type={field.type ?? "text"}
+                inputMode={field.inputMode}
+                placeholder={field.placeholder ?? ""}
+                autoComplete="off"
+                value={(user?.[field.key] as string) ?? ""}
+                onChange={(e) => onUserChange(field.key, e.target.value)}
+                inputClassName="h-11 text-base sm:text-sm"
+              />
+            ))}
+          </fieldset>
+        ))}
+        {/* Enter submits from any field */}
+        <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
+      </form>
+    </ResponsiveDrawer>
   );
 };
 

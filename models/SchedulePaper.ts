@@ -30,6 +30,10 @@ const SchedulePaperSchema = new Schema<TSchedulePaper>(
   { timestamps: true }
 );
 
+// Indexes for the hot queries. Online tests of a batch, newest first.
+// Mongoose creates them on first use (autoIndex); existing ones are a no-op.
+SchedulePaperSchema.index({ batch: 1, createdAt: -1 });
+
 const SchedulePaper =
   models.SchedulePaper ||
   model<TSchedulePaper>("SchedulePaper", SchedulePaperSchema);

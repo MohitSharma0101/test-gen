@@ -13,38 +13,36 @@ import { toast } from "./use-toast";
 
 type Props = {
   questions: TQuestion[];
+  // Trigger styling; defaults to the primary button
+  className?: string;
 };
 
-const CopyQuestionsMd = ({ questions }: Props) => {
-  const getQuestionsOnly = () =>
-    questions.map((q, index) => `${index + 1}. ${q.text}`).join("\n\n");
-  const getAnswerOnly = () =>
-    questions.map((q, index) => `${index + 1}. ${q.ans}`).join("\n\n");
-  const getQuestionAndAns = () =>
-    questions
-      .map(
-        (q, index) => `${index + 1}. ${q.text}\n\n${index + 1}. ${q.ans}`
-      )
-      .join("\n\n");
+// Markdown builders + clipboard helper, shared with the preview's More menu
+export const questionsMd = (questions: TQuestion[]) =>
+  questions.map((q, index) => `${index + 1}. ${q.text}`).join("\n\n");
+export const answersMd = (questions: TQuestion[]) =>
+  questions.map((q, index) => `${index + 1}. ${q.ans}`).join("\n\n");
+export const questionsAndAnswersMd = (questions: TQuestion[]) =>
+  questions.map((q, index) => `${index + 1}. ${q.text}\n\n${index + 1}. ${q.ans}`).join("\n\n");
 
-  const copy = (value: string) => {
-    try {
-      navigator.clipboard.writeText(value);
-      toast({
-        title: "Copied!",
-        variant: "success",
-      });
-    } catch {
-      toast({
-        title: "Unable to copy!",
-        variant: "destructive",
-      });
-    }
-  };
+export const copyText = async (value: string) => {
+  try {
+    await navigator.clipboard.writeText(value);
+    toast({ title: "Copied!", variant: "success" });
+  } catch {
+    toast({ title: "Unable to copy!", variant: "destructive" });
+  }
+};
+
+const CopyQuestionsMd = ({ questions, className }: Props) => {
+  const getQuestionsOnly = () => questionsMd(questions);
+  const getAnswerOnly = () => answersMd(questions);
+  const getQuestionAndAns = () => questionsAndAnswersMd(questions);
+  const copy = copyText;
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className={buttonVariants()}>
+      <DropdownMenuTrigger className={className ?? buttonVariants()}>
         Copy
         <ChevronDownIcon className="w-4 h-4 ml-1" />
       </DropdownMenuTrigger>

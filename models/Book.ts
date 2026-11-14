@@ -25,4 +25,9 @@ export const BookSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+// Indexes for the hot queries. Books of a class + subject.
+// Mongoose creates them on first use (autoIndex); existing ones are a no-op.
+BookSchema.index({ course: 1, subject: 1 });
+
 export default mongoose.models.Book || mongoose.model("Book", BookSchema);

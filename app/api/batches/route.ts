@@ -88,8 +88,13 @@ export const GET = async (request: NextRequest) => {
     }
 
     // Fetch student counts grouped by batchId
+    // Only the listed batches: unwinding every student of every batch (incl.
+    // archived ones) was the bulk of this request's time
+    const ids = batches.map((b) => b._id);
     const counts = await User.aggregate([
+      { $match: { batchIds: { $in: ids } } },
       { $unwind: "$batchIds" },
+      { $match: { batchIds: { $in: ids } } },
       { $group: { _id: "$batchIds", totalStudents: { $sum: 1 } } },
     ]);
 

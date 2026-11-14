@@ -17,6 +17,10 @@ type Props = {
   questionId?: string;
   tags?: string[];
   children?: ReactNode;
+  // Controlled (opened from a menu item): no trigger unless children are given
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onSaved?: (tags: string[]) => void;
 };
 
 export const TAGS = [
@@ -29,8 +33,11 @@ export const TAGS = [
   "Short Questions",
 ];
 
-const AddTagSheet = ({ questionId, children, tags = [] }: Props) => {
-  const [open, setOpen] = useState(false);
+const AddTagSheet = ({ questionId, children, tags = [], open: openProp, onOpenChange, onSaved }: Props) => {
+  const [innerOpen, setInnerOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (o: boolean) => (controlled ? onOpenChange?.(o) : setInnerOpen(o));
   const [selectedTags, setSelectedTags] = useState<string[]>(tags);
 
   const onAddTags = async () => {
@@ -44,6 +51,7 @@ const AddTagSheet = ({ questionId, children, tags = [] }: Props) => {
         toast({
           title: "Tags Added!",
         });
+        onSaved?.(selectedTags);
         setOpen(false);
       } else {
         throw new Error("Question Id missing");
@@ -58,6 +66,7 @@ const AddTagSheet = ({ questionId, children, tags = [] }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {(children || !controlled) && (
       <DialogTrigger asChild>
         {children || (
           <Button variant={"outline"} className="p-2 w-fit h-fit bg-white">
@@ -67,6 +76,7 @@ const AddTagSheet = ({ questionId, children, tags = [] }: Props) => {
           </Button>
         )}
       </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Tag</DialogTitle>

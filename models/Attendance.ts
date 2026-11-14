@@ -54,5 +54,10 @@ const AttendanceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+// Indexes for the hot queries. One batch on one day. Not unique on purpose (BUGS.md #2).
+// Mongoose creates them on first use (autoIndex); existing ones are a no-op.
+AttendanceSchema.index({ batch: 1, date: 1 });
+
 export default mongoose.models.Attendance ||
   mongoose.model("Attendance", AttendanceSchema);

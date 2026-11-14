@@ -5,6 +5,7 @@ import { getAccount } from "@/lib/auth";
 import MathpixProvider from "@/provider/MathpixProvider";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { VisitTracker } from "@/components/visit-tracker";
 
 export default async function RootLayout({
   children,
@@ -20,6 +21,7 @@ export default async function RootLayout({
       <Suspense>{children}</Suspense>
       <MathpixProvider />
       <ConfirmationModal />
+      <VisitTracker />
     </AuthProvider>
   );
 }

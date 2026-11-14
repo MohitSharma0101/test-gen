@@ -1,45 +1,30 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import useSWR from "swr";
 import { api, ENDPOINT } from "@/lib/api";
+import { LIST_SWR, swrError, swrLoading } from "@/lib/swr";
 import { TSchedulePaper } from "@/models/SchedulePaper";
 
 type Props = {
-    batchId?: string;
+  batchId?: string;
 };
 
 type TSchedulePapersRes = {
-    schedulePapers: TSchedulePaper[];
+  schedulePapers: TSchedulePaper[];
 };
 
 const useSchedulePapers = ({ batchId }: Props) => {
-    const [schedulePapersRes, setSchedulePapersRes] = useState<TSchedulePapersRes | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const fetchSchedulePapers = useCallback(async () => {
-        if (!batchId) return;
-        setLoading(true);
-        setError(null);
-
-        try {
-            const res = await api.get(ENDPOINT.schedulePaper, {
-                params: { batchId },
-            });
-
-            setSchedulePapersRes(res?.data?.data as TSchedulePapersRes);
-        } catch (err: any) {
-            setError(err.message ?? "Failed to fetch schedule papers");
-        } finally {
-            setLoading(false);
-        }
-    }, [batchId]);
-
-    useEffect(() => {
-        fetchSchedulePapers();
-    }, [fetchSchedulePapers]);
-
-    return { schedulePapersRes, loading, error, refresh: fetchSchedulePapers };
+  const swr = useSWR(
+    batchId ? ["schedule-papers", batchId] : null,
+    async () => (await api.get(ENDPOINT.schedulePaper, { params: { batchId } }))?.data?.data as TSchedulePapersRes,
+    LIST_SWR
+  );
+  return {
+    schedulePapersRes: swr.data ?? null,
+    loading: swrLoading(swr),
+    error: swrError(swr.error, "Failed to fetch schedule papers") ?? null,
+    refresh: () => swr.mutate(),
+  };
 };
 
 export default useSchedulePapers;

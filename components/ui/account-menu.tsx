@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 import { useAuth } from "@/context/auth-context";
+import { Role } from "@/data/const";
 import { LogOutIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,29 +20,51 @@ type Props = {
 
 const AccountMenu = ({ className }: Props) => {
   const { account, logout } = useAuth();
+  const displayName = account?.name || account?.username || "My account";
+  const isAdmin = account?.role === Role.ADMIN;
+  const initial = (account?.name || account?.username || "?").trim().slice(0, 1).toUpperCase();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        aria-label={`Account: ${displayName}`}
         className={cn(
-          "outline-primary w-8 h-8 rounded-full bg-slate-400 flex items-center justify-center text-white",
+          "flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
           className
         )}
       >
-        {account?.username?.slice(0, 1).toUpperCase() ?? "?"}
+        <span className="flex size-9 items-center justify-center rounded-full bg-brand text-sm font-bold text-brand-foreground">
+          {initial}
+        </span>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="mx-2 p-2 min-w-[160px]">
-        <DropdownMenuLabel>
-          {account?.username || "My Account"}
+      <DropdownMenuContent align="start" sideOffset={8} collisionPadding={8} className="w-64 rounded-2xl p-1.5 shadow-xl">
+        <DropdownMenuLabel className="flex items-center gap-3 p-2.5 font-normal">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-base font-bold text-brand-foreground">
+            {initial}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold">{displayName}</span>
+            {account?.username && (
+              <span className="block truncate text-xs text-muted-foreground">@{account.username}</span>
+            )}
+          </span>
+          <span
+            className={cn(
+              "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold",
+              isAdmin ? "bg-brand-soft text-brand" : "bg-muted text-muted-foreground"
+            )}
+          >
+            {isAdmin ? "Admin" : "Teacher"}
+          </span>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="mx-1" />
         <DropdownMenuItem
           onClick={logout}
-          className="focus:bg-red-400 hover:bg-red-400 focus:text-white"
+          className="h-10 cursor-pointer gap-2.5 rounded-xl px-2.5 font-medium text-red-700 focus:bg-red-50 focus:text-red-700"
         >
-          <LogOutIcon className="w-4 h-4 mr-2" />
-          Logout
+          <LogOutIcon className="size-4" aria-hidden="true" />
+          Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

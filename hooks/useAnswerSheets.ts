@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import useSWR from "swr";
 import { api, ENDPOINT } from "@/lib/api";
+import { LIST_SWR, swrError, swrLoading } from "@/lib/swr";
 import { TAnswerSheet } from "@/models/AnswerSheet";
 
 type Props = {
@@ -13,37 +14,16 @@ type TAnswerSheetsRes = {
 };
 
 const useAnswerSheets = ({ scheduleId }: Props) => {
-  const [answerSheets, setAnswerSheets] = useState<TAnswerSheetsRes | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAnswerSheets = useCallback(async () => {
-    if (!scheduleId) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await api.get(ENDPOINT.answerSheets, {
-        params: { scheduleId },
-      });
-      setAnswerSheets(res?.data?.data as TAnswerSheetsRes);
-    } catch (err: any) {
-      setError(err.message ?? "Failed to fetch answer sheets");
-    } finally {
-      setLoading(false);
-    }
-  }, [scheduleId]);
-
-  useEffect(() => {
-    fetchAnswerSheets();
-  }, [fetchAnswerSheets]);
-
+  const swr = useSWR(
+    scheduleId ? ["answer-sheets", scheduleId] : null,
+    async () => (await api.get(ENDPOINT.answerSheets, { params: { scheduleId } }))?.data?.data as TAnswerSheetsRes,
+    LIST_SWR
+  );
   return {
-    answerSheets,
-    loading,
-    error,
-    refresh: fetchAnswerSheets,
+    answerSheets: swr.data ?? null,
+    loading: swrLoading(swr),
+    error: swrError(swr.error, "Failed to fetch answer sheets") ?? null,
+    refresh: () => swr.mutate(),
   };
 };
 

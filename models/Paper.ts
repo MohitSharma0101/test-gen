@@ -44,4 +44,10 @@ export const PaperSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+// Indexes for the hot queries. Papers list, newest first; and filtered by author.
+// Mongoose creates them on first use (autoIndex); existing ones are a no-op.
+PaperSchema.index({ createdAt: -1, _id: -1 });
+PaperSchema.index({ author: 1, createdAt: -1 });
+
 export default mongoose.models.Paper || mongoose.model("Paper", PaperSchema);

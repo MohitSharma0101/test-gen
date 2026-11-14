@@ -26,7 +26,9 @@ const usePapers = ({ author, course, status }: TUsePaperProps = {}) => {
       return await fetchPapers(null, author, course, page, 10, status);
     },
     {
-      revalidateIfStale: false,
+      // Cached data shows at once and is refreshed behind it, so an edit made
+      // elsewhere (see invalidateAfterWrite) is picked up when this remounts
+      revalidateIfStale: true,
       revalidateOnFocus: false,
       errorRetryCount: 1,
     }

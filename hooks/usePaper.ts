@@ -18,7 +18,9 @@ const usePaper = ({ id }: config = {}) => {
       return await fetchPapers(id);
     },
     {
-      revalidateIfStale: false,
+      // Cached data shows at once and is refreshed behind it, so an edit made
+      // elsewhere (see invalidateAfterWrite) is picked up when this remounts
+      revalidateIfStale: true,
       revalidateOnFocus: false,
       errorRetryCount: 1,
     }

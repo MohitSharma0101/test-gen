@@ -36,14 +36,16 @@ export const GET = async (request: NextRequest) => {
       ? { path: "questions", populate: { path: "chapter", model: "Chapter" } }
       : { path: "questions", select: "mark" };
 
-    const papers = await Paper.find(query)
-      .sort({ createdAt: -1, _id: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit * 1)
-      .populate(questionsPopulate)
-      .lean();
-
-    const totalPapers = await Paper.countDocuments(query);
+    // The page and the total are independent: one round trip instead of two
+    const [papers, totalPapers] = await Promise.all([
+      Paper.find(query)
+        .sort({ createdAt: -1, _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit * 1)
+        .populate(questionsPopulate)
+        .lean(),
+      Paper.countDocuments(query),
+    ]);
     const totalPages = Math.ceil(totalPapers / limit);
 
     return jsonRevalidated(request, {

@@ -14,7 +14,9 @@ const useBooksOfSubjects = (subjects: string[], course?: string) => {
     key && course ? ENDPOINT.books + "subjects" + key + course : null,
     async () => fetchBooksOfSubjects(subjects, course),
     {
-      revalidateIfStale: false,
+      // Cached data shows at once and is refreshed behind it, so an edit made
+      // elsewhere (see invalidateAfterWrite) is picked up when this remounts
+      revalidateIfStale: true,
       revalidateOnFocus: false,
       errorRetryCount: 1,
       keepPreviousData: true,

@@ -1,67 +1,135 @@
 "use client";
 
-import { MenuIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "./button";
+import { usePathname } from "next/navigation";
+import { HomeIcon, MenuIcon, XIcon } from "lucide-react";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import AccountMenu from "./account-menu";
 import { useRoutes } from "@/hooks/useRoutes";
+import { ROUTE_GROUPS, routeForPath, type TRoute, type TRouteGroup } from "@/data/routes";
+import { cn } from "@/lib/utils";
 
-type Props = {
-  active?: "create" | "upload" | "chapter" | "book";
-};
+const Logo = () => (
+  <span className="flex items-center gap-2">
+    <Image
+      src="/eplus-logo-min.png"
+      alt=""
+      width={746}
+      height={500}
+      sizes="48px"
+      priority
+      className="-mt-1 h-8 w-auto object-contain"
+    />
+    <span className="text-base font-bold leading-none">Education+</span>
+  </span>
+);
 
-const Header = ({ active }: Props) => {
-  const routes = useRoutes();
+const MenuLink = ({ route, active }: { route: Pick<TRoute, "href" | "label" | "Icon" | "group">; active: boolean }) => (
+  <Link
+    href={route.href}
+    aria-current={active ? "page" : undefined}
+    className={cn(
+      "flex min-h-[2.75rem] items-center gap-3 rounded-lg px-2 py-1.5 text-sm md:short:min-h-[2.25rem] md:short:py-1 font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+      active && "bg-brand-soft text-brand hover:bg-brand-soft"
+    )}
+  >
+    <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg md:short:size-7", ROUTE_GROUPS[route.group].tile)}>
+      <route.Icon className="size-[18px]" strokeWidth={2} aria-hidden="true" />
+    </span>
+    {route.label}
+  </Link>
+);
+
+// Top bar for every signed-in page, same on phone and desktop:
+// account · centred logo · menu button (menu on the right, in thumb reach). The menu opens a side sheet with every page,
+// grouped. Nothing is pinned to the side, so heavy pages keep the full width.
+const Header = () => {
+  const routes = useRoutes(); // also redirects unknown paths to "/"
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  // Picking a page closes the sheet
+  useEffect(() => setOpen(false), [pathname]);
+
+  const currentHref = pathname === "/" ? "/" : routeForPath(pathname)?.href;
+  const groups = (Object.keys(ROUTE_GROUPS) as TRouteGroup[])
+    .map((group) => ({ group, items: routes.filter((r) => r.group === group) }))
+    .filter((g) => g.items.length > 0);
+
   return (
-    <div className="bg-white w-full px-3 md:px-6 py-2 items-center flex gap-2 sm:gap-4 text-sm font-bold">
-      <div
-        onClick={() => window.location.reload()}
-        className="flex min-w-0 items-center justify-center gap-2 font-bold text-lg sm:text-xl cursor-pointer"
-      >
-        <Image
-          src={"/eplus-logo-min.png"}
-          alt="education plus log"
-          width={50}
-          height={50}
-          className="w-10 sm:w-[50px] shrink-0 object-contain aspect-square -mt-2"
-        />
-        <div className="flex flex-col leading-4">
-          Education+
-          <span className="text-sky-500 text-[10px] font-medium">Believe in Results</span>
+    <header className="sticky top-0 z-40 border-b bg-card pt-[env(safe-area-inset-top)] print:hidden">
+      <div className="relative mx-auto flex h-14 max-w-screen-2xl items-center px-2 sm:px-4">
+        <AccountMenu />
+
+        <Link
+          href="/"
+          // Centred on the bar itself, not between the two buttons
+          className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center rounded-lg px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          <Logo />
+        </Link>
+
+        <div className="ml-auto">
+        <Drawer direction="right" open={open} onOpenChange={setOpen}>
+            <DrawerTrigger
+              aria-label="Open menu"
+              className="flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:bg-muted"
+            >
+              <MenuIcon className="size-5" aria-hidden="true" />
+            </DrawerTrigger>
+            <DrawerContent
+              // Floats 8px off the edges (clear of notch/home bar). Short desktop screens:
+              // wider drawer with two columns so the whole menu
+              // fits without scrolling
+              className="!bottom-[calc(0.5rem+env(safe-area-inset-bottom))] !right-2 !top-[calc(0.5rem+env(safe-area-inset-top))] overflow-hidden !rounded-2xl border shadow-2xl outline-none md:short:!w-[34rem] md:short:!max-w-[34rem]"
+            >
+              <div className="flex h-14 shrink-0 items-center justify-between border-b pl-4 pr-2">
+                <DrawerTitle asChild>
+                  <span>
+                    <Logo />
+                  </span>
+                </DrawerTitle>
+                <DrawerDescription className="sr-only">All pages</DrawerDescription>
+                <DrawerClose
+                  aria-label="Close menu"
+                  className="flex size-10 items-center justify-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <XIcon className="size-5" aria-hidden="true" />
+                </DrawerClose>
+              </div>
+              <nav
+                aria-label="Main"
+                className="flex-1 space-y-4 overflow-y-auto px-3 py-3 scrollbar-hide md:short:grid md:short:grid-cols-2 md:short:content-start md:short:gap-x-3 md:short:gap-y-3 md:short:space-y-0"
+              >
+                <div className="md:short:col-span-2">
+                  <MenuLink
+                    route={{ href: "/", label: "Home", Icon: HomeIcon, group: "daily" }}
+                    active={currentHref === "/"}
+                  />
+                </div>
+                {groups.map(({ group, items }) => (
+                  <section key={group} aria-labelledby={`menu-${group}`}>
+                    <h2
+                      id={`menu-${group}`}
+                      className="mb-1 px-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
+                    >
+                      {ROUTE_GROUPS[group].label}
+                    </h2>
+                    <div className="space-y-0.5">
+                      {items.map((route) => (
+                        <MenuLink key={route.href} route={route} active={route.href === currentHref} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </nav>
+            </DrawerContent>
+          </Drawer>
         </div>
       </div>
-      <AccountMenu className="ml-auto" />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant={"outline"} className="shrink-0 px-3 sm:px-4" aria-label="Menu">
-            <MenuIcon className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="bottom" align="end" className="p-1">
-          <DropdownMenuLabel>Quick links</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {routes.map((item) => (
-            <DropdownMenuItem asChild key={item.href} className="w-[180px]">
-              <Link href={item.href} className="cursor-pointer py-2 flex items-center gap-2">
-                {item.icon}
-                {item.label}
-              </Link>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    </header>
   );
 };
 

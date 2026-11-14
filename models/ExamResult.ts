@@ -40,6 +40,10 @@ const ExamResultSchema = new Schema(
   { timestamps: true }
 );
 
+// Indexes for the hot queries. Results of a batch, newest first.
+// Mongoose creates them on first use (autoIndex); existing ones are a no-op.
+ExamResultSchema.index({ batchId: 1, date: -1 });
+
 // Prevent model overwrite during hot-reload in dev
 const ExamResult =
   models.ExamResult || model<TExamResult>("ExamResult", ExamResultSchema);

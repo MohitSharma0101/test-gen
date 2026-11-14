@@ -56,14 +56,11 @@ export const GET = async (request: NextRequest) => {
     }
 
     await dbConnect();
-    const attendance = await Attendance.find({
-      batch: batchId,
-      date: date,
-    });
-
-    const users = await User.find({ batchIds: batchId })
-      .sort({ name: 1 })
-      .select("name parentPhone");
+    // Independent reads: run them together
+    const [attendance, users] = await Promise.all([
+      Attendance.find({ batch: batchId, date }).lean(),
+      User.find({ batchIds: batchId }).sort({ name: 1 }).select("name parentPhone").lean(),
+    ]);
 
     return nextSuccess({ attendance: attendance?.[0], users: users });
   } catch (err: any) {

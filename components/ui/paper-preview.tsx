@@ -25,6 +25,9 @@ const PaperPreview = ({ children, className }: Props) => {
   const [fitScale, setFitScale] = useState(1);
   const [actualSize, setActualSize] = useState(false);
   const [paperHeight, setPaperHeight] = useState(0);
+  // Content can be wider than A4 (a long unbreakable line or a wide table makes
+  // the frame's table grow), so fit to what is really there, not to A4
+  const [paperWidth, setPaperWidth] = useState(PAPER_WIDTH);
 
   useEffect(() => {
     const outer = outerRef.current;
@@ -39,7 +42,9 @@ const PaperPreview = ({ children, className }: Props) => {
     const measure = () => {
       queued = 0;
       // clientWidth excludes the scrollbar, so this cannot oscillate with it
-      setFitScale(Math.min(1, outer.clientWidth / PAPER_WIDTH));
+      const width = Math.max(PAPER_WIDTH, paper.scrollWidth);
+      setPaperWidth(width);
+      setFitScale(Math.min(1, outer.clientWidth / width));
       setPaperHeight(paper.scrollHeight);
     };
     const schedule = () => {
@@ -98,10 +103,12 @@ const PaperPreview = ({ children, className }: Props) => {
       {/* Scrolls sideways only at actual size; when fitted there is nothing to scroll */}
       <div ref={outerRef} className={cn("w-full", actualSize && "overflow-x-auto")}>
         {/* Takes the scaled size, so the page below it sits in the right place */}
+        {/* White here, not just on the A4 box below: content wider than A4
+            spills past that box, and the page should look like one sheet */}
         <div
-          className="overflow-hidden"
+          className="overflow-hidden bg-white"
           style={{
-            width: PAPER_WIDTH * scale,
+            width: paperWidth * scale,
             height: paperHeight ? paperHeight * scale : undefined,
           }}
         >

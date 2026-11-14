@@ -45,7 +45,9 @@ export const GET = async (request: NextRequest) => {
       );
     }
 
-    const questions = await Question.find(query)
+    // The page and the total are independent: one round trip instead of two
+    const [questions, totalQuestions] = await Promise.all([
+      Question.find(query)
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit * 1)
@@ -54,10 +56,10 @@ export const GET = async (request: NextRequest) => {
         course: 1,
         title: 1,
       })
-      // Nothing here needs Mongoose documents, only their JSON
-      .lean();
-
-    const totalQuestions = await Question.countDocuments(query);
+        // Nothing here needs Mongoose documents, only their JSON
+        .lean(),
+      Question.countDocuments(query),
+    ]);
     const totalPages = Math.ceil(totalQuestions / limit);
 
     // Revisiting a page of questions is common and the list rarely changes

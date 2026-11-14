@@ -1,78 +1,73 @@
 "use client";
 
 import React, { useState } from "react";
-import useBatches from "@/hooks/useBatches";
-import { Loader2Icon, ArchiveIcon, ArrowLeftIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { TBatch } from "@/models/Batch";
-import ViewBatchSheet from "@/components/sheets/view-batch-sheet";
 import Link from "next/link";
+import { ArchiveIcon, ArrowLeftIcon } from "lucide-react";
+import ViewBatchSheet from "@/components/sheets/view-batch-sheet";
+import { buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/state-message";
+import useBatches, { TBatchWithCount } from "@/hooks/useBatches";
+import { cn } from "@/lib/utils";
+import { BATCH_TONE, BatchGrid } from "../_batch-grid";
 
 const ArchivedBatchesPage = () => {
-  const { batches, loading, setBatchArchived } = useBatches({
-    withCount: true,
-    archivedOnly: true,
-  });
-  const [selectedBatch, setSelectedBatch] = useState<TBatch>();
-  const [openViewBatchSheet, setOpenViewBatchSheet] = useState(false);
+  const { batches, loading, error, refreshBatches, setBatchArchived } = useBatches({ withCount: true, archivedOnly: true });
+  const [selectedBatch, setSelectedBatch] = useState<TBatchWithCount>();
+  const [openView, setOpenView] = useState(false);
 
   return (
-    <div className="flex-1 rounded">
-      <div className="rounded h-[52px] px-6 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center justify-between">
-        <span className="flex items-center gap-2">
-          <ArchiveIcon className="w-4 h-4" />
-          ARCHIVED BATCHES
-        </span>
-        <Button variant="outline" className="p-2 w-fit h-fit bg-white" asChild>
-          <Link href="/batch">
-            <ArrowLeftIcon className="w-4 h-4 mr-1" />
-            Back to batches
+    <main className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-12 pt-5 sm:px-6">
+      <PageHeader
+        icon={<ArchiveIcon />}
+        tone={BATCH_TONE}
+        title="Archived batches"
+        description="Hidden from lists; students keep their batch. Restore to use one again."
+        actions={
+          <Link href="/batch" className={cn(buttonVariants({ variant: "outline" }), "gap-2")} aria-label="Back to batches">
+            <ArrowLeftIcon className="size-4" />
+            <span className="hidden sm:inline">Batches</span>
           </Link>
-        </Button>
-      </div>
-      <div className="px-6 py-3">
-        {loading ? (
-          <Loader2Icon className="w-10 h-10 animate-spin mx-auto" />
-        ) : batches.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-8">
-            No archived batches yet.
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {batches.map((batch) => (
-              <div
-                key={batch._id}
-                className="w-full md:w-[300px] p-4 rounded-lg border border-slate-200 bg-white flex items-center justify-between cursor-pointer hover:border-slate-500"
-                onClick={() => {
-                  setSelectedBatch(batch);
-                  setOpenViewBatchSheet(true);
-                }}
-              >
-                <div>
-                  <p className="text-sm font-medium">{batch.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {batch.totalStudents || 0} Students
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      {openViewBatchSheet && (
+        }
+      />
+
+      <BatchGrid
+        batches={batches}
+        loading={loading}
+        error={error}
+        onRetry={refreshBatches}
+        onOpen={(batch) => {
+          setSelectedBatch(batch);
+          setOpenView(true);
+        }}
+        empty={
+          <EmptyState
+            className="rounded-2xl border bg-card py-12"
+            tone={BATCH_TONE}
+            icon={<ArchiveIcon />}
+            title="No archived batches"
+            description="Batches you archive will appear here."
+          />
+        }
+      />
+
+      {openView && selectedBatch && (
         <ViewBatchSheet
           batch={selectedBatch}
           isArchived
-          open={openViewBatchSheet}
-          onOpenChange={setOpenViewBatchSheet}
+          open={openView}
+          onOpenChange={setOpenView}
           onUnarchive={async () => {
-            if (!selectedBatch?._id) return;
-            await setBatchArchived(selectedBatch._id, false);
-            setOpenViewBatchSheet(false);
+            try {
+              await setBatchArchived(selectedBatch._id, false);
+              setOpenView(false);
+            } catch {
+              // Toast shown by the hook
+            }
           }}
         />
       )}
-    </div>
+    </main>
   );
 };
 

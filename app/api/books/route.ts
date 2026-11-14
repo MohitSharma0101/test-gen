@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
+import { jsonRevalidated } from "@/lib/httpCache";
 import Book, { TBook } from "@/models/Book";
 
 export const GET = async (request: NextRequest) => {
@@ -21,12 +22,10 @@ export const GET = async (request: NextRequest) => {
     else if (subject) query.subject = subject;
 
     await dbConnect();
-    const books = await Book.find(query);
+    const books = await Book.find(query).lean();
 
-    return NextResponse.json(
-      { status: "success", books: books },
-      { status: 200 }
-    );
+    // Same as chapters: read often, changed rarely
+    return jsonRevalidated(request, { status: "success", books });
   } catch (err: any) {
     return NextResponse.json(
       { status: "error", error: err.message ?? "Something went wrong" },

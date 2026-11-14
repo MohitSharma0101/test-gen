@@ -1,3 +1,5 @@
+import { invalidateAfterWrite } from "./swr";
+import { toMessage } from "./errorMessage";
 import axios, { AxiosError } from "axios";
 import { getCookie, setCookie, deleteCookie } from "cookies-next";
 
@@ -42,11 +44,27 @@ export const api = axios.create({
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // A successful write refreshes every cached list it affects, across the
+    // dashboard (lib/swr.ts). Browser only: the cache lives there.
+    const method = (response.config?.method ?? "get").toLowerCase();
+    if (method !== "get" && typeof window !== "undefined") invalidateAfterWrite(response.config?.url);
+    return response;
+  },
   (error: AxiosError) => {
-    // Modify the error message
-    const customErrorMessage = (error.response?.data as any)?.error ?? "Something went wrong!";
-    return Promise.reject(new Error(customErrorMessage));
+    // One readable sentence, whatever shape the server answered with. No
+    // response at all means the request never got through.
+    const data = error.response?.data as any;
+    const customErrorMessage = error.response
+      ? toMessage(data?.error ?? data?.message ?? data?.detail ?? data, `Request failed (${error.response.status}). Please try again.`)
+      : error.code === "ECONNABORTED"
+        ? "The server took too long to answer. Please try again."
+        : "Can't reach the server. Check the internet connection and try again.";
+    // The HTTP status rides along so a caller can tell "wrong password" (401)
+    // from "no network" (no status) without parsing the message.
+    return Promise.reject(
+      Object.assign(new Error(customErrorMessage), { status: error.response?.status })
+    );
   }
 );
 

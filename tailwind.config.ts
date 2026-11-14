@@ -19,6 +19,11 @@ const config = {
       },
     },
     extend: {
+      screens: {
+        // Short viewports: Windows laptops (1366x768 minus taskbar and browser
+        // bars leaves ~650px). Use for density, e.g. md:short:grid-cols-2.
+        short: { raw: "(max-height: 800px)" },
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -49,6 +54,11 @@ const config = {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          foreground: "hsl(var(--brand-foreground))",
+          soft: "hsl(var(--brand-soft))",
+        },
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
@@ -68,10 +78,17 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // One short horizontal shake for a rejected form; use with motion-safe:
+        shake: {
+          "0%, 100%": { transform: "translateX(0)" },
+          "20%, 60%": { transform: "translateX(-6px)" },
+          "40%, 80%": { transform: "translateX(6px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        shake: "shake 0.4s ease-in-out",
       },
     },
   },

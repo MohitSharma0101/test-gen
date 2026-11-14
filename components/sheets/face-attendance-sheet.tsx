@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Sheet, SheetContent } from "../ui/sheet";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
+import { ResponsiveDrawer } from "../ui/responsive-drawer";
+import { cn } from "@/lib/utils";
 import { toast } from "../ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
-import { CameraIcon, Loader2Icon, XIcon } from "lucide-react";
+import { CameraIcon, ImagesIcon, Loader2Icon, RotateCcwIcon, ScanFaceIcon, XIcon } from "lucide-react";
 import { TFaceAudit } from "@/models/Attendance";
 
 type Props = {
@@ -53,18 +54,25 @@ const FaceAttendanceSheet = ({
   // they rejected both suggestions, so that face stays unresolved.
   const [picks, setPicks] = useState<Record<number, string>>({});
 
+  // Preview URLs are freed when a photo is removed, the panel closes or it
+  // unmounts. (Freeing them on every change broke the earlier thumbnails as
+  // soon as a second photo was added.)
+  const filesRef = useRef(files);
+  filesRef.current = files;
+  useEffect(() => () => filesRef.current.forEach((item) => URL.revokeObjectURL(item.url)), []);
+
   useEffect(() => {
     if (!open) {
+      filesRef.current.forEach((item) => URL.revokeObjectURL(item.url));
       setFiles([]);
       setResult(undefined);
       setPicks({});
     }
   }, [open]);
-
-  useEffect(
-    () => () => files.forEach((item) => URL.revokeObjectURL(item.url)),
-    [files]
-  );
+  // Two inputs: Android Chrome hides the camera when an input allows several
+  // files, so the camera one takes a single shot and the gallery one many
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const galleryInput = useRef<HTMLInputElement>(null);
 
   const onPick = (event: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(event.target.files ?? []);
@@ -166,160 +174,161 @@ const FaceAttendanceSheet = ({
     ? result.uncertain.filter((_, index) => !picks[index]).length
     : 0;
 
+  const label = "text-xs font-bold uppercase tracking-wider text-muted-foreground";
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-        <div className="flex flex-col gap-4 pt-2">
-          <div>
-            <h2 className="text-lg font-semibold">Mark with photos</h2>
-            <p className="text-sm text-muted-foreground">
-              Take 3 photos covering sections of the room — left, middle, right.
-              One wide shot leaves faces too small to identify.
-            </p>
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Mark with photos"
+      description={result ? "Check the matches, then apply" : "3 photos: left, middle and right of the room"}
+      footer={
+        result ? (
+          <div className="flex gap-2">
+            <Button variant="outline" className="h-11 gap-2" onClick={() => setResult(undefined)} disabled={applying}>
+              <RotateCcwIcon className="size-4" /> Retake
+            </Button>
+            <Button variant="brand" className="h-11 flex-1 gap-2" onClick={onApplyResult} disabled={applying}>
+              {applying && <Loader2Icon className="size-4 animate-spin" />}
+              Apply{unresolved ? ` · ${unresolved} unchecked` : ""}
+            </Button>
           </div>
-
-          {!result && (
-            <>
-              <label className="rounded-md border border-dashed px-3 py-6 text-center text-sm">
-                <CameraIcon className="mx-auto mb-2 h-6 w-6 text-slate-400" />
-                Take photos or pick from gallery ({files.length}/{MAX_IMAGES})
-                {/* No `capture` attribute on purpose: it forces the camera and
-                    hides the gallery. Without it, phones offer both. */}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={onPick}
-                  className="mt-2 block w-full text-xs"
-                />
-              </label>
-
-              {!!files.length && (
-                <div className="grid grid-cols-3 gap-2">
-                  {files.map((item) => (
-                    <div key={item.id} className="relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.url}
-                        alt="class photo"
-                        className="aspect-video w-full rounded object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFile(item.id)}
-                        className="absolute -right-1 -top-1 rounded-full bg-red-600 p-0.5 text-white"
-                        aria-label="Remove"
-                      >
-                        <XIcon className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <Button onClick={onRun} disabled={!files.length || running}>
-                {running && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
-                {running ? "Reading faces…" : "Recognise"}
-              </Button>
-            </>
-          )}
-
-          {result && (
-            <>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded bg-green-100 px-3 py-2 font-semibold text-green-800">
-                  {result.recognised.length} recognised
-                </div>
-                <div className="rounded bg-slate-100 px-3 py-2 font-semibold text-slate-700">
-                  {result.stats.facesDetected} faces seen
-                </div>
+        ) : (
+          <Button variant="brand" className="h-11 w-full gap-2" onClick={onRun} disabled={!files.length || running}>
+            {running ? <Loader2Icon className="size-4 animate-spin" /> : <ScanFaceIcon className="size-4" />}
+            {running ? "Reading faces…" : `Recognise${files.length ? ` · ${files.length} photo${files.length === 1 ? "" : "s"}` : ""}`}
+          </Button>
+        )
+      }
+    >
+      <div className="space-y-4 p-4">
+        {!result && (
+          <>
+            <p className="text-sm text-muted-foreground">
+              One wide shot leaves faces too small to identify, so take a few closer ones covering each part of the room.
+            </p>
+            <input ref={cameraInput} type="file" accept="image/*" capture="environment" onChange={onPick} className="hidden" />
+            <input ref={galleryInput} type="file" accept="image/*" multiple onChange={onPick} className="hidden" />
+            {files.length < MAX_IMAGES && (
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "Camera", hint: "One photo at a time", Icon: CameraIcon, input: cameraInput },
+                  { label: "Gallery", hint: "Pick several", Icon: ImagesIcon, input: galleryInput },
+                ].map(({ label, hint, Icon, input }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => input.current?.click()}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed font-medium text-muted-foreground transition-colors hover:border-brand/50 hover:bg-brand-soft hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                      files.length === 0 ? "py-8 text-sm" : "py-3 text-xs"
+                    )}
+                  >
+                    <Icon className={files.length === 0 ? "size-7" : "size-5"} />
+                    {label}
+                    {files.length === 0 && <span className="text-xs font-normal">{hint}</span>}
+                  </button>
+                ))}
               </div>
-
-              {!!result.uncertain.length && (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold">
-                    Needs your check ({result.uncertain.length})
-                  </p>
-                  {result.uncertain.map((face, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 rounded-md border px-2 py-2"
+            )}
+            {files.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {files.map((item, index) => (
+                  <div key={item.id} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.url} alt={`Class photo ${index + 1}`} className="aspect-[4/3] w-full rounded-lg border object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(item.id)}
+                      className="absolute right-1 top-1 flex size-7 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                      aria-label={`Remove photo ${index + 1}`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`data:image/jpeg;base64,${face.crop}`}
-                        alt="unidentified face"
-                        className="h-14 w-14 rounded object-cover"
-                      />
-                      <div className="flex flex-1 flex-wrap gap-1">
-                        {face.candidates.map((candidate) => (
-                          <Button
+                      <XIcon className="size-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {files.length}/{MAX_IMAGES} photos
+            </p>
+          </>
+        )}
+
+        {result && (
+          <>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {[
+                { label: "Recognised", value: result.recognised.length, tone: "text-emerald-700" },
+                { label: "Faces seen", value: result.stats.facesDetected, tone: "" },
+                { label: "Will be absent", value: result.suggestedAbsent.length, tone: "text-red-700" },
+              ].map((t) => (
+                <div key={t.label} className="rounded-xl border bg-card px-2 py-2.5">
+                  <p className={cn("text-xl font-bold tabular-nums", t.tone)}>{t.value}</p>
+                  <p className="text-[11px] text-muted-foreground">{t.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {!!result.uncertain.length && (
+              <section className="space-y-2">
+                <h3 className={label}>Who is this? · {result.uncertain.length}</h3>
+                {result.uncertain.map((face, index) => (
+                  <div key={index} className="flex items-start gap-3 rounded-xl border bg-card p-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`data:image/jpeg;base64,${face.crop}`} alt={`Unidentified face ${index + 1}`} className="size-16 shrink-0 rounded-lg object-cover" />
+                    <div role="radiogroup" aria-label={`Face ${index + 1}`} className="flex flex-1 flex-wrap gap-1.5">
+                      {face.candidates.map((candidate) => {
+                        const on = picks[index] === candidate.userId;
+                        return (
+                          <button
                             key={candidate.userId}
-                            size="sm"
-                            variant={
-                              picks[index] === candidate.userId ? "default" : "outline"
-                            }
-                            className="h-7 rounded-full text-xs"
-                            onClick={() =>
-                              setPicks((prev) => ({
-                                ...prev,
-                                [index]: candidate.userId,
-                              }))
-                            }
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => setPicks((prev) => ({ ...prev, [index]: candidate.userId }))}
+                            className={cn(
+                              "h-9 rounded-full border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                              on ? "border-brand bg-brand text-brand-foreground" : "bg-background hover:bg-muted"
+                            )}
                           >
                             {candidate.name}
-                          </Button>
-                        ))}
-                        <Button
-                          size="sm"
-                          variant={picks[index] === "none" ? "destructive" : "outline"}
-                          className="h-7 rounded-full text-xs"
-                          onClick={() =>
-                            setPicks((prev) => ({ ...prev, [index]: "none" }))
-                          }
-                        >
-                          Neither
-                        </Button>
-                      </div>
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={picks[index] === "none"}
+                        onClick={() => setPicks((prev) => ({ ...prev, [index]: "none" }))}
+                        className={cn(
+                          "h-9 rounded-full border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                          picks[index] === "none" ? "border-red-300 bg-red-50 text-red-700" : "text-muted-foreground hover:bg-muted"
+                        )}
+                      >
+                        Neither
+                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </section>
+            )}
 
-              {!!result.notEnrolled.length && (
-                <div className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  <span className="font-semibold">
-                    {result.notEnrolled.length} not enrolled
-                  </span>{" "}
-                  — never candidates, so mark them by hand:{" "}
-                  {result.notEnrolled.map((student) => student.name).join(", ")}
-                </div>
-              )}
-
-              <p className="text-[11px] text-muted-foreground">
-                {result.suggestedAbsent.length} of {result.stats.rosterSize} will
-                be marked absent. Anyone the photos missed stays absent — check
-                the list before submitting.
+            {!!result.notEnrolled.length && (
+              <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                <span className="font-semibold">{result.notEnrolled.length} not enrolled</span>, so never matched. Mark them by hand:{" "}
+                {result.notEnrolled.map((student) => student.name).join(", ")}
               </p>
+            )}
 
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  onClick={onApplyResult}
-                  disabled={applying}
-                >
-                  {applying && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
-                  Apply{unresolved ? ` (${unresolved} unchecked)` : ""}
-                </Button>
-                <Button variant="outline" onClick={() => setResult(undefined)}>
-                  Retake
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
+            <p className="text-xs text-muted-foreground">
+              {result.suggestedAbsent.length} of {result.stats.rosterSize} will be marked absent. Anyone the photos missed stays absent, so check
+              the list before submitting.
+            </p>
+          </>
+        )}
+      </div>
+    </ResponsiveDrawer>
   );
 };
 

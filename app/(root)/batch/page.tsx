@@ -1,123 +1,111 @@
 "use client";
 
 import React, { useState } from "react";
-import AddBatchSheet from "@/components/sheets/add-batch-sheet";
-import useBatches from "@/hooks/useBatches";
-import { Loader2Icon, PencilIcon, PlusIcon, ArchiveIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { TBatch } from "@/models/Batch";
+import { ArchiveIcon, GraduationCapIcon, PlusIcon } from "lucide-react";
+import AddBatchSheet from "@/components/sheets/add-batch-sheet";
 import ViewBatchSheet from "@/components/sheets/view-batch-sheet";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/state-message";
+import useBatches, { TBatchWithCount } from "@/hooks/useBatches";
+import { cn } from "@/lib/utils";
+import { BATCH_TONE, BatchGrid } from "./_batch-grid";
 
-type Props = {};
+const BatchPage = () => {
+  const { batches, loading, error, refreshBatches, setBatchArchived } = useBatches({ withCount: true });
+  const [selectedBatch, setSelectedBatch] = useState<TBatchWithCount>();
+  const [openEdit, setOpenEdit] = useState(false);
+  const [openView, setOpenView] = useState(false);
 
-const BatchPage = (props: Props) => {
-  const { batches, loading, refreshBatches, deleteBatch, setBatchArchived } =
-    useBatches({
-    withCount: true,
-  });
-  const [selectedBatch, setSelectedBatch] = useState<TBatch>();
-  const [openAddBatchSheet, setOpenAddBatchSheet] = useState(false);
-  const [openViewBatchSheet, setOpenViewBatchSheet] = useState(false);
+  const students = batches.reduce((sum, b) => sum + (b.totalStudents ?? 0), 0);
+
+  const openForm = (batch?: TBatchWithCount) => {
+    // One panel at a time: the form replaces the batch details
+    setOpenView(false);
+    setSelectedBatch(batch);
+    setOpenEdit(true);
+  };
 
   return (
-    <div className="flex-1 rounded">
-      <div className="rounded h-[52px] px-6 border border-slate-200 bg-slate-300 text-sm font-medium flex items-center justify-between">
-        BATCHES
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="p-2 w-fit h-fit bg-white" asChild>
-            <Link href="/batch/archive">
-              <ArchiveIcon className="w-4 h-4 mr-1" />
-              Archived
+    <main className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-12 pt-5 sm:px-6">
+      <PageHeader
+        icon={<GraduationCapIcon />}
+        tone={BATCH_TONE}
+        title="Batches"
+        description={
+          batches.length
+            ? `${batches.length} active batch${batches.length === 1 ? "" : "es"} · ${students} student${students === 1 ? "" : "s"}`
+            : "Create batches and assign students"
+        }
+        actions={
+          <>
+            <Link href="/batch/archive" className={cn(buttonVariants({ variant: "outline" }), "gap-2")} aria-label="Archived batches">
+              <ArchiveIcon className="size-4" />
+              <span className="hidden sm:inline">Archived</span>
             </Link>
-          </Button>
-          <Button
-            variant={"outline"}
-            className="p-2 w-fit h-fit bg-white"
-            onClick={() => {
-              setSelectedBatch(undefined);
-              setOpenAddBatchSheet(true);
-            }}
-          >
-            <PlusIcon className="w-4 h-4" />
-            Add Batch
-          </Button>
-        </div>
-      </div>
-      <div className="px-6 py-3">
-        {loading ? (
-          <Loader2Icon className="w-10 h-10 animate-spin mx-auto" />
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {batches.map((batch) => (
-              <div
-                key={batch.name}
-                className="w-full md:w-[300px] p-4 rounded-lg border border-slate-200 bg-white flex items-center justify-between cursor-pointer hover:border-slate-500"
-                onClick={() => {
-                  setSelectedBatch(batch);
-                  setOpenViewBatchSheet(true);
-                }}
-              >
-                <div>
-                  <p className="text-sm font-medium">{batch.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {batch.totalStudents || 0} Students
-                  </p>
-                </div>
-                <div
-                  className="flex items-center gap-2"
-                  // onClick={(e) => e.stopPropagation()}
-                >
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    <PencilIcon className="w-4 h-4" />
-                  </Button>
-                  {/* <DeleteButton
-                    size="sm"
-                    className="rounded-full"
-                    title="Delete batch"
-                    description={`Are you sure you want to delete "${batch.name}"? This will remove the batch from all assigned students.`}
-                    onDelete={(closeDialog) => {
-                      deleteBatch(batch._id);
-                      closeDialog();
-                    }}
-                  /> */}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      {openAddBatchSheet && (
+            <Button variant="brand" onClick={() => openForm()} className="gap-2" aria-label="Add batch">
+              <PlusIcon className="size-4" />
+              <span className="hidden sm:inline">Add batch</span>
+            </Button>
+          </>
+        }
+      />
+
+      <BatchGrid
+        batches={batches}
+        loading={loading}
+        error={error}
+        onRetry={refreshBatches}
+        onOpen={(batch) => {
+          setSelectedBatch(batch);
+          setOpenView(true);
+        }}
+        onEdit={openForm}
+        empty={
+          <EmptyState
+            className="rounded-2xl border bg-card py-12"
+            tone={BATCH_TONE}
+            icon={<GraduationCapIcon />}
+            title="No batches yet"
+            description="Create a batch, then add its students."
+            action={
+              <Button variant="brand" onClick={() => openForm()} className="gap-2">
+                <PlusIcon className="size-4" /> Add batch
+              </Button>
+            }
+          />
+        }
+      />
+
+      {openEdit && (
         <AddBatchSheet
-          onSuccess={refreshBatches}
+          // Fresh form state for each batch
+          key={selectedBatch?._id ?? "new"}
           defaultBatch={selectedBatch}
-          open={openAddBatchSheet}
-          onOpenChange={(open) => {
-            setOpenAddBatchSheet(open);
-            if (!open) {
-              setOpenViewBatchSheet(false);
+          open={openEdit}
+          onOpenChange={setOpenEdit}
+          onSuccess={refreshBatches}
+        />
+      )}
+      {openView && selectedBatch && (
+        <ViewBatchSheet
+          batch={selectedBatch}
+          open={openView}
+          onOpenChange={setOpenView}
+          onEdit={() => openForm(selectedBatch)}
+          onArchive={async () => {
+            try {
+              await setBatchArchived(selectedBatch._id, true);
+              setOpenView(false);
+            } catch {
+              // The hook already showed the error toast; keep the panel open
             }
           }}
         />
       )}
-      {openViewBatchSheet && (
-        <ViewBatchSheet
-          batch={selectedBatch}
-          open={openViewBatchSheet}
-          onOpenChange={setOpenViewBatchSheet}
-          onEdit={() => {
-            setOpenAddBatchSheet(true);
-          }}
-          onArchive={async () => {
-            if (!selectedBatch?._id) return;
-            await setBatchArchived(selectedBatch._id, true);
-            setOpenViewBatchSheet(false);
-          }}
-        />
-      )}
-    </div>
+    </main>
   );
 };
 
 export default BatchPage;
-

@@ -4,6 +4,8 @@
 // signatures travel with each recognise call rather than the container
 // reaching into the database itself.
 
+import { toMessage } from "./errorMessage";
+
 // Two shapes are supported:
 //   FACE_SERVICE_URL set  -> a standalone service, e.g. http://localhost:8080
 //                            during development, with /embed and /recognize
@@ -74,19 +76,22 @@ const post = async <T>(path: string, body: FormData): Promise<T> => {
     if (err?.name === "TimeoutError") {
       throw new Error("Face service timed out. It may be starting up — try again.");
     }
-    throw new Error(`Could not reach the face service: ${err?.message ?? err}`);
+    throw new Error(`Could not reach the face service: ${toMessage(err, "network error")}`);
   }
 
   if (!response.ok) {
-    // FastAPI puts its message in `detail`; fall back to raw text otherwise.
-    const text = await response.text();
-    let detail = text;
+    // FastAPI puts its message in `detail`, sometimes as a list of objects
+    // (validation errors): read it as text, never "[object Object]". An HTML
+    // error page (platform crash) is not shown to the teacher.
+    const text = await response.text().catch(() => "");
+    let detail = "";
     try {
-      detail = JSON.parse(text)?.detail ?? text;
+      detail = toMessage(JSON.parse(text), "");
     } catch {
-      // not JSON, keep the raw body
+      detail = /^\s*</.test(text) ? "" : text.trim();
     }
-    throw new Error(`Face service error (${response.status}): ${detail}`);
+    const reason = detail ? `: ${detail.slice(0, 200)}` : response.status >= 500 ? ". It may be restarting, try again in a minute." : "";
+    throw new Error(`Face service error (${response.status})${reason}`);
   }
 
   return response.json() as Promise<T>;
@@ -113,3 +118,4 @@ export const recognizeFaces = async (images: File[], roster: RosterEntry[]) => {
 
   return post<RecognizeResult>(path("recognize"), form);
 };
+

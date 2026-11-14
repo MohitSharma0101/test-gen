@@ -4,7 +4,9 @@ import { toast } from "@/components/ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
 import { fetchAttendance, TAttendanceRes } from "@/service/core.service";
 import { TFaceAudit } from "@/models/Attendance";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import useSWR from "swr";
+import { LIST_SWR, swrLoading } from "@/lib/swr";
 
 type config = {
   _id?: string;
@@ -14,32 +16,19 @@ type config = {
 };
 
 const useAttendance = ({ batchId, date, shouldLoad = true }: config = {}) => {
-  const [data, setData] = useState<TAttendanceRes["data"]>();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>();
+  // Keyed by batch + date: another day's list is never shown for this one
+  const swr = useSWR(
+    shouldLoad && batchId && date ? ["attendance", batchId, date] : null,
+    async () => (await fetchAttendance(batchId!, date!))?.data?.data as TAttendanceRes["data"],
+    LIST_SWR
+  );
+  const data = swr.data;
+  const loading = swrLoading(swr);
+  const error = swr.error ? "Unable to fetch attendance." : undefined;
+  const getAttendance = useCallback(() => swr.mutate(), [swr]);
 
   const attendance = data?.attendance;
   const users = data?.users;
-
-  const getAttendance = useCallback(async () => {
-    if (!batchId || !date) return;
-    try {
-      setLoading(true);
-      const res = await fetchAttendance(batchId, date);
-      if (res?.data?.data) setData(res?.data?.data);
-    } catch (err) {
-      console.log(err);
-      setError("Unable to fetch attendance.");
-    } finally {
-      setLoading(false);
-    }
-  }, [batchId, date]);
-
-  useEffect(() => {
-    if (shouldLoad) {
-      getAttendance();
-    }
-  }, [getAttendance, shouldLoad]);
 
   // faceAudit is passed only when the photo flow produced this list, so the
   // machine's suggestion can be compared against what the teacher submitted.

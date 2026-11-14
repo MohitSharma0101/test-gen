@@ -21,6 +21,9 @@ type Props = {
   confirmText?: string;
   disabled?: boolean;
   variant?: ButtonProps["variant"];
+  // The confirm button: red with a bin by default; override for non-destructive confirms (restore)
+  confirmVariant?: ButtonProps["variant"];
+  confirmIcon?: ReactNode;
 };
 
 const DeleteButton = ({
@@ -33,6 +36,8 @@ const DeleteButton = ({
   size = "icon",
   disabled,
   variant = "destructive",
+  confirmVariant = "destructive",
+  confirmIcon = <Trash2Icon className="w-4 h-4 mr-2" />,
 }: Props) => {
   const [open, setOpen] = useState(false);
   const closeDialog = () => setOpen(false);
@@ -63,10 +68,10 @@ const DeleteButton = ({
             <Button variant={"outline"}>Cancel</Button>
           </DialogClose>
           <Button
-            variant={"destructive"}
+            variant={confirmVariant}
             onClick={() => onDelete?.(closeDialog)}
           >
-            <Trash2Icon className="w-4 h-4 mr-2" />
+            {confirmIcon}
             {confirmText || "Delete"}
           </Button>
         </div>

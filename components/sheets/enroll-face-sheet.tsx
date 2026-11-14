@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Sheet, SheetContent } from "../ui/sheet";
+import { ResponsiveDrawer } from "../ui/responsive-drawer";
+import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { toast } from "../ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
@@ -13,6 +14,7 @@ import {
   RefreshCwIcon,
   SwitchCameraIcon,
   Trash2Icon,
+  UploadIcon,
   XIcon,
 } from "lucide-react";
 
@@ -240,40 +242,66 @@ const EnrollFaceSheet = ({ open, onOpenChange, user, onSuccess }: Props) => {
 
   const nextPrompt = PROMPTS[shots.length] ?? "Extra shot (optional)";
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <div className="flex flex-col gap-4 pt-2">
-          <div>
-            <h2 className="text-lg font-semibold">Enroll face</h2>
-            <p className="text-sm text-muted-foreground">{user?.name}</p>
-          </div>
+  const recommended = status?.recommended ?? PROMPTS.length;
+  const fileInput = useRef<HTMLInputElement>(null);
 
-          {status && (
-            <div className="text-xs rounded-md bg-slate-100 px-3 py-2">
+  return (
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Enroll face"
+      description={user?.name}
+      footer={
+        <div className="flex items-center gap-2">
+          <Button variant="brand" className="h-11 flex-1 gap-2" onClick={onSave} disabled={!shots.length || saving}>
+            {saving && <Loader2Icon className="size-4 animate-spin" />}
+            {shots.length ? `Save ${shots.length} photo${shots.length === 1 ? "" : "s"}` : "Save"}
+          </Button>
+          {!!status?.signatureCount && (
+            <Button
+              variant="outline"
+              className="size-11 shrink-0 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+              aria-label="Remove face data"
+              title="Remove face data"
+              onClick={onClear}
+            >
+              <Trash2Icon className="size-4" />
+            </Button>
+          )}
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-4 p-4">
+        {status && (
+          <div className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-sm">
+            {/* One dot per recommended angle: filled for photos taken now */}
+            <div className="flex shrink-0 gap-1" aria-hidden="true">
+              {Array.from({ length: recommended }).map((_, i) => (
+                <span key={i} className={cn("size-2 rounded-full", i < shots.length ? "bg-brand" : "bg-muted-foreground/25")} />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
               {status.signatureCount > 0 ? (
                 <>
-                  <span className="font-semibold">
-                    {status.signatureCount} signature
-                    {status.signatureCount === 1 ? "" : "s"} on file
+                  <span className="font-semibold text-foreground">
+                    {status.signatureCount} signature{status.signatureCount === 1 ? "" : "s"} on file
                   </span>
-                  {status.correctionCount > 0 && (
-                    <> ({status.correctionCount} from teacher corrections)</>
-                  )}
-                  . Saving new photos replaces the enrolled set.
+                  {status.correctionCount > 0 && <> ({status.correctionCount} from corrections)</>}. Saving new photos
+                  replaces them.
                 </>
               ) : (
-                <>Not enrolled yet. Capture {status.recommended} photos below.</>
+                <>Not enrolled yet. Take {recommended} photos from different angles.</>
               )}
-            </div>
-          )}
+            </p>
+          </div>
+        )}
 
-          <div className="relative overflow-hidden rounded-lg bg-black aspect-[3/4]">
-            {cameraError ? (
-              <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-white">
-                {cameraError}
-              </div>
-            ) : (
+        {/* data-vaul-no-drag: dragging on the camera shouldn't pull the drawer closed */}
+        <div data-vaul-no-drag className="relative mx-auto aspect-[3/4] w-full max-w-sm overflow-hidden rounded-2xl bg-black">
+          {cameraError ? (
+            <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-white">{cameraError}</div>
+          ) : (
+            <>
               <video
                 ref={videoRef}
                 playsInline
@@ -281,120 +309,101 @@ const EnrollFaceSheet = ({ open, onOpenChange, user, onSuccess }: Props) => {
                 className="h-full w-full object-cover"
                 style={{
                   // Mirror the preview so it feels like a mirror. The capture
-                  // below draws the raw frame, not this transform.
+                  // draws the raw frame, not this transform.
                   transform: facingMode === "user" ? "scaleX(-1)" : undefined,
                 }}
               />
-            )}
-
-            {!cameraError && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-3 py-2 text-center text-sm font-medium text-white">
+              {/* Where to put the face */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-[42%] h-[58%] w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-2 border-dashed border-white/70"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-3 pt-8 text-center text-sm font-medium text-white">
                 {nextPrompt}
               </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              className="flex-1"
-              onClick={capture}
-              disabled={!!cameraError || saving}
-            >
-              <CameraIcon className="mr-2 h-4 w-4" />
-              Capture ({shots.length})
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              title="Switch camera"
-              onClick={() =>
-                setFacingMode((mode) => (mode === "user" ? "environment" : "user"))
-              }
-            >
-              <SwitchCameraIcon className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" title="Restart camera" onClick={startCamera}>
-              <RefreshCwIcon className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <label className="text-xs text-muted-foreground">
-            Or upload photos
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={onPickFiles}
-              className="mt-1 block w-full text-xs"
-            />
-          </label>
-
-          {!!shots.length && (
-            <div className="grid grid-cols-4 gap-2">
-              {shots.map((shot) => (
-                <div key={shot.id} className="relative">
-                  {/* Local blob preview, never uploaded for display. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={shot.url}
-                    alt={shot.prompt}
-                    className="aspect-square w-full rounded object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeShot(shot.id)}
-                    className="absolute -right-1 -top-1 rounded-full bg-red-600 p-0.5 text-white"
-                    aria-label="Remove photo"
-                  >
-                    <XIcon className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {result && (
-            <div className="space-y-2 rounded-md border px-3 py-2 text-xs">
-              <div className="flex items-center gap-1 font-semibold">
-                <CheckCircle2Icon className="h-4 w-4 text-green-600" />
-                {result.accepted} accepted, {result.signatureCount} total
+              <div className="absolute right-2 top-2 flex gap-1.5">
+                <button
+                  type="button"
+                  aria-label="Switch camera"
+                  title="Switch camera"
+                  onClick={() => setFacingMode((mode) => (mode === "user" ? "environment" : "user"))}
+                  className="flex size-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur hover:bg-black/70"
+                >
+                  <SwitchCameraIcon className="size-5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Restart camera"
+                  title="Restart camera"
+                  onClick={startCamera}
+                  className="flex size-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur hover:bg-black/70"
+                >
+                  <RefreshCwIcon className="size-5" />
+                </button>
               </div>
-              {result.weak && (
-                <p className="text-amber-600">
-                  Fewer than {result.recommended} signatures. Accuracy will be
-                  noticeably worse — add more angles when you can.
-                </p>
-              )}
-              {!!result.rejected.length && (
-                <ul className="list-disc pl-4 text-muted-foreground">
-                  {result.rejected.map((item) => (
-                    <li key={item.index}>
-                      Photo {item.index + 1}: {item.reason}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            </>
           )}
+        </div>
 
-          <div className="flex items-center gap-2 pt-1">
-            <Button className="flex-1" onClick={onSave} disabled={!shots.length || saving}>
-              {saving && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
-              Save {shots.length ? `${shots.length} photo${shots.length === 1 ? "" : "s"}` : ""}
-            </Button>
-            {!!status?.signatureCount && (
-              <Button variant="outline" size="icon" title="Remove face data" onClick={onClear}>
-                <Trash2Icon className="h-4 w-4" />
-              </Button>
+        <div className="mx-auto flex w-full max-w-sm items-center gap-2">
+          <Button variant="brand" className="h-12 flex-1 gap-2 text-base" onClick={capture} disabled={!!cameraError || saving}>
+            <CameraIcon className="size-5" />
+            Take photo
+          </Button>
+          <input ref={fileInput} type="file" accept="image/*" multiple onChange={onPickFiles} className="hidden" />
+          <Button variant="outline" className="h-12 gap-2" onClick={() => fileInput.current?.click()}>
+            <UploadIcon className="size-4" /> Upload
+          </Button>
+        </div>
+
+        {!!shots.length && (
+          <div className="mx-auto grid w-full max-w-sm grid-cols-4 gap-2">
+            {shots.map((shot) => (
+              <div key={shot.id} className="relative">
+                {/* Local blob preview, never uploaded for display. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={shot.url} alt={shot.prompt} className="aspect-square w-full rounded-lg object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeShot(shot.id)}
+                  className="absolute -right-1.5 -top-1.5 flex size-6 items-center justify-center rounded-full bg-red-600 text-white shadow"
+                  aria-label="Remove photo"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {result && (
+          <div className="space-y-2 rounded-xl border bg-card px-3 py-2.5 text-xs">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <CheckCircle2Icon className="size-4 text-emerald-600" />
+              {result.accepted} accepted, {result.signatureCount} total
+            </div>
+            {result.weak && (
+              <p className="text-amber-700">
+                Fewer than {result.recommended} signatures. Accuracy will be noticeably worse. Add more angles when you can.
+              </p>
+            )}
+            {!!result.rejected.length && (
+              <ul className="list-disc pl-4 text-muted-foreground">
+                {result.rejected.map((item) => (
+                  <li key={item.index}>
+                    Photo {item.index + 1}: {item.reason}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
+        )}
 
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Photos are turned into signatures and discarded — nothing is stored.
-          </p>
-        </div>
-      </SheetContent>
-    </Sheet>
+        <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+          Photos are turned into signatures and discarded. Nothing is stored.
+        </p>
+      </div>
+    </ResponsiveDrawer>
   );
 };
 

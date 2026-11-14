@@ -1,3 +1,4 @@
+import { toMessage } from "./errorMessage";
 import { TUserResult } from "@/models/AnswerSheet";
 import type { SubjectQuestions, TQuestion } from "@/models/Question";
 import { type ClassValue, clsx } from "clsx";
@@ -227,9 +228,7 @@ export const withConfirmation = (
   });
 };
 
-export const apiErrorMsg = (err: any, defaultMsg: string = "Something went wrong!") => {
-  return (err as any).message || defaultMsg;
-};
+export const apiErrorMsg = (err: any, defaultMsg: string = "Something went wrong!") => toMessage(err, defaultMsg);
 
 export const getSafeAccount = (account: TAccount, stringify = false) => {
   const res = {
@@ -246,3 +245,10 @@ export const getSafeAccount = (account: TAccount, stringify = false) => {
   }
   return res;
 };
+
+// ₹1,25,000 (Indian grouping). Missing or non-numeric values read as ₹0
+export const formatINR = (value?: number | null) =>
+  `₹${(Number.isFinite(value) ? (value as number) : 0).toLocaleString("en-IN")}`;
+
+// "10" → "Class 10"; "JEE" stays "JEE"
+export const courseLabel = (course?: string) => (course && /^\d+$/.test(course) ? `Class ${course}` : course ?? "");

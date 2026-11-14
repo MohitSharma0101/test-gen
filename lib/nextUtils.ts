@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
+import { toMessage } from "./errorMessage";
 
 export function nextError(
-  message: string = "Something went wrong.",
+  message: unknown = "Something went wrong.",
   status: number = 500
 ) {
   return NextResponse.json(
     {
       status: "error",
-      error: message || "Something went wrong.",
+      // Always a string: callers sometimes pass an error object along
+      error: toMessage(message, "Something went wrong."),
     },
     { status: status }
   );

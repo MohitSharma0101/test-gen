@@ -1,95 +1,79 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { MessageCircleIcon, UsersIcon } from "lucide-react";
 import SelectCompact from "@/components/ui/select-compact";
 import WAButton from "@/components/ui/wa-button";
-import {
-  INPUT_FIELD,
-  MSG_TEMPLATE,
-  MSG_TEMPLATES_META,
-  MSG_TEMPLATES_OPTIONS,
-} from "@/data/const";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TIME_OPTIONS } from "@/components/ui/date-time-picker";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/state-message";
+import { Skeleton } from "@/components/ui/skeleton";
+import { INPUT_FIELD, MSG_TEMPLATE, MSG_TEMPLATES_META, MSG_TEMPLATES_OPTIONS } from "@/data/const";
+import { ROUTE_GROUPS } from "@/data/routes";
 import { WA_MSG } from "@/data/wa-msg";
 import useBatches from "@/hooks/useBatches";
-import Clock from "@/lib/clock";
-import { SquareMousePointerIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Textarea } from "@/components/ui/textarea";
 import useExamResults from "@/hooks/useExamResult";
-import LabelInput from "@/components/ui/label-input";
 import useUsers from "@/hooks/useUsers";
-import { Loader2Icon } from "lucide-react";
 import useAttendance from "@/hooks/useAttendance";
+import Clock from "@/lib/clock";
+import { cn } from "@/lib/utils";
 
 type TMSG_TEMPLATE = keyof typeof MSG_TEMPLATE;
 
+const TONE = ROUTE_GROUPS.daily.tile;
+
+const Section = ({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) => (
+  <section className={cn("rounded-2xl border bg-card p-4 shadow-sm", className)}>
+    <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</h2>
+    {children}
+  </section>
+);
+
 export default function SendMessagePage() {
-  const [selectedTemplate, setSelectedTemplate] = useState<TMSG_TEMPLATE>(
-    MSG_TEMPLATE.EXTRA_CLASS
-  );
-  const { batches } = useBatches();
+  const [selectedTemplate, setSelectedTemplate] = useState<TMSG_TEMPLATE>(MSG_TEMPLATE.EXTRA_CLASS);
+  const { batches, loading: batchesLoading } = useBatches();
 
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
   const selectedBatch = batches.find((batch) => batch._id === selectedBatchId);
-  const { users, loading: userLoading } = useUsers({
-    batchId: selectedBatchId,
-    shouldLoad: !!selectedBatchId,
-  });
-  const [selectedDate, setSelectedDate] = useState<string>(Clock.getDate());
+  const { users, loading: userLoading } = useUsers({ batchId: selectedBatchId, shouldLoad: !!selectedBatchId });
+  const today = Clock.getDate();
+  const [selectedDate, setSelectedDate] = useState<string>(today);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
   const selectedTemplateMeta = MSG_TEMPLATES_META[selectedTemplate];
   const { examResults, fetchExamResults } = useExamResults();
   const [selectedResultId, setSelectedResultId] = useState("");
-  const selectedResult = examResults.find(
-    (res) => res._id === selectedResultId
-  );
+  const selectedResult = examResults.find((res) => res._id === selectedResultId);
 
-  const { attendance } = useAttendance(
-    {
-      batchId: selectedBatchId,
-      date: selectedDate,
-      shouldLoad: selectedTemplate === MSG_TEMPLATE.ABSENT
-    }
-  );
+  const isAbsentTemplate = selectedTemplate === MSG_TEMPLATE.ABSENT;
+  const { attendance } = useAttendance({
+    batchId: selectedBatchId,
+    date: selectedDate,
+    shouldLoad: isAbsentTemplate,
+  });
 
-  const usersToShow =
-    selectedTemplate === MSG_TEMPLATE.ABSENT
-      ? users?.filter((user) =>
-          (attendance?.absentUsers as string[])?.includes(user._id)
-        )
-      : users;
+  // The absence message goes only to parents of that day's absentees
+  const recipients = isAbsentTemplate
+    ? users?.filter((user) => (attendance?.absentUsers as string[])?.includes(user._id))
+    : users;
 
   useEffect(() => {
     if (selectedTemplate === MSG_TEMPLATE.RESULT) {
       setSelectedResultId("");
-      fetchExamResults({
-        batchId: selectedBatchId,
-        date: selectedDate,
-      });
+      fetchExamResults({ batchId: selectedBatchId, date: selectedDate });
     }
-  }, [selectedTemplate, selectedDate, selectedBatchId]);
+  }, [selectedTemplate, selectedDate, selectedBatchId, fetchExamResults]);
 
   const getWAMsg = (data: Record<string, any>) => {
     switch (selectedTemplate) {
       case MSG_TEMPLATE.EXTRA_CLASS:
-        return WA_MSG.extraClass({
-          name: data.name,
-          date: Clock.getDateInFormat(selectedDate),
-          startTime,
-          endTime,
-        });
-
+        return WA_MSG.extraClass({ name: data.name, date: Clock.getDateInFormat(selectedDate), startTime, endTime });
       case MSG_TEMPLATE.ABSENT:
-        return WA_MSG.absent(
-          data.name,
-          Clock.getDateInFormat(selectedDate),
-          selectedBatch?.name || ""
-        );
-      case MSG_TEMPLATE.RESULT:
-        const userMarks = selectedResult?.results?.find(
-          (res) => res.userId === data._id
-        )?.marks;
+        return WA_MSG.absent(data.name, Clock.getDateInFormat(selectedDate), selectedBatch?.name || "");
+      case MSG_TEMPLATE.RESULT: {
+        const userMarks = selectedResult?.results?.find((res) => res.userId === data._id)?.marks;
         if (userMarks == undefined || userMarks == null) {
           return WA_MSG.resultAbsent({
             name: data.name,
@@ -104,153 +88,173 @@ export default function SendMessagePage() {
           total_marks: selectedResult?.totalMarks ?? "",
           subject: selectedResult?.subject ?? "",
         });
+      }
       case MSG_TEMPLATE.PTM:
-        return WA_MSG.ptm({
-          name: data.name,
-          date: Clock.getDateInFormat(selectedDate),
-          startTime,
-          endTime,
-        });
+        return WA_MSG.ptm({ name: data.name, date: Clock.getDateInFormat(selectedDate), startTime, endTime });
       case MSG_TEMPLATE.FEE_REMINDER:
         return WA_MSG.feesReminder(data.name);
     }
   };
 
-  const renderExtraFields = () => {
-    const extraFields = selectedTemplateMeta.extraFields;
-    if (extraFields.length == 0) return;
+  const extraFields = selectedTemplateMeta.extraFields;
 
-    return (
-      <>
-        <p className="font-bold text-xs">ADDITIONAL DATA</p>
-        <div className="flex flex-wrap gap-2 items-center mt-2">
-          {extraFields.map((field, index) => {
-            switch (field) {
-              case INPUT_FIELD.DATE:
-                return (
-                  <LabelInput
-                    label="Date"
-                    key={field + index}
-                    type="date"
-                    className="w-fit"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                  />
-                );
-              case INPUT_FIELD.RESULT_NAME:
-                return (
-                  <SelectCompact
-                    options={examResults?.map((r) => ({
-                      label: r.name,
-                      value: r._id,
-                    }))}
-                    className="w-[250px]"
-                    placeholder="Select result"
-                    label="Result"
-                    value={selectedResultId}
-                    onChange={setSelectedResultId}
-                  />
-                );
-              case INPUT_FIELD.TIME_RANGE:
-                return (
-                  <>
-                    <LabelInput
-                      label="Start time"
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                    />
-                    <LabelInput
-                      label="End time"
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                    />
-                  </>
-                );
-            }
-          })}
+  const renderField = (field: INPUT_FIELD) => {
+    switch (field) {
+      case INPUT_FIELD.DATE:
+        return (
+          <DatePicker
+            key={field}
+            label="Date"
+            value={selectedDate}
+            today={today}
+            todayLabel="Today"
+            onChange={setSelectedDate}
+            className="col-span-2 sm:col-span-1"
+          />
+        );
+      case INPUT_FIELD.RESULT_NAME:
+        return (
+          <SelectCompact
+            key={field}
+            options={examResults?.map((r) => ({ label: r.name, value: r._id }))}
+            className="col-span-2 min-w-0 sm:col-span-1"
+            placeholder="Select result"
+            emptyState="No results for this batch on this date"
+            label="Result"
+            value={selectedResultId}
+            onChange={setSelectedResultId}
+          />
+        );
+      case INPUT_FIELD.TIME_RANGE:
+        return (
+          <div key={field} className="col-span-2 grid grid-cols-2 gap-3">
+            <SelectCompact label="Starts" placeholder="Time" options={TIME_OPTIONS} value={startTime} onChange={setStartTime} className="min-w-0" />
+            <SelectCompact label="Ends" placeholder="Time" options={TIME_OPTIONS} value={endTime} onChange={setEndTime} className="min-w-0" />
+          </div>
+        );
+    }
+  };
+
+  const recipientList = () => {
+    if (!selectedBatchId) {
+      return (
+        <EmptyState
+          className="py-8"
+          tone={TONE}
+          icon={<UsersIcon />}
+          title="Pick a batch"
+          description="Its parents will be listed here with a WhatsApp button each."
+        />
+      );
+    }
+    if (userLoading || !recipients) {
+      return (
+        <div className="space-y-2" aria-busy="true" aria-label="Loading parents">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 rounded-lg" />
+          ))}
         </div>
-      </>
+      );
+    }
+    if (recipients.length === 0) {
+      return (
+        <EmptyState
+          className="py-8"
+          tone={TONE}
+          icon={<UsersIcon />}
+          title={isAbsentTemplate ? "Nobody was absent" : "No students in this batch"}
+          description={isAbsentTemplate ? "No absences are saved for this batch on this date." : undefined}
+        />
+      );
+    }
+    return (
+      <ul className="divide-y">
+        {recipients.map((user, index) => (
+          <li key={user._id} className="flex min-h-12 items-center gap-3 py-2">
+            <span className="w-6 shrink-0 text-right text-xs tabular-nums text-muted-foreground">{index + 1}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium">{user.name}</span>
+              {!user.parentPhone && <span className="block text-xs text-amber-700">No parent number saved</span>}
+            </span>
+            <WAButton phone={user.parentPhone} message={getWAMsg(user)} className="size-10 rounded-full hover:bg-emerald-50" />
+          </li>
+        ))}
+      </ul>
     );
   };
 
   return (
-    <div>
-      <div>
-        <div className="rounded py-1 px-2 md:px-6 border border-slate-200 bg-slate-300 flex gap-x-4 items-center justify-between flex-wrap sticky top-0 ">
-          <div className="py-2 w-full flex items-center justify-between flex-wrap gap-2 md:gap-4">
-            <h1 className="py-2 text-sm font-bold flex items-center gap-x-2">
-              SEND MESSAGE
-            </h1>
-            <SelectCompact
-              options={MSG_TEMPLATES_OPTIONS}
-              onChange={(value) => setSelectedTemplate(value as TMSG_TEMPLATE)}
-              value={selectedTemplate}
-              placeholder="Select a template"
-            />
-          </div>
-        </div>
-        <div className="p-2 max-w-[700px] mx-auto">
-          <p className="font-bold text-xs">SELECT A SOURCE</p>
-          <div className="py-2 grid grid-cols-2 gap-2 md:gap-4">
-            <SelectCompact
-              options={batches.map((batch) => ({
-                label: batch.name,
-                value: batch._id,
-              }))}
-              onChange={(value) => {
-                setSelectedBatchId(value);
-              }}
-              value={selectedBatchId}
-              className="flex-grow lg:w-[300px]"
-              placeholder="Select a batch"
-            />
-          </div>
-          {renderExtraFields()}
-          {selectedTemplateMeta.preview && (
-            <>
-              <p className="font-bold text-xs my-2">PREVIEW</p>
-              <Textarea
-                disabled
-                value={selectedTemplateMeta.preview}
-                rows={10}
-                className="disabled:opacity-100 disabled:cursor-pointer"
+    <main className="mx-auto w-full max-w-5xl space-y-4 px-4 pb-12 pt-5 sm:px-6">
+      <PageHeader
+        icon={<MessageCircleIcon />}
+        tone={TONE}
+        title="Send message"
+        description="Send a WhatsApp message to each parent in a batch"
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+        <div className="space-y-4">
+          <Section title="Message">
+            {/* Templates as chips: five options, faster to tap than a dropdown */}
+            <div role="radiogroup" aria-label="Template" className="flex flex-wrap gap-2">
+              {MSG_TEMPLATES_OPTIONS.map((option) => {
+                const active = option.value === selectedTemplate;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setSelectedTemplate(option.value as TMSG_TEMPLATE)}
+                    className={cn(
+                      "h-9 rounded-full border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                      active ? "border-brand bg-brand-soft text-brand" : "bg-background text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    {option.label.replace(/ Template$/, "")}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <SelectCompact
+                label="Batch"
+                options={batches.map((batch) => ({ label: batch.name, value: batch._id }))}
+                onChange={setSelectedBatchId}
+                value={selectedBatchId}
+                loading={batchesLoading}
+                className="col-span-2 min-w-0 sm:col-span-1"
+                placeholder="Select a batch"
               />
-            </>
+              {extraFields.map(renderField)}
+            </div>
+          </Section>
+
+          {selectedTemplateMeta.preview && (
+            <Section title="Preview">
+              {/* Shown the way the parent will see it */}
+              <div className="rounded-xl bg-[#efeae2] p-3">
+                <div className="ml-auto max-w-[90%] whitespace-pre-wrap break-words rounded-xl rounded-tr-sm bg-[#d9fdd3] px-3 py-2 text-sm leading-relaxed text-slate-900 shadow-sm">
+                  {selectedTemplateMeta.preview}
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">Names, dates and marks are filled in for each parent.</p>
+            </Section>
           )}
         </div>
+
+        <Section
+          title={
+            recipients && selectedBatchId
+              ? `${recipients.length} ${isAbsentTemplate ? "absent" : "parents"}`
+              : "Parents"
+          }
+          className="lg:sticky lg:top-[calc(var(--app-header-h)+1.25rem)]"
+        >
+          {recipientList()}
+        </Section>
       </div>
-      <div className="max-w-[700px] mx-auto my-3 px-2">
-        {userLoading ? (
-          <Loader2Icon className="size-4 animate-spin my-4 mx-auto" />
-        ) : !usersToShow ? (
-          <div className="py-10 px-3 text-slate-400 text-sm md:text-base font-medium h-full flex gap-4 flex-col items-center justify-center">
-            <SquareMousePointerIcon
-              className="w-[100px] h-[100px]"
-              strokeWidth={1.5}
-            />
-            Select a source to send message
-          </div>
-        ) : (
-          <div className="my-3 bg-white rounded-lg border border-slate-200 divide-y divide-slate-200">
-            {attendance && (
-              <div className="py-2 px-3 w-full text-slate-600 text-xs md:text-sm">
-                Last Updated At <strong>{Clock.getDateInFormat(attendance.updatedAt)}</strong>
-              </div>
-            )}
-            {usersToShow?.map((user, index) => (
-              <div key={user._id} className="py-2 px-3 flex items-center gap-2">
-                {index + 1}.
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{user.name}</p>
-                </div>
-                <WAButton phone={user.parentPhone} message={getWAMsg(user)} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+    </main>
   );
 }

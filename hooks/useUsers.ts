@@ -1,8 +1,9 @@
 "use client";
 
+import useSWR from "swr";
 import { TUser } from "@/models/User";
 import { api, ENDPOINT } from "@/lib/api";
-import { useCallback, useEffect, useState } from "react";
+import { LIST_SWR, swrLoading } from "@/lib/swr";
 import { toast } from "@/components/ui/use-toast";
 
 type Props = {
@@ -10,37 +11,17 @@ type Props = {
   shouldLoad?: boolean;
 };
 
+// Every component asking for the same batch shares one request and cache
 const useUsers = ({ batchId, shouldLoad = true }: Props = {}) => {
-  const [users, setUsers] = useState<TUser[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await api.get(ENDPOINT.users, {
-        params: {
-          batchId,
-        },
-      });
-      setUsers(res.data.users);
-    } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Something went wrong!",
-        description: err.message,
-      });
+  const swr = useSWR(
+    shouldLoad ? ["users", batchId ?? "all"] : null,
+    async () => ((await api.get(ENDPOINT.users, { params: { batchId } }))?.data?.users ?? []) as TUser[],
+    {
+      ...LIST_SWR,
+      onError: (err) => toast({ variant: "destructive", title: "Something went wrong!", description: (err as Error)?.message }),
     }
-
-    setLoading(false);
-  }, [batchId]);
-
-  useEffect(() => {
-    if (shouldLoad) {
-      fetchUsers();
-    }
-  }, [fetchUsers, shouldLoad]);
-
-  return { users, loading, refreshUsers: fetchUsers };
+  );
+  return { users: swr.data ?? [], loading: swrLoading(swr), refreshUsers: () => swr.mutate() };
 };
 
 export default useUsers;

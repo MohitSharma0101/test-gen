@@ -85,5 +85,11 @@ export const UserSchema = new mongoose.Schema<TUser>(
   { timestamps: true }
 );
 
+
+// Indexes for the hot queries. Students of a batch by name (attendance, fees, messages); all students by name.
+// Mongoose creates them on first use (autoIndex); existing ones are a no-op.
+UserSchema.index({ batchIds: 1, name: 1 });
+UserSchema.index({ name: 1 });
+
 export default mongoose.models.User ||
   mongoose.model<TUser>("User", UserSchema);

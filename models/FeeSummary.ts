@@ -31,5 +31,10 @@ const FeeSummarySchema = new mongoose.Schema({
   ],
 });
 
+
+// Indexes for the hot queries. A student's fee record.
+// Mongoose creates them on first use (autoIndex); existing ones are a no-op.
+FeeSummarySchema.index({ studentId: 1 });
+
 export default mongoose.models.FeeSummary ||
   mongoose.model<TFeeSummary>("FeeSummary", FeeSummarySchema);

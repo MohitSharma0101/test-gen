@@ -230,7 +230,8 @@ export const savePaper = async (
   author?: string,
   status?: PaperStatus
 ) => {
-  if (questions.length === 0) return;
+  if (questions.length === 0) return false;
+  // Resolves whether it saved, so a caller can keep its dialog open on failure
   try {
     await api.post(ENDPOINT.papers, {
       title,
@@ -243,12 +244,14 @@ export const savePaper = async (
       title: "💾 Question Paper saved!",
       variant: "success",
     });
+    return true;
   } catch (err) {
     toast({
       title: "Unable to save question paper!",
       variant: "destructive",
     });
     console.log(err);
+    return false;
   }
 };
 

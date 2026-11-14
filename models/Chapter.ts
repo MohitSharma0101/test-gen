@@ -37,5 +37,10 @@ export const ChapterSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+// Indexes for the hot queries. Chapters of a book in order.
+// Mongoose creates them on first use (autoIndex); existing ones are a no-op.
+ChapterSchema.index({ book: 1, order: 1 });
+
 export default mongoose.models.Chapter ||
   mongoose.model("Chapter", ChapterSchema);

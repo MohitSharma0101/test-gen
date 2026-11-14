@@ -17,7 +17,9 @@ const useChapters = (subject?: string, course?: string, book?: string) => {
       return await fetchChapters(book);
     },
     {
-      revalidateIfStale: false,
+      // Cached data shows at once and is refreshed behind it, so an edit made
+      // elsewhere (see invalidateAfterWrite) is picked up when this remounts
+      revalidateIfStale: true,
       revalidateOnFocus: false,
       errorRetryCount: 1,
     }
@@ -45,12 +47,14 @@ const useChapters = (subject?: string, course?: string, book?: string) => {
         title: "Successfully added chapter!",
         variant: "success",
       });
+      return true;
     } catch (err) {
       toast({
         title: (err as any)?.message || "Unable to add chapter!",
         variant: "destructive",
       });
       console.log("err", err);
+      return false;
     }
   };
 
@@ -69,12 +73,14 @@ const useChapters = (subject?: string, course?: string, book?: string) => {
         title: "Successfully updated chapter!",
         variant: "success",
       });
+      return true;
     } catch (err) {
       toast({
         title: (err as any)?.message || "Unable to update chapter!",
         variant: "destructive",
       });
       console.log("err", err);
+      return false;
     } finally {
       refresh();
     }
@@ -95,12 +101,14 @@ const useChapters = (subject?: string, course?: string, book?: string) => {
         title: "Successfully deleted chapter!",
         variant: "success",
       });
+      return true;
     } catch (err) {
       toast({
-        title: (err as any)?.message || "Unable to add chapter!",
+        title: (err as any)?.message || "Unable to delete chapter!",
         variant: "destructive",
       });
       console.log("err", err);
+      return false;
     }
   };
 

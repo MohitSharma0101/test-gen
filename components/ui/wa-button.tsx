@@ -7,6 +7,8 @@ type WAButtonProps = {
   message?: string;
   className?: string;
   children?: React.ReactNode;
+  // Accessible name for the icon-only link
+  label?: string;
 };
 
 const WAButton: React.FC<WAButtonProps> = ({
@@ -14,6 +16,7 @@ const WAButton: React.FC<WAButtonProps> = ({
   message = "",
   className = "",
   children,
+  label = "WhatsApp",
 }) => {
   return (
     <a
@@ -21,6 +24,7 @@ const WAButton: React.FC<WAButtonProps> = ({
       target="_blank"
       rel="noopener noreferrer"
       data-action="share/whatsapp/share"
+      aria-label={children ? undefined : label}
       className={cn("size-[26px] flex items-center justify-center", className)}
     >
       {children || <WhatsappIcon />}

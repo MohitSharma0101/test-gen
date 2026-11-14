@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import React, { useState } from "react";
 import {
   Select,
@@ -17,6 +18,8 @@ export type TSelectCompactProps = {
     value: string;
     // A short badge shown after the label, e.g. "Paid"
     tag?: string;
+    // "warning" (amber, the default, e.g. "Paid") or "info" (brand, e.g. "30Q")
+    tagTone?: "warning" | "info";
   }[];
   value?: string;
   label?: string;
@@ -59,7 +62,9 @@ const SelectCompact = ({
         onOpenChange={setOpen}
         disabled={disabled}
       >
-        <SelectTrigger className={triggerClassName}>
+        {/* The visible label isn't wired to the trigger, so name it directly
+            (screen readers, and tests finding it by role + name) */}
+        <SelectTrigger className={triggerClassName} aria-label={label || placeholder}>
           <SelectValue placeholder={placeholder || "Select a value"} />
         </SelectTrigger>
         <SelectContent>
@@ -77,7 +82,14 @@ const SelectCompact = ({
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
                 {option.tag && (
-                  <span className="ml-1.5 rounded border border-amber-300 bg-amber-50 px-1 py-px text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                  <span
+                    className={cn(
+                      "ml-1.5 rounded border px-1 py-px text-[10px] font-semibold uppercase tracking-wide",
+                      option.tagTone === "info"
+                        ? "border-brand/30 bg-brand-soft text-brand"
+                        : "border-amber-300 bg-amber-50 text-amber-800"
+                    )}
+                  >
                     {option.tag}
                   </span>
                 )}

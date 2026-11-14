@@ -37,7 +37,9 @@ const useQuestions = (
       return await fetchQuestions(chapter, page, limit, marks, questionId, tag, timesUsed);
     },
     {
-      revalidateIfStale: false,
+      // Cached data shows at once and is refreshed behind it, so an edit made
+      // elsewhere (see invalidateAfterWrite) is picked up when this remounts
+      revalidateIfStale: true,
       revalidateOnFocus: false,
       errorRetryCount: 1,
       keepPreviousData: true,
@@ -83,7 +85,8 @@ const useQuestions = (
   };
 
   const updateQuestion = async (q: TQuestion) => {
-    if (questions.length === 0) return;
+    // `questions` is undefined until the first page arrives
+    if (!questions?.length) return;
     try {
       await putUpdateQuestion(q);
       refresh();

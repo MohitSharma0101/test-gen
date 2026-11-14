@@ -1,111 +1,117 @@
 "use client";
 
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
-import SelectCompact from "../ui/select-compact";
-import useBooks from "@/hooks/useBooks";
+import React, { useEffect, useState } from "react";
+import { ArrowRightToLineIcon, Loader2Icon } from "lucide-react";
 import { Button } from "../ui/button";
+import SelectCompact from "../ui/select-compact";
+import { ResponsiveDrawer } from "../ui/responsive-drawer";
+import { useToast } from "../ui/use-toast";
+import useBooks from "@/hooks/useBooks";
+import { useCourses } from "@/hooks/useCourses";
 import { TChapter } from "@/models/Chapter";
 import { moveChapter } from "@/service/core.service";
-import { useToast } from "../ui/use-toast";
-import { AxiosError } from "axios";
-import { Loader2Icon } from "lucide-react";
-import { ArrowRightToLineIcon } from "lucide-react";
-import { useCourses } from "@/hooks/useCourses";
+import { courseLabel } from "@/lib/utils";
 
 type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   chapters: TChapter[];
+  // Start on the class/subject the page is showing
+  defaultCourse?: string;
+  defaultSubject?: string;
+  // The book they're in now: not offered as a target
+  currentBook?: string;
   onSuccess?: () => void;
 };
 
-const MoveChaptersDailog = ({ chapters, onSuccess }: Props) => {
-  const [open, setOpen] = useState(false);
-  const { course, subject, setCourse, setSubject, courses, subjects } = useCourses();
+// Move the selected chapters (and their questions) to another book
+const MoveChaptersDailog = ({ open, onOpenChange, chapters, defaultCourse, defaultSubject, currentBook, onSuccess }: Props) => {
+  const { course, subject, setCourse, setSubject, courses, subjects } = useCourses({ defaultCourse, defaultSubject });
   const { books, loading: booksLoading } = useBooks(subject, course);
   const [book, setBook] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    const list = subjects ?? [];
+    if (!list.includes(subject)) setSubject(list[0] ?? "");
+  }, [subjects, subject, setSubject]);
+
+  const targets = books.filter((b) => b._id !== currentBook);
+  // A book from the previous class/subject is no longer a valid target
+  useEffect(() => {
+    if (book && !targets.some((b) => b._id === book)) setBook("");
+  }, [targets, book]);
+
   const onSubmit = async () => {
+    if (!book || loading || chapters.length === 0) return;
+    setLoading(true);
     try {
-      setLoading(true);
       await moveChapter(
         chapters.map((c) => c._id),
         book
       );
-      toast({
-        variant: "success",
-        title: "Chapters succesfully moved!",
-      });
-      setOpen(false);
+      toast({ variant: "success", title: `${chapters.length} chapter${chapters.length === 1 ? "" : "s"} moved` });
+      onOpenChange(false);
       onSuccess?.();
     } catch (err) {
-      console.log("err", err);
-      toast({
-        variant: "destructive",
-        title: (err as AxiosError).response?.data?.toString() || "Something went wrong!",
-      });
+      toast({ variant: "destructive", title: "Couldn't move the chapters", description: (err as Error)?.message });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button disabled={chapters.length === 0} onClick={() => setOpen(true)} size={"sm"}>
-          <ArrowRightToLineIcon className="mr-2 w-4 h-4" />
-          Move
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Move ${chapters.length} chapter${chapters.length === 1 ? "" : "s"}`}
+      description="Their questions move with them."
+      footer={
+        <Button variant="brand" disabled={!book || loading} onClick={onSubmit} className="h-11 w-full gap-2">
+          {loading ? <Loader2Icon className="size-4 animate-spin" /> : <ArrowRightToLineIcon className="size-4" />}
+          Move here
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogTitle>
-          Move Chapters
-          <DialogDescription>This will move this chapter to the selected book.</DialogDescription>
-        </DialogTitle>
-        <div className="flex flex-col gap-3">
+      }
+    >
+      <div className="space-y-4 p-4">
+        <ul className="flex flex-wrap gap-1.5">
+          {chapters.map((c) => (
+            <li key={c._id} className="max-w-full truncate rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
+              {c.title}
+            </li>
+          ))}
+        </ul>
+        <div className="grid grid-cols-2 gap-3">
           <SelectCompact
             label="Class"
             placeholder="Select a class"
-            className="w-full"
             value={course}
             onChange={setCourse}
-            options={courses.map((c) => ({
-              label: c,
-              value: c,
-            }))}
+            options={courses.map((c) => ({ label: courseLabel(c), value: c }))}
+            className="min-w-0"
           />
           <SelectCompact
             label="Subject"
             placeholder="Select a subject"
-            className="w-full"
             value={subject}
             onChange={setSubject}
-            options={subjects.map((c) => ({
-              label: c,
-              value: c,
-            }))}
+            options={(subjects ?? []).map((s) => ({ label: s, value: s }))}
+            className="min-w-0"
           />
           <SelectCompact
-            label="Book"
+            label="To book"
             placeholder="Select a book"
-            className="w-full col-span-2"
             value={book}
             onChange={setBook}
-            options={books?.map((b) => ({
-              label: b.title,
-              value: b._id,
-            }))}
+            options={targets.map((b) => ({ label: b.title, value: b._id }))}
+            emptyState="No other books for this class and subject"
             loading={booksLoading}
+            className="col-span-2 min-w-0"
           />
-
-          <Button disabled={!book || loading} onClick={onSubmit} className="mt-4">
-            {loading && <Loader2Icon classNamme="w-4 h-4 animate-spin mr-2" />}
-            Move Chapter
-          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ResponsiveDrawer>
   );
 };
 

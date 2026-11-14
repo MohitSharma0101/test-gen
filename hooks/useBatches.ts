@@ -1,7 +1,9 @@
 "use client";
 
 import { api, ENDPOINT } from "@/lib/api";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import useSWR from "swr";
+import { LIST_SWR, swrError, swrLoading } from "@/lib/swr";
 import { TBatch } from "@/models/Batch";
 import { toast } from "@/components/ui/use-toast";
 
@@ -10,26 +12,22 @@ type UseBatchesProps = {
   archivedOnly?: boolean;
 };
 
-type TBatchWithCount = TBatch & {
+export type TBatchWithCount = TBatch & {
   totalStudents: number;
 };
 
 const useBatches = ({ withCount, archivedOnly }: UseBatchesProps = {}) => {
-  const [batches, setBatches] = useState<TBatchWithCount[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const fetchBatches = useCallback(async () => {
-    setLoading(true);
-    const res = await api.get(ENDPOINT.batches, {
-      params: { withCount, archivedOnly },
-    });
-    setBatches(res.data.batches);
-    setLoading(false);
-  }, [withCount, archivedOnly]);
-
-  useEffect(() => {
-    fetchBatches();
-  }, [fetchBatches]);
+  // Shared cache: the many pickers asking for batches make one request
+  const swr = useSWR(
+    ["batches", Boolean(withCount), Boolean(archivedOnly)],
+    async () =>
+      ((await api.get(ENDPOINT.batches, { params: { withCount, archivedOnly } }))?.data?.batches ?? []) as TBatchWithCount[],
+    LIST_SWR
+  );
+  const batches = swr.data ?? [];
+  const loading = swrLoading(swr);
+  const error = swrError(swr.error, "Couldn't load batches");
+  const fetchBatches = useCallback(() => swr.mutate(), [swr]);
 
   const deleteBatch = async (id: string) => {
     try {
@@ -79,6 +77,7 @@ const useBatches = ({ withCount, archivedOnly }: UseBatchesProps = {}) => {
   return {
     batches,
     loading,
+    error,
     refreshBatches: fetchBatches,
     deleteBatch,
     setBatchArchived,

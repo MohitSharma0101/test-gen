@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
+import { jsonRevalidated } from "@/lib/httpCache";
 import Chapter, { TChapter } from "@/models/Chapter";
 import Question from "@/models/Question";
 
@@ -24,12 +25,11 @@ export const GET = async (request: NextRequest) => {
     else if (book) query.book = book;
 
     await dbConnect();
-    const chapters = await Chapter.find(query).sort({ order: 1 });
+    const chapters = await Chapter.find(query).sort({ order: 1 }).lean();
 
-    return NextResponse.json(
-      { status: "success", chapters: chapters },
-      { status: 200 }
-    );
+    // Chapter lists are re-read on every page that picks a chapter and rarely
+    // change: an unchanged list answers 304 instead of resending it
+    return jsonRevalidated(request, { status: "success", chapters });
   } catch (err: any) {
     return NextResponse.json(
       { status: "error", error: err.message ?? "Something went wrong" },

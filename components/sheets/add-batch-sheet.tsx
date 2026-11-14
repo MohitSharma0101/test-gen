@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2Icon, SearchIcon } from "lucide-react";
 import { Button } from "../ui/button";
-import { api, ENDPOINT } from "@/lib/api";
-import { toast } from "../ui/use-toast";
-import { Sheet, SheetContent } from "../ui/sheet";
-import LabelInput from "../ui/label-input";
-import useUsers from "@/hooks/useUsers";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
+import LabelInput from "../ui/label-input";
+import { Skeleton } from "../ui/skeleton";
+import { ResponsiveDrawer } from "../ui/responsive-drawer";
+import { toast } from "../ui/use-toast";
+import { api, ENDPOINT } from "@/lib/api";
+import useUsers from "@/hooks/useUsers";
 import { TBatch } from "@/models/Batch";
 
 type Props = {
@@ -18,147 +20,178 @@ type Props = {
   onOpenChange?: (open: boolean) => void;
 };
 
-const AddBatchSheet = ({
-  defaultBatch,
-  onSuccess,
-  open,
-  onOpenChange,
-}: Props) => {
+// Create or edit a batch: name, fee, and which students are in it
+const AddBatchSheet = ({ defaultBatch, onSuccess, open = false, onOpenChange }: Props) => {
   const editMode = !!defaultBatch;
 
   const [name, setName] = useState(defaultBatch?.name ?? "");
-  const [fee, setFee] = useState(defaultBatch?.fee ?? 0);
-  const { users } = useUsers();
+  // Kept as typed so the field can be empty; parsed on save
+  const [fee, setFee] = useState(defaultBatch?.fee ? String(defaultBatch.fee) : "");
   const [query, setQuery] = useState("");
-  const { users: defaultSelectedUsers } = useUsers({
-    batchId: defaultBatch?._id,
-    shouldLoad: editMode,
-  });
-  const defaultSelectedUserIds = defaultSelectedUsers?.map((user) => user?._id);
-  const [selectedUsers, setSelectedUsers] = useState(defaultSelectedUserIds);
+  const [saving, setSaving] = useState(false);
 
+  const { users, loading: usersLoading } = useUsers();
+  const { users: members, loading: membersLoading } = useUsers({ batchId: defaultBatch?._id, shouldLoad: editMode });
+  const memberIds = useMemo(() => members.map((u) => u._id), [members]);
+
+  // null until the current members have loaded (edit), so a quick save can't
+  // compute "removed" against an empty list
+  const [selected, setSelected] = useState<string[] | null>(editMode ? null : []);
+  const sawLoading = useRef(false);
   useEffect(() => {
-    setSelectedUsers(defaultSelectedUsers?.map((user) => user?._id));
-  }, [defaultSelectedUsers]);
+    if (membersLoading) sawLoading.current = true;
+    else if (sawLoading.current && selected === null) setSelected(memberIds);
+  }, [membersLoading, memberIds, selected]);
 
-  const filteredUsers = (users ?? []).filter((user) =>
-    user.name.toLowerCase().includes(query.toLowerCase())
+  const selectedSet = useMemo(() => new Set(selected ?? []), [selected]);
+  const q = query.trim().toLowerCase();
+  const filtered = (users ?? []).filter(
+    (u) => !q || (u.name ?? "").toLowerCase().includes(q) || (u.userId ?? "").toLowerCase().includes(q)
   );
 
-  const onAddBatch = async () => {
+  const feeNumber = fee.trim() === "" ? 0 : Number(fee);
+  const feeValid = Number.isFinite(feeNumber) && feeNumber >= 0;
+  const canSave = Boolean(name.trim()) && feeValid && selected !== null && !saving;
+
+  const toggle = (id: string, on: boolean) =>
+    setSelected((prev) => (on ? [...(prev ?? []), id] : (prev ?? []).filter((x) => x !== id)));
+
+  const onSave = async () => {
+    if (!canSave || !selected) return;
+    setSaving(true);
     try {
       if (editMode) {
-        const newUsers = selectedUsers.filter(
-          (id) => !defaultSelectedUserIds.includes(id)
-        );
-        const removedUsers = defaultSelectedUserIds.filter(
-          (id) => !selectedUsers.includes(id)
-        );
         await api.put(ENDPOINT.batches, {
           _id: defaultBatch?._id,
-          name,
-          userIds: selectedUsers,
-          fee: fee,
-          usersToAdd: newUsers,
-          usersToRemove: removedUsers,
+          name: name.trim(),
+          fee: feeNumber,
+          userIds: selected,
+          usersToAdd: selected.filter((id) => !memberIds.includes(id)),
+          usersToRemove: memberIds.filter((id) => !selectedSet.has(id)),
         });
       } else {
-        await api.post(ENDPOINT.batches, { name, fee });
+        // The API already accepted students on create; the old form never sent them
+        await api.post(ENDPOINT.batches, { name: name.trim(), fee: feeNumber, userIds: selected });
       }
-      toast({
-        title: "Success",
-        variant: "success",
-        description: editMode
-          ? "Batch updated successfully"
-          : "Batch added successfully",
-      });
-      onOpenChange?.(false);
-      setName("");
-      setFee(0);
+      toast({ title: editMode ? "Batch updated" : "Batch created", variant: "success" });
       onSuccess?.();
-    } catch (err: any) {
+      onOpenChange?.(false);
+    } catch (err) {
+      // Stays open so nothing is lost
       toast({
-        title: "Error",
-        description: err.response.data.error,
+        title: editMode ? "Couldn't update the batch" : "Couldn't create the batch",
+        description: (err as Error)?.message,
         variant: "destructive",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side={"right"}
-        className="p-0 flex flex-col gap-2 max-h-screen"
-      >
-        <div className="text-base font-medium px-2 py-3 bg-gray-200">
-          {editMode ? "Edit Batch" : "Add Batch"}
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={(o) => onOpenChange?.(o)}
+      title={editMode ? "Edit batch" : "New batch"}
+      description={editMode ? defaultBatch?.name : "Name it, set the fee and pick its students."}
+      footer={
+        <div className="flex gap-2">
+          <Button variant="outline" className="h-11" onClick={() => onOpenChange?.(false)}>
+            Cancel
+          </Button>
+          <Button variant="brand" className="h-11 flex-1 gap-2" onClick={onSave} disabled={!canSave}>
+            {saving && <Loader2Icon className="size-4 animate-spin" />}
+            {editMode ? "Save changes" : "Create batch"}
+            {selected && selected.length > 0 && <span className="opacity-80">· {selected.length}</span>}
+          </Button>
         </div>
-        <div className="flex flex-col gap-2 px-3 flex-grow overflow-auto">
+      }
+    >
+      <div className="space-y-5 p-4">
+        <form
+          className="grid grid-cols-[1fr_8rem] gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSave();
+          }}
+        >
           <LabelInput
-            label="Batch Name"
-            placeholder="eg: JEE-2025"
+            label="Batch name"
+            placeholder="e.g. JEE 2027"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            inputClassName="h-11 text-base sm:text-sm"
+            autoComplete="off"
           />
           <LabelInput
-            label="Batch Fee (₹)"
-            placeholder="eg: 5000"
+            label="Fee (₹)"
+            placeholder="0"
+            inputMode="numeric"
             value={fee}
-            type="number"
-            onChange={(e) => setFee(parseInt(e.target.value))}
+            // Digits only: "abc" or "-5" can't reach the API
+            onChange={(e) => setFee(e.target.value.replace(/\D/g, ""))}
+            inputClassName="h-11 text-base tabular-nums sm:text-sm"
           />
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium flex items-center justify-between">
-              Add Students
-              <Button
-                variant="link"
-                size="sm"
-                className="rounded-full underline"
-                onClick={() => setSelectedUsers([])}
-              >
-                Remove All
+          <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
+        </form>
+
+        <section aria-labelledby="batch-students" className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 id="batch-students" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Students {selected ? `· ${selected.length} selected` : ""}
+            </h3>
+            {selected && selected.length > 0 && (
+              <Button variant="ghost" size="sm" className="h-8 text-brand" onClick={() => setSelected([])}>
+                Clear
               </Button>
-            </label>
-            <div className="flex flex-col border border-slate-200 rounded-md">
-              <Input
-                placeholder={"Search Students..."}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="rounded-b-none rounded-t-md"
-              />
-              {filteredUsers.map((user) => (
-                <label
-                  key={user.userId}
-                  className="flex items-center py-2 px-2 gap-2 border-b last:border-b-none border-slate-200 cursor-pointer hover:bg-slate-100"
-                >
-                  <Checkbox
-                    id={user._id}
-                    checked={selectedUsers.includes(user._id)}
-                    onCheckedChange={(checked) => {
-                      setSelectedUsers(
-                        checked
-                          ? [...selectedUsers, user._id]
-                          : selectedUsers.filter((id) => id !== user._id)
-                      );
-                    }}
-                  />
-                  <div>
-                    <p className="text-sm font-medium">{user.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {user.phone} | {user.dob}
-                    </p>
-                  </div>
-                </label>
+            )}
+          </div>
+          <div className="relative">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              aria-label="Search students"
+              placeholder="Search name or ID"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-11 pl-9 text-base sm:text-sm"
+            />
+          </div>
+
+          {(usersLoading && users.length === 0) || selected === null ? (
+            <div className="space-y-2" aria-busy="true" aria-label="Loading students">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 rounded-lg" />
               ))}
             </div>
-          </div>
-        </div>
-        <Button className="mb-2 mx-2" onClick={onAddBatch}>
-          Submit
-        </Button>
-      </SheetContent>
-    </Sheet>
+          ) : filtered.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {users.length ? "No students match" : "No students yet. Add them on the Users page."}
+            </p>
+          ) : (
+            <ul className="divide-y rounded-xl border bg-card">
+              {filtered.map((user) => {
+                const id = `batch-user-${user._id}`;
+                return (
+                  <li key={user._id}>
+                    <label htmlFor={id} className="flex min-h-12 cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted/50">
+                      <Checkbox id={id} checked={selectedSet.has(user._id)} onCheckedChange={(c) => toggle(user._id, c === true)} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{user.name || "—"}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {user.userId}
+                          {user.phone ? ` · ${user.phone}` : ""}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      </div>
+    </ResponsiveDrawer>
   );
 };
 

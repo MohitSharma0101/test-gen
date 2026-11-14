@@ -37,6 +37,15 @@ export const Print = ({ children }: Props) => {
   const [loadContent, setLoadContent] = useState(false);
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
+    // Printing happens in a hidden iframe that keeps keyboard focus afterwards,
+    // so Escape/shortcuts stopped reaching the page (e.g. an open preview could
+    // no longer be closed with Esc). Hand focus back, and reset so the same
+    // print-out can be printed again without reopening.
+    onAfterPrint: () => {
+      (document.activeElement as HTMLElement | null)?.blur?.();
+      window.focus();
+      setLoadContent(false);
+    },
   });
 
   useEffect(() => {

@@ -51,5 +51,10 @@ export const QuestionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+// Indexes for the hot queries. Question list per chapter, newest first (also serves the generator's chapter $in).
+// Mongoose creates them on first use (autoIndex); existing ones are a no-op.
+QuestionSchema.index({ chapter: 1, createdAt: -1, _id: -1 });
+
 export default mongoose.models.Question ||
   mongoose.model("Question", QuestionSchema);

@@ -13,24 +13,23 @@ type Props = {
 const useExamResults = () => {
   const [examResults, setExamResults] = useState<TExamResult[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>();
 
-  const fetchExamResults = useCallback(
-    async ({ batchId, subject, date }: Props = {}) => {
-      setLoading(true);
-      const res = await api.get(ENDPOINT.examResults, {
-        params: {
-          batchId,
-          subject,
-          date,
-        },
-      });
-      setExamResults(res.data.data);
+  const fetchExamResults = useCallback(async ({ batchId, subject, date }: Props = {}) => {
+    setLoading(true);
+    setError(undefined);
+    // A failed request used to leave `loading` stuck on and reject unhandled
+    try {
+      const res = await api.get(ENDPOINT.examResults, { params: { batchId, subject, date } });
+      setExamResults(res.data?.data ?? []);
+    } catch (err) {
+      setError((err as Error)?.message || "Couldn't load results");
+    } finally {
       setLoading(false);
-    },
-    []
-  );
+    }
+  }, []);
 
-  return { examResults, loading, fetchExamResults };
+  return { examResults, loading, error, fetchExamResults };
 };
 
 export default useExamResults;

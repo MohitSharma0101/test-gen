@@ -1,13 +1,6 @@
 import React, { useRef } from "react";
 import { CameraIcon, ImagesIcon } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { ResponsiveDrawer } from "@/components/ui/responsive-drawer";
 
 type Props = {
   open: boolean;
@@ -19,7 +12,8 @@ type Props = {
   onChooseFile: () => void;
 };
 
-// Phone bottom sheet: take a photo with the back camera or pick an existing image
+// Take a photo with the back camera or pick an existing image (bottom drawer
+// on phones, side panel on wider screens, like every task panel)
 const ImageSourceSheet = ({ open, onOpenChange, title = "Add an image", onPhoto, onChooseFile }: Props) => {
   const cameraInput = useRef<HTMLInputElement>(null);
 
@@ -42,34 +36,27 @@ const ImageSourceSheet = ({ open, onOpenChange, title = "Add an image", onPhoto,
           e.target.value = "";
         }}
       />
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="rounded-t-2xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <SheetHeader className="text-left pr-8">
-            <SheetTitle className="text-base">{title}</SheetTitle>
-            <SheetDescription className="sr-only">Take a photo or choose an image</SheetDescription>
-          </SheetHeader>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <Button
+      <ResponsiveDrawer open={open} onOpenChange={onOpenChange} title={title} description="Take a photo or choose one you have">
+        <div className="grid grid-cols-2 gap-3 p-4">
+          {[
+            { label: "Take photo", Icon: CameraIcon, run: () => cameraInput.current?.click() },
+            { label: "Choose image", Icon: ImagesIcon, run: onChooseFile },
+          ].map(({ label, Icon, run }) => (
+            <button
+              key={label}
               type="button"
-              variant="outline"
-              className="h-24 flex-col gap-2 text-sm"
-              onClick={() => pick(() => cameraInput.current?.click())}
+              // The input is clicked in the same tap, so phones allow it
+              onClick={() => pick(run)}
+              className="flex h-28 flex-col items-center justify-center gap-2 rounded-xl border bg-card text-sm font-semibold shadow-sm transition-colors hover:border-brand/40 hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
-              <CameraIcon className="w-6 h-6" strokeWidth={1.5} />
-              Take photo
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-24 flex-col gap-2 text-sm"
-              onClick={() => pick(onChooseFile)}
-            >
-              <ImagesIcon className="w-6 h-6" strokeWidth={1.5} />
-              Choose image
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+              <span className="flex size-11 items-center justify-center rounded-full bg-brand-soft text-brand">
+                <Icon className="size-5" />
+              </span>
+              {label}
+            </button>
+          ))}
+        </div>
+      </ResponsiveDrawer>
     </>
   );
 };

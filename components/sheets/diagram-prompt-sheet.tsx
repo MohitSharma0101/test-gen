@@ -10,14 +10,9 @@ import {
   PencilIcon,
   SparklesIcon,
 } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { ResponsiveDrawer } from "@/components/ui/responsive-drawer";
+import { cn } from "@/lib/utils";
 import { buildDiagramPrompt, diagramPromptTitle, type TDiagramKind } from "@/lib/ai/diagramPrompt";
 import type { TGeneratedQuestion, TQuestionType } from "@/lib/ai/types";
 
@@ -63,11 +58,7 @@ const PromptCard = ({
   };
 
   return (
-    <div
-      className={`min-w-0 rounded-xl border bg-white transition-colors ${
-        needed ? "border-amber-300 bg-amber-50/40" : "border-slate-200"
-      }`}
-    >
+    <div className={cn("min-w-0 rounded-xl border bg-card shadow-sm transition-colors", needed && "border-amber-300 bg-amber-50/40")}>
       <div className="flex items-center gap-2 px-3 pt-3">
         <span className="truncate text-sm font-semibold">{diagramPromptTitle(kind)}</span>
         {needed && (
@@ -76,7 +67,7 @@ const PromptCard = ({
           </span>
         )}
       </div>
-      <p className="px-3 pt-1 text-xs text-slate-500">
+      <p className="px-3 pt-1 text-xs text-muted-foreground">
         {kind === "question"
           ? "Shows the setup, without giving the answer away."
           : "Shows the working: free-body arrows, ray paths, construction lines."}
@@ -84,7 +75,7 @@ const PromptCard = ({
 
       <div className="flex items-center gap-2 p-3">
         {/* Big tap target: this is the one thing to press on a phone */}
-        <Button onClick={copy} className="h-11 flex-1 gap-2 text-sm">
+        <Button variant="brand" onClick={copy} className="h-11 flex-1 gap-2 text-sm">
           {copied ? <CheckIcon className="h-4 w-4" /> : <CopyIcon className="h-4 w-4" />}
           {copied ? "Copied" : "Copy prompt"}
         </Button>
@@ -100,7 +91,7 @@ const PromptCard = ({
       </div>
 
       {show && (
-        <pre className="mx-3 mb-3 max-h-56 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-700 select-all">
+        <pre className="mx-3 mb-3 max-h-56 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-muted p-3 text-[11px] leading-relaxed text-foreground select-all">
           {prompt}
         </pre>
       )}
@@ -121,37 +112,29 @@ const DiagramPromptSheet = ({ open, onOpenChange, question, questionType, label 
   }, [question, questionType]);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="max-h-[88dvh] overflow-y-auto rounded-t-2xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
-      >
-        <SheetHeader className="pr-8 text-left">
-          <SheetTitle className="text-base">Diagram prompts</SheetTitle>
-          <SheetDescription className="text-xs">
-            {label} &middot; draw it in any image model, then paste the picture in.
-          </SheetDescription>
-        </SheetHeader>
-
-        <ol className="mt-3 space-y-1.5 rounded-xl bg-slate-50 p-3">
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Diagram prompts"
+      description={`${label} · draw it in any image model, then paste the picture in`}
+    >
+      <div className="space-y-3 p-4">
+        <ol className="space-y-1.5 rounded-xl bg-muted/60 p-3">
           {STEPS.map(({ icon: Icon, text }, i) => (
-            <li key={text} className="flex items-start gap-2.5 text-xs text-slate-600">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-slate-500 ring-1 ring-slate-200">
+            <li key={text} className="flex items-start gap-2.5 text-xs text-muted-foreground">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-card text-[10px] font-semibold ring-1 ring-border">
                 {i + 1}
               </span>
-              <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <Icon className="mt-0.5 size-3.5 shrink-0" />
               <span className="min-w-0">{text}</span>
             </li>
           ))}
         </ol>
-
-        <div className="mt-3 space-y-3">
-          {prompts.map(({ kind, prompt, needed }) => (
-            <PromptCard key={kind} kind={kind} prompt={prompt} needed={needed} />
-          ))}
-        </div>
-      </SheetContent>
-    </Sheet>
+        {prompts.map(({ kind, prompt, needed }) => (
+          <PromptCard key={kind} kind={kind} prompt={prompt} needed={needed} />
+        ))}
+      </div>
+    </ResponsiveDrawer>
   );
 };
 
