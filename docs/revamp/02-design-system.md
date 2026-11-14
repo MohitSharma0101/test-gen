@@ -8,10 +8,18 @@ possible later for free.
 
 ## Brand
 
-Logo: Education+ (`public/eplus-logo-min.png`), tagline "Believe in Results"
-in sky blue. The brand color is therefore **sky/blue**; today `--primary` is
+Logo: Education+ (`public/eplus-logo-min.png`, black "e" + a royal-blue
+swoosh), tagline "Believe in Results". The brand color is the logo blue
+**`#0053C5`** (`hsl(215 100% 39%)`, sampled from the PNG). White text on it
+is ≈ 6.9:1, so it is safe for filled buttons. Today `--primary` is
 near-black (shadcn default), which makes primary buttons look heavy and
 unbranded.
+
+Tokens added in the login-page step (`app/globals.css`):
+`--brand` (215 100% 39%), `--brand-foreground` (white), `--brand-soft`
+(215 100% 97%, tinted backgrounds). They exist as a separate name so pages
+can adopt the brand one at a time; in the app-shell step `--primary` /
+`--ring` are pointed at the brand and `brand` stays as an alias.
 
 ## Color tokens
 
@@ -25,9 +33,9 @@ of every text/background pair (≥ 4.5:1) before merging.
 | `--card` | surfaces (cards, sheets, tables) | white |
 | `--foreground` | body text | slate-900 |
 | `--muted` / `--muted-foreground` | secondary surfaces / secondary text | slate-100 / slate-500 |
-| `--primary` / `--primary-foreground` | the one main action, active nav, links | sky-600 `199 89% 40%` / white |
-| `--accent` | hover/selected row, subtle highlight | sky-50 |
-| `--border`, `--input`, `--ring` | lines, inputs, focus ring | slate-200, slate-200, sky-500 |
+| `--primary` / `--primary-foreground` | the one main action, active nav, links | brand `215 100% 39%` / white |
+| `--accent` | hover/selected row, subtle highlight | brand-soft `215 100% 97%` |
+| `--border`, `--input`, `--ring` | lines, inputs, focus ring | slate-200, slate-200, brand |
 | `--success` (new) | present, paid, saved | emerald-600 |
 | `--warning` (new) | pending, partially paid, review needed | amber-500 (text amber-700) |
 | `--destructive` | absent, overdue, delete | red-600 |

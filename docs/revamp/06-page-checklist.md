@@ -5,8 +5,9 @@
 Shared pieces every page will use. Ship as small PRs; no page should look
 different yet except where a primitive is swapped in place.
 
-- [ ] Tokens in `app/globals.css` + `tailwind.config.ts` (02): brand
-      primary, success/warning/info (+ `-soft`), motion durations/easings.
+- [ ] Tokens in `app/globals.css` + `tailwind.config.ts` (02): `--brand*`
+      already added (sign-in); point `--primary`/`--ring` at brand; darken
+      `--destructive` to red-600 (current text fails 4.5:1); success/warning/info (+ `-soft`), motion durations/easings.
 - [ ] `data/icons.ts` — one icon per concept; `ROUTES` uses it; add
       `group` + `mobilePriority` to `ROUTES`.
 - [ ] `PageHeader`, `EmptyState`, `ErrorState`, `StatusBadge`,
@@ -52,7 +53,7 @@ Ordered by daily use and pain. Adjust after asking teachers.
 | 16 | Sign in | `/signin` | all | first impression; illustration, brand |
 
 Quick wins (Batches, Books, Sign in) can be pulled earlier to prove the
-foundation.
+foundation. **Sign in was done first** (see `pages/16-signin.md`).
 
 ## Per-page workflow
 

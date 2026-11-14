@@ -46,7 +46,11 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     // Modify the error message
     const customErrorMessage = (error.response?.data as any)?.error ?? "Something went wrong!";
-    return Promise.reject(new Error(customErrorMessage));
+    // The HTTP status rides along so a caller can tell "wrong password" (401)
+    // from "no network" (no status) without parsing the message.
+    return Promise.reject(
+      Object.assign(new Error(customErrorMessage), { status: error.response?.status })
+    );
   }
 );
 

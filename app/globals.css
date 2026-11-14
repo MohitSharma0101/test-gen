@@ -28,6 +28,12 @@ body {
     --input: 220 13% 91%;
     --ring: 224 71.4% 4.1%;
     --radius: 0.5rem;
+
+    /* Education+ logo blue (#0053C5). Separate from --primary so pages can
+       adopt it one at a time; see docs/revamp/02-design-system.md. */
+    --brand: 215 100% 39%;
+    --brand-foreground: 0 0% 100%;
+    --brand-soft: 215 100% 97%;
   }
 
   .dark {
