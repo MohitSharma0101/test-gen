@@ -43,6 +43,7 @@ Constraints (from the product owner):
 | Foundation | 02–05 | ☐ | ☐ |
 | App shell + Home | 03 | ☐ | ☐ |
 | Sign in | [pages/16-signin.md](pages/16-signin.md) | ☑ | ☑ (phone/tablet/desktop; signed-in redirect needs real DB) |
+| Home | [pages/00-home.md](pages/00-home.md) | ☑ | ☑ (fixtures; real-data check pending) |
 | Other pages | see 06 | | |
 
 Update this table in the same commit that finishes a step.

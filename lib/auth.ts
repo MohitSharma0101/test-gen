@@ -1,3 +1,4 @@
+import { cache } from "react";
 import Account, { TAccount } from "@/models/Account";
 import { cookies, headers } from "next/headers";
 import { dbConnect } from "./dbUtils";
@@ -9,7 +10,14 @@ type TGetAccountProps = {
   includePassword?: boolean;
 };
 
-export const getAccount = async ({ includePassword }: TGetAccountProps = {}) => {
+// One JWT verify and one DB read per request, however many server components
+// ask (the (root) layout and a page both do). React's cache() is scoped to a
+// single request, so nothing leaks between users. Outside a server render
+// (route handlers) it simply calls through.
+export const getAccount = ({ includePassword }: TGetAccountProps = {}) =>
+  readAccount(Boolean(includePassword));
+
+const readAccount = cache(async (includePassword: boolean) => {
   try {
     const cookieStore = cookies();
     const authorization = headers().get("authorization");
@@ -38,4 +46,4 @@ export const getAccount = async ({ includePassword }: TGetAccountProps = {}) => 
   } catch (err) {
     return null;
   }
-};
+});
