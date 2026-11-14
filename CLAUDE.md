@@ -194,3 +194,17 @@ Frontend
   Allowed additions already planned in the docs: `motion` (Framer Motion) for
   layout/presence animation, `vaul` for mobile bottom-sheet drawers, `cmdk`
   for the desktop command palette. Each must be justified on first use.
+
+## Token budget for page revamps
+
+Keep each page cheap:
+- Spec in `docs/revamp/pages/` ≤ ~30 lines: contract list, target, out of scope.
+  No new web research; 01–06 already cover it.
+- Read only the page and the components it imports. No repo-wide sweeps.
+- One `tsc` + one `next build` at the end (not before/after builds per step).
+- Visual check: one phone (390) + one desktop (1280) viewport screenshot, not
+  full-page; look again only if layout changed. Reuse the scratchpad helpers
+  (`dev.sh on|start|stop|off` for the fixture account, `shot.js <path> <name>`)
+  instead of writing new test scripts.
+- Don't re-verify what already passed or run side experiments unless asked.
+- Short commit messages and short final summaries.
