@@ -3,6 +3,7 @@
 // generateVariants and recheckQuestion work unchanged.
 import Anthropic from "@anthropic-ai/sdk";
 import { GeminiError, parseJson, type GenerateJsonInput } from "./gemini";
+import { toJsonSchema } from "./schema";
 
 type Effort = "low" | "medium" | "high";
 const EFFORTS: Effort[] = ["low", "medium", "high"];
@@ -14,26 +15,6 @@ const getClient = () => {
   }
   client ??= new Anthropic();
   return client;
-};
-
-// The prompts describe their output with Gemini's schema dialect ("OBJECT",
-// "STRING", propertyOrdering). Claude takes plain JSON Schema, and structured
-// outputs need every object closed with additionalProperties: false.
-export const toJsonSchema = (schema: unknown): unknown => {
-  if (Array.isArray(schema)) return schema.map(toJsonSchema);
-  if (!schema || typeof schema !== "object") return schema;
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(schema as Record<string, unknown>)) {
-    if (key === "propertyOrdering") continue;
-    if (key === "type" && typeof value === "string") out.type = value.toLowerCase();
-    else if (key === "properties" && value && typeof value === "object") {
-      out.properties = Object.fromEntries(
-        Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, toJsonSchema(v)])
-      );
-    } else out[key] = toJsonSchema(value);
-  }
-  if (out.type === "object") out.additionalProperties = false;
-  return out;
 };
 
 const toContent = (parts: GenerateJsonInput["parts"]): Anthropic.ContentBlockParam[] =>

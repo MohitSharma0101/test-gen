@@ -11,7 +11,7 @@ import type {
   TThinkingMode,
 } from "@/lib/ai/types";
 import { DEFAULT_THINKING_MODE } from "@/lib/ai/types";
-import { DEFAULT_FREE_MODEL, isOfferedModel } from "@/lib/ai/free-models";
+import { DEFAULT_MODEL, isOfferedModel } from "@/lib/ai/free-models";
 import { DEFAULT_VARIANT_COUNT } from "@/lib/ai/generateVariants";
 
 // One tab is one source photo and the questions generated from it.
@@ -200,7 +200,7 @@ export const useVariantBatchStore = create<TState & TActions>()(
       return {
         tabs: [],
         activeId: null,
-        model: DEFAULT_FREE_MODEL,
+        model: DEFAULT_MODEL,
         thinking: DEFAULT_THINKING_MODE,
         prompt: "",
         variantCount: DEFAULT_VARIANT_COUNT,
@@ -400,7 +400,18 @@ export const useVariantBatchStore = create<TState & TActions>()(
     },
     {
       name: "variant-batch",
-      version: 1,
+      version: 2,
+      // v2 moved the default to a paid gateway model at low thinking. The
+      // sheet-wide choice saved by v1 was the old default for almost everyone,
+      // so it is reset; existing tabs keep the model they were made with.
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>;
+        if (version < 2) {
+          state.model = DEFAULT_MODEL;
+          state.thinking = DEFAULT_THINKING_MODE;
+        }
+        return state as never;
+      },
       storage: createJSONStorage(() => localStorage),
       // Only what is worth surviving a reload. Photos are excluded above, and
       // recheck state is deliberately not kept: it describes a reply, not work.
@@ -416,7 +427,7 @@ export const useVariantBatchStore = create<TState & TActions>()(
         if (!state) return;
         // A model that was offered when this was saved may not be any more,
         // and a tab stuck on one would be refused by the server
-        const usable = (model: string) => (isOfferedModel(model) ? model : DEFAULT_FREE_MODEL);
+        const usable = (model: string) => (isOfferedModel(model) ? model : DEFAULT_MODEL);
         state.model = usable(state.model);
 
         // Photos are not kept, so a tab that had not finished comes back as a

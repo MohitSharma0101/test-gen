@@ -35,7 +35,7 @@ import {
   type TTabSettings,
   type TVariantTab,
 } from "@/stores/variantBatchStore";
-import { AI_MODELS, DEFAULT_FREE_MODEL } from "@/lib/ai/free-models";
+import { AI_MODELS, DEFAULT_MODEL } from "@/lib/ai/free-models";
 import { DEFAULT_VARIANT_COUNT, VARIANT_COUNTS } from "@/lib/ai/generateVariants";
 import {
   THINKING_MODES,
@@ -306,7 +306,7 @@ const TabInputs = ({
           <span className="block truncate text-sm font-medium">{tab.label}</span>
           <span className="block truncate text-xs text-slate-500">
             {(fromText ? tab.sourceText.trim() : preview)
-              ? `${fromText ? "Text" : "Photo"} · ${tab.variantCount} variant${tab.variantCount > 1 ? "s" : ""} · ${tab.model.replace(/^gemini-|^gemma-/, "")}`
+              ? `${fromText ? "Text" : "Photo"} · ${tab.variantCount} variant${tab.variantCount > 1 ? "s" : ""} · ${tab.model.replace(/^[a-z0-9-]+\//, "").replace(/^gemini-|^gemma-/, "")}`
               : fromText
                 ? "Add the question text to begin"
                 : "Add a photo to begin"}
@@ -409,7 +409,7 @@ const TabInputs = ({
               disabled={busy}
               onChange={(value) => value && onChange({ model: value })}
               options={AI_MODELS.map((m) => ({
-                label: m.id === DEFAULT_FREE_MODEL ? `${m.label} (default)` : m.label,
+                label: m.id === DEFAULT_MODEL ? `${m.label} (default)` : m.label,
                 value: m.id,
               }))}
             />
