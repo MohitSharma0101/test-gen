@@ -13,11 +13,11 @@ import type { TAiModel } from "./types";
 // GPT-5 nano ~$3, Gemini 2.5 Flash-Lite ~$3.50, GPT-5.4 nano ~$10,
 // GPT-5 mini ~$16, Gemini 2.5 Flash ~$20.
 export const GATEWAY_MODELS: TAiModel[] = [
-  { id: "openai/gpt-5-nano", label: "GPT-5 nano" },
-  { id: "openai/gpt-5-mini", label: "GPT-5 mini (stronger, ~5x cost)" },
-  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (stronger, ~6x cost)" },
-  { id: "openai/gpt-5.4-nano", label: "GPT-5.4 nano" },
-  { id: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite" },
+  { id: "openai/gpt-5-nano", label: "GPT-5 nano", paid: true },
+  { id: "openai/gpt-5-mini", label: "GPT-5 mini (stronger, ~5x cost)", paid: true },
+  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (stronger, ~6x cost)", paid: true },
+  { id: "openai/gpt-5.4-nano", label: "GPT-5.4 nano", paid: true },
+  { id: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", paid: true },
 ];
 
 // Free of charge on the Gemini API free tier as of October 2026, with
@@ -42,7 +42,7 @@ export const FREE_MODELS: TAiModel[] = [
 
 // Billed per token on the Claude API (ANTHROPIC_API_KEY)
 export const PAID_MODELS: TAiModel[] = [
-  { id: "claude-haiku-5-5", label: "Claude Haiku 5.5 (Anthropic, paid)" },
+  { id: "claude-haiku-5-5", label: "Claude Haiku 5.5 (Anthropic)", paid: true },
 ];
 
 // The single source for "no model chosen": the sheet picks it when nothing is

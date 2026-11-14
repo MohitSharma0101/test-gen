@@ -15,6 +15,8 @@ export type TSelectCompactProps = {
   options: {
     label: string;
     value: string;
+    // A short badge shown after the label, e.g. "Paid"
+    tag?: string;
   }[];
   value?: string;
   label?: string;
@@ -74,6 +76,11 @@ const SelectCompact = ({
             options.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
+                {option.tag && (
+                  <span className="ml-1.5 rounded border border-amber-300 bg-amber-50 px-1 py-px text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                    {option.tag}
+                  </span>
+                )}
               </SelectItem>
             ))
           )}

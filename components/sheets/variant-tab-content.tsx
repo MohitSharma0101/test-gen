@@ -411,6 +411,7 @@ const TabInputs = ({
               options={AI_MODELS.map((m) => ({
                 label: m.id === DEFAULT_MODEL ? `${m.label} (default)` : m.label,
                 value: m.id,
+                tag: m.paid ? "Paid" : undefined,
               }))}
             />
             <SelectCompact
