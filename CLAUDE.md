@@ -207,4 +207,4 @@ Keep each page cheap:
   (`dev.sh on|start|stop|off` for the fixture account, `shot.js <path> <name>`)
   instead of writing new test scripts.
 - Don't re-verify what already passed or run side experiments unless asked.
-- Short commit messages and short final summaries.
+- Short commit messages. Chat replies: a few lines — what changed, anything to check. No tables or long recaps.
