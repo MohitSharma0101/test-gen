@@ -20,6 +20,7 @@ export const resolveVariantCount = (value: unknown) =>
 // Shared with the recheck prompt
 export const FORMAT_RULES = `Formatting for every "text" and "solution" (it is rendered with Mathpix Markdown):
 - Plain Markdown. Write all maths, symbols, units with powers and chemical formulae in LaTeX: inline $...$ and display $$...$$.
+- That includes every variable, subscript, power and equation in the solution, not only in the question. Write $E_{\\text{axial}} = E_{\\text{equatorial}}$, $\\frac{2kp}{x^{3}} = \\frac{kp}{y^{3}}$ and $2^{1/3}$, never E_axial, 2p/x^3 or 2^{1/3} as plain text.
 - No LaTeX preamble, \\documentclass, \\begin{document}, enumerate or itemize environments, tables of contents, code fences, HTML or images.
 - Do not number the question.
 - MCQ "text": the question, a blank line, then the four options, each on its own line separated by blank lines, written exactly as \\textbf{(a)} option, \\textbf{(b)} option, \\textbf{(c)} option, \\textbf{(d)} option.
@@ -88,6 +89,7 @@ You receive ${fromText ? "one question written as Mathpix Markdown" : "a photo o
     ? 'Repeat that question as "original", exactly as given, including its options, and give the correct answer with a solution. Do not reword it, do not shorten it and do not add anything, and if it refers to a figure leave that reference exactly as written. If an answer was supplied with it, keep that answer unless it is plainly wrong.'
     : 'Transcribe that question exactly as "original", including its options and the correct answer with a solution. Word for word: copy what the photo says and nothing else. Do not reword it, do not shorten it, do not add anything, and if it refers to a figure leave that reference exactly as printed. The teacher attaches the figure separately.'
 }
+   The original\'s "text" is the question and its options only. Leave out the question number, and anything printed after the options - an answer line such as "Ans: (4)", an answer key, a hint or a worked solution - even when the ${fromText ? "text" : "photo"} shows it. Those go into "answer" and "solution" instead, with the solution rewritten to follow the formatting rules below. Options numbered (1) to (4) or (A) to (D) are written as \\textbf{(a)} to \\textbf{(d)}, in the same order, and "answer" is then the matching letter.
 2. Write exactly ${variantCount} new "variants" that test the same concept and, unless the teacher asks otherwise, keep the same difficulty, using different values and, where it helps, a changed scenario. Each variant must be fully solvable and, for MCQs, have exactly one correct option. Make the wrong options plausible. Unlike the original, a variant is yours to word, so write it to stand on its own without a figure - briefly. See the rules on figures below.
 
 Keep the question type of the original: an MCQ stays an MCQ with four options; a numerical (integer or decimal answer) stays numerical with no options.
@@ -150,7 +152,9 @@ type RawResponse = {
 export const formatAnswer = (answer: string, type: TQuestionType) => {
   const first = (answer || "").trim().split("\n")[0].trim();
   if (type === "MCQ") {
-    const letter = first.replace(/[()\[\]\s.]/g, "").charAt(0).toLowerCase();
+    let letter = first.replace(/[()\[\]\s.]/g, "").charAt(0).toLowerCase();
+    // An option numbered (1) to (4) is option (a) to (d)
+    if (/^[1-4]$/.test(letter)) letter = "abcd"[Number(letter) - 1];
     // "(c)" would render as "©", so the closing bracket is escaped
     return /^[a-d]$/.test(letter) ? `(${letter}\\)` : first;
   }
@@ -163,12 +167,48 @@ const MAX_BRIEF = 600;
 const brief = (value: unknown) =>
   typeof value === "string" ? value.trim().replace(/s+/g, " ").slice(0, MAX_BRIEF) : "";
 
+// A line that starts what follows the options: "Ans: (4)", "Answer -", "Sol.",
+// "Solution:", "Hint:", "Explanation:"
+const AFTER_QUESTION = /^\s*(?:\*\*|\\textbf\{)?\s*(?:ans(?:wer)?|sol(?:ution)?|hint|explanation)\b\s*\}?\s*[:.\-)]/im;
+// "2.", "Q2)", "Q. 12." at the very start
+const QUESTION_NUMBER = /^\s*(?:Q(?:uestion)?\s*\.?\s*)?\d{1,3}\s*[.)]\s+/i;
+// One option on its own line, labelled (1)-(4), (A)-(D) or (a)-(d), with or
+// without the \textbf{...} around the label
+const OPTION_LINE = /^\s*(?:\\textbf\{\s*)?\(([1-4A-Da-d])\)\s*\}?\s*(.*)$/;
+
+// The model is told all of this, but small models still copy a printed answer
+// and worked solution into the question, number it, or keep (1)-(4) options.
+// The text goes straight onto a student's paper, so it is enforced here too.
+export const cleanQuestionText = (text: string, type: TQuestionType) => {
+  let out = text.replace(QUESTION_NUMBER, "");
+  const after = out.search(AFTER_QUESTION);
+  if (after > 0) out = out.slice(0, after);
+  out = out.trim();
+  if (type !== "MCQ") return out;
+
+  // Re-label four options that sit one per line, in order, to the format the
+  // renderer and answer key expect. Anything less regular is left alone.
+  const lines = out.split("\n");
+  const optionAt = lines
+    .map((line, i) => ({ i, m: line.match(OPTION_LINE) }))
+    .filter((o): o is { i: number; m: RegExpMatchArray } => !!o.m);
+  if (optionAt.length !== 4) return out;
+  const labels = optionAt.map((o) => o.m[1].toLowerCase()).join("");
+  if (labels !== "1234" && labels !== "abcd") return out;
+  const stem = lines.slice(0, optionAt[0].i).join("\n").trim();
+  // An option like "1 : \sqrt{2}" with no $ around it would print the
+  // backslash command as raw text, so the whole option goes into maths
+  const option = (body: string) => (body.includes("\\") && !body.includes("$") ? `$${body}$` : body);
+  const options = optionAt.map((o, n) => `\\textbf{(${"abcd"[n]})} ${option(o.m[2].trim())}`);
+  return [stem, ...options].join("\n\n");
+};
+
 const toQuestion = (
   raw: RawQuestion | undefined,
   kind: TGeneratedQuestion["kind"],
   type: TQuestionType
 ): TGeneratedQuestion | null => {
-  const text = raw?.text?.trim();
+  const text = cleanQuestionText(raw?.text ?? "", type);
   if (!text) return null;
   const answer = formatAnswer(raw?.answer ?? "", type);
   const solution = raw?.solution?.trim();

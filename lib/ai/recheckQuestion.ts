@@ -2,7 +2,7 @@
 // A variant is solved again without seeing our answer key, so the model works
 // it out on its own instead of agreeing with what is already there.
 import { generateJson } from "./llm";
-import { FORMAT_RULES, formatAnswer } from "./generateVariants";
+import { FORMAT_RULES, cleanQuestionText, formatAnswer } from "./generateVariants";
 import type {
   TQuestionType,
   TRecheckRequest,
@@ -146,7 +146,7 @@ const checkTranscription = async ({
 
   const issues = (raw.issues ?? []).map((i) => i.trim()).filter(Boolean);
   const summary = raw.summary?.trim() || "";
-  const newText = raw.text?.trim();
+  const newText = cleanQuestionText(raw.text ?? "", questionType);
 
   if (raw.verdict === "CANNOT_VERIFY") {
     return {
@@ -192,7 +192,7 @@ export const recheckQuestion = async (request: TRecheckRequest): Promise<TRechec
 
   const issues = (raw.issues ?? []).map((i) => i.trim()).filter(Boolean);
   const summary = raw.summary?.trim() || "";
-  const newText = raw.text?.trim();
+  const newText = cleanQuestionText(raw.text ?? "", questionType);
   const solution = raw.solution?.trim();
   const newAnswer = formatAnswer(raw.answer ?? "", questionType);
 
