@@ -206,5 +206,10 @@ Keep each page cheap:
   full-page; look again only if layout changed. Reuse the scratchpad helpers
   (`dev.sh on|start|stop|off` for the fixture account, `shot.js <path> <name>`)
   instead of writing new test scripts.
+- Delegate codebase searches, screenshots and test runs to a subagent on the
+  cheaper model (`model: "haiku"`; `Explore` for searches, `general-purpose`
+  for running `dev.sh`/`shot.js`/build). Ask it for a short report (paths,
+  pass/fail, overflow numbers), not file dumps. Keep design and code edits in
+  the main session.
 - Don't re-verify what already passed or run side experiments unless asked.
 - Short commit messages. Chat replies: a few lines — what changed, anything to check. No tables or long recaps.
