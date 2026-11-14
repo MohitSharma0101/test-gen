@@ -56,8 +56,10 @@ Simple "start here" page — no charts, nothing to configure.
    with `<Suspense>`, the rest of the page doesn't wait); empty → "No
    papers yet" + Create paper; error → message + Try again.
 4. **All tools** — every route, grouped (Daily · Papers · Question bank ·
-   Institute) with a colored icon tile per group and a one-line
-   description. 1 column on small phones, 2 from 400 px, 3 on desktop.
+   Institute) with a colored icon tile per group. Two per row everywhere.
+   Phones (< 640 px) show icon + name only; the one-line description and
+   arrow appear from 640 px (feedback: description tiles were crowded on a
+   real phone with a large system font).
 
 Layout: phone stacks greeting → quick actions → recent papers → tools.
 Desktop (≥ 1024 px): tools take two thirds, recent papers sit in a right

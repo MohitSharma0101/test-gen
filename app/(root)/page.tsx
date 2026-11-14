@@ -22,20 +22,27 @@ export const metadata: Metadata = {
 const reveal = "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:fill-mode-both motion-safe:duration-300";
 const delay = (ms: number) => ({ animationDelay: `${ms}ms` });
 
+// Phones get icon + name only, two per row; the one-line description and the
+// arrow come back from 640px where there is room for them.
 const ToolTile = ({ route }: { route: TRoute }) => (
   <Link
     href={route.href}
-    className="group flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm transition-[transform,box-shadow,border-color] hover:border-brand/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.99] motion-safe:hover:-translate-y-0.5"
+    className="group flex min-h-[3.5rem] items-center gap-2.5 rounded-xl border bg-card p-2.5 shadow-sm transition-[transform,box-shadow,border-color] hover:border-brand/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.99] motion-safe:hover:-translate-y-0.5 sm:gap-3 sm:p-3"
   >
-    <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl", ROUTE_GROUPS[route.group].tile)}>
+    <span
+      className={cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-lg sm:size-11 sm:rounded-xl",
+        ROUTE_GROUPS[route.group].tile
+      )}
+    >
       <route.Icon className="size-5" strokeWidth={2} aria-hidden="true" />
     </span>
     <span className="min-w-0 flex-1">
-      <span className="block text-sm font-bold">{route.label}</span>
-      <span className="block text-xs leading-snug text-muted-foreground">{route.description}</span>
+      <span className="block text-sm font-bold leading-tight">{route.label}</span>
+      <span className="hidden text-xs leading-snug text-muted-foreground sm:block">{route.description}</span>
     </span>
     <ChevronRightIcon
-      className="size-4 shrink-0 text-muted-foreground transition-transform motion-safe:group-hover:translate-x-0.5"
+      className="hidden size-4 shrink-0 text-muted-foreground transition-transform motion-safe:group-hover:translate-x-0.5 sm:block"
       aria-hidden="true"
     />
   </Link>
@@ -104,7 +111,7 @@ export default async function Home() {
               </h2>
               <div
                 className={cn(
-                  "grid grid-cols-1 gap-2 min-[400px]:grid-cols-2",
+                  "grid grid-cols-2 gap-2",
                   showRecentPapers ? "xl:grid-cols-2" : "lg:grid-cols-3"
                 )}
               >
