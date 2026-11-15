@@ -84,7 +84,7 @@ const UploadInput = ({ icon, label, hint, text, count, active, onChange }: Props
         <span className="hidden sm:inline">{text ? "Replace" : "Choose"}</span>
         <span className="sr-only sm:hidden">Choose {label} file</span>
       </Button>
-      <EditMarkdownSheet text={text} onSave={onChange}>
+      <EditMarkdownSheet title={label} text={text} onSave={onChange}>
         <Button variant="ghost" className="size-10 shrink-0 p-0" aria-label={`Type or edit ${label}`}>
           <PenLineIcon className="size-4" />
         </Button>

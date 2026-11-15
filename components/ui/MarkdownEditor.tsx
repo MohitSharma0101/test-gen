@@ -9,7 +9,8 @@ import {
 import { Textarea } from "./textarea";
 import Markdown from "./markdown";
 import { Button } from "./button";
-import { ImagePlusIcon } from "lucide-react";
+import { CheckIcon, ImagePlusIcon, Loader2Icon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { uploadImage } from "@/lib/uploadImage";
 import { useIsNarrowViewport } from "@/hooks/useIsNarrowViewport";
@@ -17,6 +18,8 @@ import { useIsNarrowViewport } from "@/hooks/useIsNarrowViewport";
 type Props = {
   defaultText?: string;
   onSave?: (changedText: string) => void;
+  // Told whenever the text starts or stops differing from defaultText
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
@@ -43,15 +46,18 @@ const markUploadingImages = (root: HTMLElement) => {
   });
 };
 
-const MarkdownEditor = ({ defaultText, onSave }: Props) => {
+const MarkdownEditor = ({ defaultText, onSave, onDirtyChange }: Props) => {
   const [text, setText] = useState(defaultText || "");
   const [uploadingCount, setUploadingCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
-  // Two panes side by side need width a phone does not have
-  const direction = useIsNarrowViewport() ? "vertical" : "horizontal";
+  // Both panes always visible: side by side from sm up, stacked on a phone
+  // (writing on top, preview below; the handle between them resizes)
+  const narrow = useIsNarrowViewport();
+  const dirty = text !== (defaultText || "");
+  useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange]);
 
   // The preview re-renders its HTML on every change, so re-apply the overlay.
   useEffect(() => {
@@ -110,29 +116,65 @@ const MarkdownEditor = ({ defaultText, onSave }: Props) => {
 
   const isUploading = uploadingCount > 0;
 
+  const textarea = (
+    <Textarea
+      ref={textareaRef}
+      aria-label="Text"
+      // flex-1 + min-h-0 so it takes the height the window actually has
+      className={cn(
+        "min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-base leading-relaxed focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-sm",
+        isDragging && "ring-2 ring-inset ring-brand"
+      )}
+      placeholder="Type here. Paste or drop an image to upload it."
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onPaste={(e) => {
+        if (handleFiles(e.clipboardData?.files)) e.preventDefault();
+      }}
+      onDragOver={(e) => {
+        if (Array.from(e.dataTransfer.types).includes("Files")) {
+          e.preventDefault();
+          setIsDragging(true);
+        }
+      }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={(e) => {
+        setIsDragging(false);
+        if (e.dataTransfer.files?.length) {
+          e.preventDefault();
+          handleFiles(e.dataTransfer.files);
+        }
+      }}
+    />
+  );
+
+  // A long equation renders as one unbreakable MathJax block, so the preview
+  // scrolls sideways rather than widening the pane.
+  const preview = (
+    <div ref={previewRef} className="min-h-0 w-full max-w-full flex-1 overflow-auto break-words bg-white px-3 [&_ol]:ml-4 [&_ol]:list-outside [&_ol]:list-decimal">
+      {text.trim() ? <Markdown text={text} /> : <p className="py-6 text-center text-sm text-muted-foreground">Nothing to preview yet</p>}
+    </div>
+  );
+
+  const paneLabel = "flex h-9 shrink-0 items-center border-b bg-muted/40 px-3 text-xs font-bold uppercase tracking-wider text-muted-foreground";
+
   return (
-    // Stacked on a phone, side by side from sm up. The group is remounted when
-    // the direction changes so the panels re-measure instead of keeping sizes
-    // from the other axis.
-    <ResizablePanelGroup
-      key={direction}
-      direction={direction}
-      className="h-full min-h-0 border"
-    >
-      {/* min-w-0 as well as min-h-0: a flex child defaults to min-width:auto, so
-          without it wide content stretches the pane instead of scrolling */}
-      <ResizablePanel className="flex min-h-0 min-w-0 flex-col">
-        {/* pr-10 keeps the Save button clear of the sheet's close button */}
-        <h5 className="flex h-[60px] w-full shrink-0 items-center gap-2 border-b p-4 pr-10 font-bold sm:pr-4">
-          Editor
-          <Button
-            variant={"outline"}
-            size={"sm"}
-            className="ml-auto gap-1"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <ImagePlusIcon className="w-4 h-4" />
-            Image
+    <div className="flex h-full min-h-0 flex-col">
+      {/* One action bar: tabs (phone), image, save */}
+      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
+        <p className="min-w-0 truncate text-xs text-muted-foreground">
+          {narrow ? "Paste or drop images to upload" : "Paste or drop images into the text to upload them"}
+        </p>
+        <div className="ml-auto flex items-center gap-2">
+          {isUploading && (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Loader2Icon className="size-3.5 animate-spin" /> Uploading {uploadingCount}
+            </span>
+          )}
+          <Button variant="outline" className="h-9 gap-1.5 px-3" onClick={() => fileInputRef.current?.click()}>
+            <ImagePlusIcon className="size-4" />
+            <span className="hidden sm:inline">Image</span>
+            <span className="sr-only sm:hidden">Add image</span>
           </Button>
           <input
             ref={fileInputRef}
@@ -145,59 +187,29 @@ const MarkdownEditor = ({ defaultText, onSave }: Props) => {
               e.target.value = "";
             }}
           />
-          <Button
-            onClick={() => onSave?.(text)}
-            size={"sm"}
-            disabled={isUploading}
-          >
+          <Button variant="brand" className="h-9 gap-1.5 px-4" onClick={() => onSave?.(text)} disabled={isUploading || !dirty}>
+            <CheckIcon className="size-4" />
             {isUploading ? "Uploading…" : "Save"}
           </Button>
-        </h5>
-        <Textarea
-          ref={textareaRef}
-          // flex-1 + min-h-0 so it takes the height the sheet actually has.
-          // A fixed height here overflowed the sheet on a phone.
-          className={`min-h-0 flex-1 resize-none rounded-none text-base ${
-            isDragging ? "ring-2 ring-primary ring-inset" : ""
-          }`}
-          placeholder="Enter your text here... Paste or drop an image to upload it."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onPaste={(e) => {
-            if (handleFiles(e.clipboardData?.files)) e.preventDefault();
-          }}
-          onDragOver={(e) => {
-            if (Array.from(e.dataTransfer.types).includes("Files")) {
-              e.preventDefault();
-              setIsDragging(true);
-            }
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => {
-            setIsDragging(false);
-            if (e.dataTransfer.files?.length) {
-              e.preventDefault();
-              handleFiles(e.dataTransfer.files);
-            }
-          }}
-        />
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel className="flex min-h-0 min-w-0 flex-col [&_ol]:list-decimal [&_ol]:list-outside [&_ol]:ml-4">
-        <h5 className="flex h-[60px] w-full shrink-0 items-center border-b p-4 font-bold">
-          Preview
-        </h5>
-        {/* A long equation renders as one unbreakable MathJax block, so the
-            preview scrolls sideways rather than widening the pane. Matches how
-            the generate sheet renders the same markdown. */}
-        <div
-          ref={previewRef}
-          className="min-h-0 w-full max-w-full flex-1 overflow-auto break-words"
-        >
-          <Markdown text={text} />
         </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+      </div>
+
+      {/* Remounted when the direction changes so the panels re-measure
+          instead of keeping sizes from the other axis */}
+      <ResizablePanelGroup key={narrow ? "v" : "h"} direction={narrow ? "vertical" : "horizontal"} className="min-h-0 flex-1">
+        {/* min-w-0 as well as min-h-0: a flex child defaults to min-width:auto,
+            so without it wide content stretches the pane instead of scrolling */}
+        <ResizablePanel defaultSize={50} minSize={20} className="flex min-h-0 min-w-0 flex-col">
+          <div className={paneLabel}>Write</div>
+          {textarea}
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize={50} minSize={20} className="flex min-h-0 min-w-0 flex-col">
+          <div className={paneLabel}>Preview</div>
+          {preview}
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   );
 };
 

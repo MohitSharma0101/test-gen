@@ -425,6 +425,7 @@ export default function ManageQuestion() {
           key={`${action.q._id}-${action.kind}`}
           open
           onOpenChange={(o) => !o && setAction(undefined)}
+          title={action.kind === "question" ? "Edit question" : action.q.ans ? "Edit answer" : "Add answer"}
           text={action.kind === "question" ? action.q.text : action.q.ans}
           onSave={(text) => {
             updateQuestion(action.kind === "question" ? { id: action.q._id, text } : { id: action.q._id, ans: text });

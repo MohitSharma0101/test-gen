@@ -19,6 +19,9 @@ const SonnerToaster = ({ ...props }: ToasterProps) => {
         loading: <Loader2Icon className="size-4 animate-spin" />,
       }}
       position="top-center"
+      // Top-centre toasts only swipe up by default; sideways is the natural
+      // flick on a phone
+      swipeDirections={["left", "right", "top"]}
       richColors
       duration={5000}
       closeButton

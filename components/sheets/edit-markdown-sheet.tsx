@@ -1,13 +1,17 @@
-import React, { ReactNode, useState } from "react";
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+"use client";
+
+import React, { ReactNode, useCallback, useState } from "react";
+import { EditIcon } from "lucide-react";
 import MarkdownEditor from "../ui/MarkdownEditor";
 import { Button } from "../ui/button";
-import { EditIcon } from "lucide-react";
+import { DocumentWindow } from "../ui/document-window";
 import { cn } from "@/lib/utils";
 
 type Props = {
   text?: string;
   onSave?: (text: string) => void;
+  // Window title, e.g. "Edit question"
+  title?: string;
   className?: string;
   children?: ReactNode;
   // Controlled (e.g. opened from a menu item, which unmounts when the menu
@@ -16,44 +20,74 @@ type Props = {
   onOpenChange?: (open: boolean) => void;
 };
 
-const EditMarkdownSheet = ({ text, onSave, children, className, open: openProp, onOpenChange }: Props) => {
+// Editing markdown needs room, so it opens in the document window: full
+// screen on phones, a large centred window on desktop. Closing with unsaved
+// changes (X, Escape, back button) asks first instead of losing them.
+const EditMarkdownSheet = ({ text, onSave, title = "Edit text", children, className, open: openProp, onOpenChange }: Props) => {
   const [innerOpen, setInnerOpen] = useState(false);
   const controlled = openProp !== undefined;
   const open = controlled ? openProp : innerOpen;
-  const setOpen = (o: boolean) => (controlled ? onOpenChange?.(o) : setInnerOpen(o));
+  const setOpen = useCallback((o: boolean) => (controlled ? onOpenChange?.(o) : setInnerOpen(o)), [controlled, onOpenChange]);
+
+  const [dirty, setDirty] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  const close = () => {
+    setConfirmDiscard(false);
+    setDirty(false);
+    setOpen(false);
+  };
+  const requestOpenChange = (o: boolean) => {
+    if (o) return setOpen(true);
+    if (dirty) setConfirmDiscard(true);
+    else close();
+  };
+
+  const trigger = children ? (
+    <span onClick={() => setOpen(true)} className="contents">
+      {children}
+    </span>
+  ) : (
+    <Button variant="outline" className={cn("h-fit w-fit p-2", className)} onClick={() => setOpen(true)} aria-label={title}>
+      <EditIcon className="size-3" />
+    </Button>
+  );
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      {(children || !controlled) && (
-      <SheetTrigger asChild>
-        {children || (
-          <Button
-            variant={"outline"}
-            className={cn("p-2 w-fit h-fit", className)}
-          >
-            <EditIcon className="w-3 h-3" />
-          </Button>
-        )}
-      </SheetTrigger>
-      )}
-      {/* Editing markdown is a focused job, so a phone gets the whole screen.
-          The height is definite rather than a max so the editor inside can size
-          its panes from it; with an auto height they collapsed and it used to
-          fall back to a fixed 618px that overflowed the sheet. */}
-      <SheetContent
-        side={"bottom"}
-        className="flex h-[100dvh] flex-col gap-0 px-2 pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:h-[85dvh] md:px-4"
+    <>
+      {(children || !controlled) && trigger}
+      <DocumentWindow
+        open={open}
+        onOpenChange={requestOpenChange}
+        title={title}
+        description={dirty ? "Unsaved changes" : undefined}
+        bodyClassName="flex flex-col overflow-hidden"
+        footer={
+          confirmDiscard ? (
+            <div className="flex flex-wrap items-center gap-2" role="alert">
+              <p className="min-w-0 flex-1 text-sm font-medium">Discard your changes?</p>
+              <Button variant="outline" className="h-10" onClick={() => setConfirmDiscard(false)}>
+                Keep editing
+              </Button>
+              <Button variant="destructive" className="h-10" onClick={close}>
+                Discard
+              </Button>
+            </div>
+          ) : undefined
+        }
       >
-        <div className="min-h-0 flex-1">
+        {open && (
           <MarkdownEditor
             defaultText={text}
-            onSave={(text) => {
-              onSave?.(text);
-              setOpen(false);
+            onDirtyChange={setDirty}
+            onSave={(value) => {
+              onSave?.(value);
+              close();
             }}
           />
-        </div>
-      </SheetContent>
-    </Sheet>
+        )}
+      </DocumentWindow>
+    </>
   );
 };
 

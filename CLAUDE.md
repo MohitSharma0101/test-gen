@@ -189,8 +189,16 @@ Frontend
   old `toast({ title, description, variant })` call; new code may import
   `toast` from "sonner". (`@radix-ui/react-toast` is still in package.json,
   unused; removing it reshuffles the lockfile, so it was left.)
-- `MathpixProvider` is mounted in both `(root)/layout.tsx` and
-  `(root)/(mathpix)/layout.tsx`; load it once, only where math renders.
+- Math (`mathpix-markdown-it`, ~1.2 MB gzipped) loads only where math renders:
+  `MathpixProvider` is mounted in `(root)/(mathpix)/layout.tsx` only (early
+  download for paper/question pages); `<Markdown>` loads the library on demand
+  elsewhere and injects the math styles itself. Never mount it in the shell.
+- Monitoring: Vercel Web Analytics + Speed Insights (`<Analytics />`,
+  `<SpeedInsights />` in `app/layout.tsx`), free tier, enabled per project in
+  the Vercel dashboard. Server logs/errors: Vercel's Logs and Observability tabs.
+  Packages are managed with **yarn**: `yarn.lock` is the only lockfile (the
+  stale `package-lock.json` was removed). Add dependencies with `yarn add`,
+  never `npm install <pkg>` (it would create a second lockfile).
 - `lucide-react` is already in Next's default `optimizePackageImports` list,
   so named imports are fine. Measure the bundle (`@next/bundle-analyzer`)
   before adding config; `mathpix-markdown-it` is the likely heavyweight.

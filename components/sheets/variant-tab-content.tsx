@@ -730,7 +730,7 @@ const VariantTabContent = ({ tabId }: Props) => {
               >
                 <ShapesIcon className="w-3.5 h-3.5" /> Diagram
               </Button>
-              <EditMarkdownSheet text={q.text} onSave={(text) => editQuestion(q.id, { text })}>
+              <EditMarkdownSheet title="Edit question" text={q.text} onSave={(text) => editQuestion(q.id, { text })}>
                 <Button
                   variant="outline"
                   disabled={!!checks[q.id]?.loading}
@@ -739,7 +739,7 @@ const VariantTabContent = ({ tabId }: Props) => {
                   <PencilIcon className="w-3.5 h-3.5" /> Edit Ques.
                 </Button>
               </EditMarkdownSheet>
-              <EditMarkdownSheet text={q.ans} onSave={(ans) => editQuestion(q.id, { ans })}>
+              <EditMarkdownSheet title="Edit answer" text={q.ans} onSave={(ans) => editQuestion(q.id, { ans })}>
                 <Button
                   variant="outline"
                   disabled={!!checks[q.id]?.loading}

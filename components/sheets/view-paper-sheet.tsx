@@ -168,7 +168,7 @@ export const ViewPaperSheet = ({ open, paperId, onOpenChange }: Props) => {
                       </span>
                       {!kept && <span className="text-xs font-medium text-red-700">Will be removed</span>}
                       <span className="ml-auto">
-                        <EditMarkdownSheet text={item.text} onSave={(text) => updateQuestion({ id, text })}>
+                        <EditMarkdownSheet title="Edit question" text={item.text} onSave={(text) => updateQuestion({ id, text })}>
                           <EditButton label={`Edit question ${index + 1}`} />
                         </EditMarkdownSheet>
                       </span>
@@ -191,7 +191,7 @@ export const ViewPaperSheet = ({ open, paperId, onOpenChange }: Props) => {
                           <div className="min-w-0 flex-1 overflow-x-auto">
                             <Markdown text={item.ans ? `Ans: ${item.ans}` : "No answer added yet."} />
                           </div>
-                          <EditMarkdownSheet text={item.ans} onSave={(ans) => updateQuestion({ id, ans })}>
+                          <EditMarkdownSheet title="Edit answer" text={item.ans} onSave={(ans) => updateQuestion({ id, ans })}>
                             <EditButton label={`Edit answer ${index + 1}`} className="mt-2 size-8 shrink-0 p-0" />
                           </EditMarkdownSheet>
                         </div>

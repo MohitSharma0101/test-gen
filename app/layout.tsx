@@ -5,6 +5,8 @@ import PageProgressProvider from "@/provider/PageProgressProvider";
 import { SonnerToaster } from "@/components/ui/sonnar-toaster";
 import { OverlayBackHandler } from "@/components/overlay-back-handler";
 import { PwaRegister } from "@/components/pwa-register";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const lato = Lato({
   subsets: ["latin"],
@@ -47,6 +49,12 @@ export default function RootLayout({
       <body className={`${lato.className} bg-gray-100 print:hidden`}>
         {children}
         <SonnerToaster />
+        {/* Vercel's free monitoring: page views (Web Analytics) and real-user
+            load speed per page (Speed Insights). No cookies, nothing personal;
+            both report only from the deployed site, not from localhost.
+            Turn each on under the project's Analytics / Speed Insights tabs. */}
+        <Analytics />
+        <SpeedInsights />
         <PageProgressProvider />
         <OverlayBackHandler />
         <PwaRegister />
