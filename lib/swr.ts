@@ -37,7 +37,11 @@ type TFamily =
   | "books"
   | "chapter"
   | "question"
-  | "papers";
+  | "papers"
+  | "student"
+  | "batch-insights"
+  | "student-insights"
+  | "dev-suggestions";
 
 // Write endpoint (path prefix, longest first) → the lists it can change
 const WRITE_EFFECTS: [string, TFamily[]][] = [
@@ -50,19 +54,22 @@ const WRITE_EFFECTS: [string, TFamily[]][] = [
   ["auth/user", []],
   // Writes
   ["auth/accounts", ["accounts"]],
-  ["face/", ["users"]],
-  ["users", ["users", "batches", "fees", "attendance"]],
-  ["batches", ["batches", "users", "fees", "attendance"]],
-  ["fees", ["fees"]],
-  ["attendance", ["attendance"]],
+  ["face/", ["users", "student"]],
+  ["users", ["users", "batches", "fees", "attendance", "student"]],
+  ["batches", ["batches", "users", "fees", "attendance", "student"]],
+  ["fees", ["fees", "student"]],
+  ["attendance", ["attendance", "student"]],
+  ["exam-results", ["student"]],
   ["schedule-paper", ["schedule-papers"]],
-  ["answer-sheets", ["answer-sheets", "schedule-papers"]],
+  ["answer-sheets", ["answer-sheets", "schedule-papers", "student", "student-insights", "batch-insights", "question"]],
+  ["question-stats", ["question", "student", "student-insights", "batch-insights"]],
   ["books", ["books", "chapter"]],
   ["chapter", ["chapter", "question"]],
   ["bulk/question", ["question", "papers"]],
   ["questions/used", ["question", "papers"]],
   ["question", ["question", "papers"]],
   ["papers", ["papers"]],
+  ["dev-suggestions", ["dev-suggestions"]],
 ];
 
 const pathOf = (url?: string) =>

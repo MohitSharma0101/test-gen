@@ -25,7 +25,7 @@ export const GET = async (req: NextRequest) => {
             path: "answers.question",
             populate: {
                 path: "chapter",
-                select: 'title cousre subject _id'
+                select: 'title course subject book _id'
             }
         }).lean<TAnswerSheet<true>[]>();
 

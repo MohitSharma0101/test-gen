@@ -85,6 +85,7 @@ export type TGenerateSection = {
   marks?: number;
   tags?: string[];
   unusedOnly?: boolean;
+  difficulty?: "easy" | "medium" | "hard";
   requirements?: TGenerateRequirement[];
 };
 

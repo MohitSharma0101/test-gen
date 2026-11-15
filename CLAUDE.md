@@ -209,6 +209,12 @@ Frontend
 
 ## Working rules
 
+- **Ask the user before any database change**: a new model/collection, a new
+  field on a schema, a new index, or anything that stores more data. Explain
+  the size impact first. (Already in place, with the user's knowledge since:
+  `Question.stats` from lib/questionStats.ts, and the schema indexes listed
+  under Performance.)
+
 - Branch for this effort: **`dev-revamp`** (cut from `main`; the Vercel dev
   domain tracks it). Commit there directly.
 - **Push sparingly**: every push is a Vercel deployment. Commit locally as

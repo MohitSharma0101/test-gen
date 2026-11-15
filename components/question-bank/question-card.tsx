@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import { CheckIcon, ChevronDownIcon, HashIcon, MoreHorizontalIcon, PenLineIcon, TagIcon } from "lucide-react";
 import Markdown from "@/components/ui/markdown";
 import TimesUsed from "@/components/ui/times-used";
+import { DifficultyBadge } from "./difficulty-badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,6 +104,7 @@ const QuestionCard = ({ question: q, number, selected, onToggle, onAction, canCh
 
         <div className="flex shrink-0 flex-col items-end gap-1" data-no-toggle onClick={(e) => e.stopPropagation()}>
           <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-bold tabular-nums">{q.mark ?? "?"}M</span>
+          <DifficultyBadge stats={q.stats} />
           <span className="text-xs" title="Times used in printed papers">
             <TimesUsed count={q.timesUsed} />
           </span>

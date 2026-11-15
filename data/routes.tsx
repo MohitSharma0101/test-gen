@@ -178,6 +178,10 @@ export const routesFor = (isAdmin: boolean) =>
 
 // "/papers/edit/123" → Papers, "/batch/archive" → Batches. Longest match wins
 // so a future "/papers-x" can't be mistaken for "/papers".
+// Pages with no menu entry or tile, reachable only by URL (each still checks
+// the role itself). useRoutes leaves them alone instead of redirecting home.
+export const HIDDEN_PATHS = ["/dev-suggestions"];
+
 export const routeForPath = (pathname: string) =>
   ROUTES.filter((r) => pathname === r.href || pathname.startsWith(r.href + "/")).sort(
     (a, b) => b.href.length - a.href.length

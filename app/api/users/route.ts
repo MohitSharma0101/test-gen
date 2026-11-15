@@ -110,7 +110,7 @@ export const GET = async (request: NextRequest) => {
 
     const users = await User.find(filter)
       .sort({ name: 1 })
-      .populate("batchIds", "name fee _id")
+      .populate("batchIds", "name fee archived _id")
       // Plain objects: the list is JSON for the client, documents only cost time
       .lean();
 

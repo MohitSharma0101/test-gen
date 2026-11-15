@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/auth-context";
-import { routesFor } from "@/data/routes";
+import { HIDDEN_PATHS, routesFor } from "@/data/routes";
 import { Role } from "@/data/const";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -14,7 +14,7 @@ export const useRoutes = () => {
 
   useEffect(() => {
     // Home matches no route; replacing "/" with "/" would re-render it for nothing
-    if (pathname === "/") return;
+    if (pathname === "/" || HIDDEN_PATHS.includes(pathname)) return;
     const route = routes.find((route) => pathname.includes(route.href));
     if (!route) {
       router.replace("/");

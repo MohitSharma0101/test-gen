@@ -11,6 +11,20 @@ export type TQuestion = {
   timesUsed?: number;
   index?: number;
   tags?: string[];
+  // Measured from online-test answer sheets (lib/questionStats.ts)
+  stats?: TQuestionStats;
+};
+
+export type TQuestionStats = {
+  attempts: number; // answered (right or wrong) in online tests
+  correct: number;
+  correctRate: number; // 0–1
+  avgTime: number; // seconds per attempt
+  // Top-third students' accuracy minus bottom-third's, per test. Negative =
+  // weaker students do better: usually a wrong answer key or a misleading
+  // question. null until each group has enough attempts.
+  discrimination: number | null;
+  updatedAt: string;
 };
 
 export type SubjectQuestions = {
@@ -46,6 +60,14 @@ export const QuestionSchema = new mongoose.Schema(
       type: Number,
       required: false,
       default: 0,
+    },
+    stats: {
+      attempts: Number,
+      correct: Number,
+      correctRate: Number,
+      avgTime: Number,
+      discrimination: { type: Number, default: null },
+      updatedAt: Date,
     },
   },
   { timestamps: true }

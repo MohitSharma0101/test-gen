@@ -42,6 +42,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { takePracticePrefill } from "@/lib/practicePrefill";
 
 const COUNT_PRESETS = [10, 20, 25, 30, 50];
 
@@ -55,6 +56,8 @@ type TSubjectPlan = {
   // quotas do not account for is drawn from every tag.
   requirements: { tag: string; count: string }[];
   unusedOnly: boolean;
+  // "" = any; otherwise measured difficulty from online tests
+  difficulty?: "" | "easy" | "medium" | "hard";
 };
 
 const emptyPlan = (): TSubjectPlan => ({
@@ -156,6 +159,7 @@ export default function GeneratePaper() {
           maxQuestions: Number(plans[s].count) || 0,
           marks: plans[s].marks ? Number(plans[s].marks) : undefined,
           unusedOnly: plans[s].unusedOnly,
+          difficulty: plans[s].difficulty || undefined,
           requirements: plans[s].requirements
             .filter((r) => r.tag && Number(r.count) > 0)
             .map((r) => ({ tag: r.tag, count: Number(r.count) })),
@@ -179,8 +183,30 @@ export default function GeneratePaper() {
 
   // ---- Draft -------------------------------------------------------------
   const [restored, setRestored] = useState<number | null>(null);
+  // Set when opened from Online Test analysis with its weak chapters picked
+  const [practiceFrom, setPracticeFrom] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
   useEffect(() => {
+    // A practice-paper hand-off wins over an older draft
+    const pre = takePracticePrefill();
+    if (pre) {
+      if (pre.course && pre.course !== course) {
+        restoringCourse.current = pre.course;
+        setCourse(pre.course);
+      }
+      const next: Record<string, TSubjectPlan> = {};
+      for (const [subj, ids] of Object.entries(pre.chapters)) {
+        if (subj && ids?.length) next[subj] = { ...emptyPlan(), chapterIds: ids, count: "20" };
+      }
+      setPlans(next);
+      const first = Object.keys(next)[0];
+      if (first) setSubject(first);
+      setQuestions([]);
+      setPracticeFrom(pre.source || "the online test");
+      setView("setup");
+      setDraftReady(true);
+      return;
+    }
     const d = readDraft();
     if (d) {
       if (d.course && d.course !== course) {
@@ -327,6 +353,7 @@ export default function GeneratePaper() {
     `${Number(plan.count) || 0} questions`,
     plan.marks ? `${plan.marks} mark${plan.marks === "1" ? "" : "s"}` : "any marks",
     plan.unusedOnly ? "unused" : "",
+    plan.difficulty ? `${plan.difficulty} only` : "",
     quotaCount ? `${quotaCount} tag rule${quotaCount === 1 ? "" : "s"}` : "",
   ]
     .filter(Boolean)
@@ -336,6 +363,17 @@ export default function GeneratePaper() {
     // Class/subjects and the folded settings take two short rows; the chapter
     // list gets everything else and scrolls on its own, Generate at the foot
     <div className="flex h-full min-h-0 w-full flex-col bg-card">
+      {practiceFrom && (
+        <div className="flex shrink-0 items-start gap-2 border-b bg-brand-soft px-3 py-2 text-sm">
+          <WandSparklesIcon className="mt-0.5 size-4 shrink-0 text-brand" />
+          <p className="min-w-0 flex-1">
+            Weak chapters from <strong>{practiceFrom}</strong> are picked. Adjust if you like, then press Generate.
+          </p>
+          <button type="button" aria-label="Dismiss" onClick={() => setPracticeFrom(null)} className="rounded p-0.5 text-muted-foreground hover:bg-muted">
+            <XIcon className="size-4" />
+          </button>
+        </div>
+      )}
       <div className="grid shrink-0 grid-cols-2 gap-2 border-b p-2.5">
         <SelectCompact
           placeholder="Class"
@@ -420,6 +458,21 @@ export default function GeneratePaper() {
                 Unused
               </div>
             </div>
+
+            {/* Measured difficulty: only questions with enough online-test
+                answers are rated, so a strict band can leave few to pick from */}
+            <SelectCompact
+              label="Difficulty"
+              placeholder="Any difficulty"
+              value={plan.difficulty || ""}
+              onChange={(value) => setPlan({ difficulty: (value || "") as TSubjectPlan["difficulty"] })}
+              options={[
+                { label: "Easy (70%+ answer right)", value: "easy" },
+                { label: "Medium (40–70%)", value: "medium" },
+                { label: "Hard (under 40%)", value: "hard" },
+              ]}
+              canUnselect
+            />
 
             {/* Tag quotas: "5 of these must be Numerical" */}
             <TagQuotaPicker
@@ -653,6 +706,7 @@ export default function GeneratePaper() {
             marks: planOf?.marks ? Number(planOf.marks) : undefined,
             tags: quotaTag ? [quotaTag] : undefined,
             unusedOnly: planOf?.unusedOnly,
+            difficulty: planOf?.difficulty || undefined,
           });
         }}
         onRemove={() => removeQuestion(question)}

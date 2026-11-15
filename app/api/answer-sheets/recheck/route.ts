@@ -3,6 +3,7 @@ import { nextError, nextSuccess } from "@/lib/nextUtils";
 import { analyseTest } from "@/lib/test-utils";
 import AnswerSheet, { TAnswerSheet } from "@/models/AnswerSheet";
 import SchedulePaper, { TSchedulePaper } from "@/models/SchedulePaper";
+import { recomputeQuestionStats } from "@/lib/questionStats";
 import { NextRequest } from "next/server";
 
 // Import related models for population
@@ -64,6 +65,14 @@ export const PUT = async (req: NextRequest) => {
 
         // Perform bulk update
         await AnswerSheet.bulkWrite(bulkOps);
+
+        // Fresh results change these questions' measured difficulty. A
+        // failure here must not fail the recheck itself.
+        try {
+            await recomputeQuestionStats(questions.map((q: any) => String(q?._id ?? q)).filter(Boolean));
+        } catch (err) {
+            console.error("question stats refresh failed", err);
+        }
 
         return nextSuccess({
             message: "Answer sheets analyzed and updated successfully.",

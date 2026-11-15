@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useMemo, useState } from "react";
 import { CheckCircle2Icon, PencilIcon, PhoneIcon, PlusIcon, ScanFaceIcon, SearchIcon, SearchXIcon, Users2Icon, XIcon } from "lucide-react";
 import AddUserSheet from "@/components/sheets/add-user-sheet";
@@ -42,7 +43,9 @@ const FACE_STYLES: Record<TFaceState, string> = {
 
 const NO_BATCH = "__none";
 
-const batchesOf = (u: TUser) => ((u.batchIds ?? []) as TBatch[]).filter((b) => b && typeof b === "object");
+// Current batches only: an archived batch is hidden everywhere else, so a
+// student left only in archived batches counts as "No batch"
+const batchesOf = (u: TUser) => ((u.batchIds ?? []) as TBatch[]).filter((b) => b && typeof b === "object" && !b.archived);
 
 const FaceButton = ({ user, onClick }: { user: TUser; onClick: () => void }) => {
   const count = user.faceSignatureCount ?? 0;
@@ -151,7 +154,9 @@ const UserPage = () => {
       header: "Student",
       cell: (u) => (
         <>
-          <span className="block truncate font-medium">{u.name || "—"}</span>
+          <Link href={`/users/${u._id}`} className="block truncate font-medium text-brand underline-offset-2 hover:underline">
+            {u.name || "—"}
+          </Link>
           <span className="text-xs text-muted-foreground">
             {u.userId}
             {u.phone ? ` · ${u.phone}` : ""}
@@ -183,13 +188,14 @@ const UserPage = () => {
   const card = (u: TUser) => (
     <div className="rounded-xl border bg-card p-3 shadow-sm">
       <div className="flex items-start gap-2">
-        <button type="button" onClick={() => setSelectedUser(u)} className="min-w-0 flex-1 text-left">
-          <span className="block truncate font-bold">{u.name || "—"}</span>
+        {/* The name opens the student's page; the pencil still edits */}
+        <Link href={`/users/${u._id}`} className="min-w-0 flex-1 text-left">
+          <span className="block truncate font-bold text-brand">{u.name || "—"}</span>
           <span className="block text-xs text-muted-foreground">
             {u.userId}
             {u.phone ? ` · ${u.phone}` : ""}
           </span>
-        </button>
+        </Link>
         {/* Own row so the pill and the 36px edit button share a centre line */}
         <div className="flex shrink-0 items-center gap-1">
           <FaceButton user={u} onClick={() => setFaceUser(u)} />

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
+  BrainCircuitIcon,
   CalendarClockIcon,
   ChartColumnIcon,
   EllipsisVerticalIcon,
@@ -15,6 +16,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 import QuestionAnalyzerSheet from "@/components/sheets/question-analyzer-sheet";
+import { BatchInsightsWindow } from "@/components/insights/batch-insights-window";
 import { ViewPaperSheet } from "@/components/sheets/view-paper-sheet";
 import { ViewResultSheet } from "@/components/sheets/view-results-sheet";
 import SelectCompact from "@/components/ui/select-compact";
@@ -130,6 +132,8 @@ const OnlineTestPage = () => {
   const [viewPaperId, setViewPaperId] = useState<string | null>(null);
   const [viewScheduleResult, setViewScheduleResult] = useState<TSchedulePaper | null>(null);
   const [analyzerId, setAnalyzerId] = useState<string | null>(null);
+  const [analyzerTitle, setAnalyzerTitle] = useState("");
+  const [insightsOpen, setInsightsOpen] = useState(false);
 
   // Teachers usually check the same batch: remember it on this device
   useEffect(() => {
@@ -218,7 +222,10 @@ const OnlineTestPage = () => {
             test={test}
             status={status}
             onResults={() => setViewScheduleResult(test)}
-            onAnalyze={() => setAnalyzerId(test._id)}
+            onAnalyze={() => {
+              setAnalyzerId(test._id);
+              setAnalyzerTitle(test.paper?.title ?? "");
+            }}
             onViewPaper={() => test.paper?._id && setViewPaperId(test.paper._id)}
             onDelete={() => onDelete(test._id)}
           />
@@ -235,15 +242,28 @@ const OnlineTestPage = () => {
         title="Online tests"
         description={selectedBatchId && !loading ? `${tests.length} test${tests.length === 1 ? "" : "s"} in this batch` : "Scheduled tests by batch"}
         actions={
-          <Button
-            variant="outline"
-            onClick={refresh}
-            disabled={!selectedBatchId || loading}
-            aria-label="Refresh"
-            className="size-10 p-0"
-          >
-            <RefreshCwIcon className={cn("size-4", loading && "animate-spin")} />
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setInsightsOpen(true)}
+              disabled={!selectedBatchId}
+              className="h-10 gap-2"
+              title="What this batch's online tests say: re-teach list, groups, questions to review"
+            >
+              <BrainCircuitIcon className="size-4" />
+              <span className="hidden sm:inline">Insights</span>
+              <span className="sr-only sm:hidden">Batch insights</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={refresh}
+              disabled={!selectedBatchId || loading}
+              aria-label="Refresh"
+              className="size-10 p-0"
+            >
+              <RefreshCwIcon className={cn("size-4", loading && "animate-spin")} />
+            </Button>
+          </>
         }
       />
 
@@ -282,10 +302,19 @@ const OnlineTestPage = () => {
       {analyzerId && (
         <QuestionAnalyzerSheet
           scheduleId={analyzerId}
+          title={analyzerTitle || undefined}
           open={Boolean(analyzerId)}
           onOpenChange={(open) => {
             if (!open) setAnalyzerId(null);
           }}
+        />
+      )}
+      {insightsOpen && selectedBatchId && (
+        <BatchInsightsWindow
+          open={insightsOpen}
+          onOpenChange={setInsightsOpen}
+          batchId={selectedBatchId}
+          batchName={batches.find((b) => b._id === selectedBatchId)?.name ?? "Batch"}
         />
       )}
     </main>

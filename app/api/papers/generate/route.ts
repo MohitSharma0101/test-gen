@@ -1,3 +1,4 @@
+import { DIFFICULTY_BANDS, MIN_ATTEMPTS, type TDifficulty } from "@/lib/difficulty";
 import { NextRequest } from "next/server";
 import mongoose from "mongoose";
 import { getAccount } from "@/lib/auth";
@@ -32,6 +33,9 @@ export type TGenerateSection = {
   // replacement carrying the tag the original was there to satisfy.
   tags?: string[];
   unusedOnly?: boolean;
+  // Measured difficulty from online tests (lib/difficulty.ts); only rated
+  // questions qualify when set
+  difficulty?: TDifficulty;
   requirements?: TGenerateRequirement[];
 };
 
@@ -128,6 +132,11 @@ export const POST = async (request: NextRequest) => {
       if (tag) query.tags = tag;
       else if (section.tags?.length) query.tags = { $in: section.tags };
       if (section.unusedOnly) query.timesUsed = 0;
+      const band = section.difficulty ? DIFFICULTY_BANDS[section.difficulty as TDifficulty] : undefined;
+      if (band) {
+        query["stats.attempts"] = { $gte: MIN_ATTEMPTS };
+        query["stats.correctRate"] = { $gte: band.min, $lt: band.max };
+      }
       return query;
     };
 

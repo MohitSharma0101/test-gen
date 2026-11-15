@@ -252,3 +252,11 @@ export const formatINR = (value?: number | null) =>
 
 // "10" → "Class 10"; "JEE" stays "JEE"
 export const courseLabel = (course?: string) => (course && /^\d+$/.test(course) ? `Class ${course}` : course ?? "");
+
+// "2026-11-14" / ISO date → "14 Nov 2026"; missing or invalid → "—"
+export const formatDay = (value?: string | Date | null) => {
+  const d = value ? new Date(value) : null;
+  return d && !Number.isNaN(d.getTime())
+    ? d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+    : "—";
+};

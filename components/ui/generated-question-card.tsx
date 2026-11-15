@@ -4,6 +4,7 @@ import { memo } from "react";
 import { ChevronDownIcon, RefreshCwIcon, XIcon } from "lucide-react";
 import Markdown from "./markdown";
 import TimesUsed from "./times-used";
+import { DifficultyBadge } from "@/components/question-bank/difficulty-badge";
 import { cn } from "@/lib/utils";
 import type { TChapter } from "@/models/Chapter";
 import type { TQuestion } from "@/models/Question";
@@ -61,8 +62,11 @@ const GeneratedQuestionCard = ({
           <div className="min-w-0 flex-1 overflow-x-auto">
             <Markdown text={question.text ?? ""} />
           </div>
-          <span className="h-fit shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-xs font-bold tabular-nums">
-            {question.mark ?? 1}M
+          <span className="flex shrink-0 flex-col items-end gap-1">
+            <span className="h-fit rounded-md bg-muted px-1.5 py-0.5 text-xs font-bold tabular-nums">
+              {question.mark ?? 1}M
+            </span>
+            <DifficultyBadge stats={question.stats} />
           </span>
         </div>
 
