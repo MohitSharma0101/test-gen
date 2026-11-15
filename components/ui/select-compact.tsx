@@ -15,8 +15,8 @@ export type TSelectCompactProps = {
   options: {
     label: string;
     value: string;
-    // A short badge shown after the label, e.g. "Paid"
-    tag?: string;
+    // Short badges shown after the label in the list, e.g. "Paid"
+    tags?: string[];
   }[];
   value?: string;
   label?: string;
@@ -26,6 +26,14 @@ export type TSelectCompactProps = {
   triggerClassName?: string;
   canUnselect?: boolean;
   disabled?: boolean;
+};
+
+// Badge colours by tag; anything else is neutral
+const TAG_STYLES: Record<string, string> = {
+  Paid: "border-amber-300 bg-amber-50 text-amber-800",
+  "Free tier": "border-green-300 bg-green-50 text-green-800",
+  Default: "border-blue-300 bg-blue-50 text-blue-800",
+  default: "border-slate-300 bg-slate-50 text-slate-700",
 };
 
 const SelectCompact = ({
@@ -74,13 +82,27 @@ const SelectCompact = ({
             </p>
           ) : (
             options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
+              <SelectItem
+                key={option.value}
+                value={option.value}
+                suffix={
+                  option.tags?.length ? (
+                    <span className="ml-1.5 flex flex-wrap gap-1">
+                      {option.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className={`rounded border px-1 py-px text-[10px] font-semibold uppercase tracking-wide ${
+                            TAG_STYLES[tag] || TAG_STYLES.default
+                          }`}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </span>
+                  ) : undefined
+                }
+              >
                 {option.label}
-                {option.tag && (
-                  <span className="ml-1.5 rounded border border-amber-300 bg-amber-50 px-1 py-px text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                    {option.tag}
-                  </span>
-                )}
               </SelectItem>
             ))
           )}

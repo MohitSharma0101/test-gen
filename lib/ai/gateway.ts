@@ -19,6 +19,9 @@ const FALLBACKS: Record<string, string[]> = {
   "openai/gpt-5-mini": ["google/gemini-2.5-flash", "openai/gpt-5-nano"],
   "google/gemini-2.5-flash": ["openai/gpt-5-mini", "openai/gpt-5-nano"],
   "google/gemini-2.5-flash-lite": ["openai/gpt-5-nano", "openai/gpt-5.4-nano"],
+  "stepfun/step-3.7-flash": ["openai/gpt-5-mini", "google/gemini-2.5-flash"],
+  "thinkingmachines/inkling-2-small": ["openai/gpt-5-mini", "google/gemini-2.5-flash"],
+  "openai/o4-mini": ["openai/gpt-5-mini", "google/gemini-2.5-flash"],
 };
 
 type ChatContent =

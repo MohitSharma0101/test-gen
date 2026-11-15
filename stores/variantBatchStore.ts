@@ -400,16 +400,18 @@ export const useVariantBatchStore = create<TState & TActions>()(
     },
     {
       name: "variant-batch",
-      version: 2,
-      // v2 moved the default to a paid gateway model at low thinking. The
-      // sheet-wide choice saved by v1 was the old default for almost everyone,
-      // so it is reset; existing tabs keep the model they were made with.
+      version: 3,
+      // v2 moved the default to a paid gateway model at low thinking, and v3
+      // from GPT-5 nano to GPT-5 mini. The sheet-wide choice saved before was
+      // the old default for almost everyone, so it is reset; existing tabs
+      // keep the model they were made with.
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>;
         if (version < 2) {
           state.model = DEFAULT_MODEL;
           state.thinking = DEFAULT_THINKING_MODE;
         }
+        if (version < 3 && state.model === "openai/gpt-5-nano") state.model = DEFAULT_MODEL;
         return state as never;
       },
       storage: createJSONStorage(() => localStorage),
