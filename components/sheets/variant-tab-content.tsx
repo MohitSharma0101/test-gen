@@ -37,7 +37,7 @@ import {
   type TTabSettings,
   type TVariantTab,
 } from "@/stores/variantBatchStore";
-import { AI_MODELS, DEFAULT_MODEL } from "@/lib/ai/free-models";
+import { AI_MODELS, modelTags } from "@/lib/ai/free-models";
 import { DEFAULT_VARIANT_COUNT, VARIANT_COUNTS } from "@/lib/ai/generateVariants";
 import {
   THINKING_MODES,
@@ -407,9 +407,9 @@ const TabInputs = ({
               disabled={busy}
               onChange={(value) => value && onChange({ model: value })}
               options={AI_MODELS.map((m) => ({
-                label: m.id === DEFAULT_MODEL ? `${m.label} (default)` : m.label,
+                label: m.label,
                 value: m.id,
-                tag: m.paid ? "Paid" : undefined,
+                tags: modelTags(m),
               }))}
             />
             <SelectCompact

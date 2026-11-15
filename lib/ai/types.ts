@@ -43,8 +43,15 @@ export type TGenerateVariantsRequest = {
 };
 
 // The model picker in the Generate sheet
-// paid: billed per token; the picker tags it so teachers know it costs money
-export type TAiModel = { id: string; label: string; paid?: boolean };
+// The picker shows each flag and tag as a badge after the name, so the name
+// stays clean. paid: billed per token. free: on a provider's free tier.
+export type TAiModel = {
+  id: string;
+  label: string;
+  paid?: boolean;
+  free?: boolean;
+  tags?: string[];
+};
 
 export type TGenerateVariantsResponse = {
   questionType: TQuestionType;

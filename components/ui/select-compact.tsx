@@ -20,6 +20,8 @@ export type TSelectCompactProps = {
     tag?: string;
     // "warning" (amber, the default, e.g. "Paid") or "info" (brand, e.g. "30Q")
     tagTone?: "warning" | "info";
+    // Several badges, coloured by name (see TAG_STYLES)
+    tags?: string[];
   }[];
   value?: string;
   label?: string;
@@ -29,6 +31,14 @@ export type TSelectCompactProps = {
   triggerClassName?: string;
   canUnselect?: boolean;
   disabled?: boolean;
+};
+
+// Badge colours by tag; anything else is neutral
+const TAG_STYLES: Record<string, string> = {
+  Paid: "border-amber-300 bg-amber-50 text-amber-800",
+  "Free tier": "border-green-300 bg-green-50 text-green-800",
+  Default: "border-brand/30 bg-brand-soft text-brand",
+  default: "border-slate-300 bg-slate-50 text-slate-700",
 };
 
 const SelectCompact = ({
@@ -79,7 +89,26 @@ const SelectCompact = ({
             </p>
           ) : (
             options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
+              <SelectItem
+                key={option.value}
+                value={option.value}
+                suffix={
+                  option.tags?.length ? (
+                    <span className="ml-1.5 flex flex-wrap gap-1">
+                      {option.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className={`rounded border px-1 py-px text-[10px] font-semibold uppercase tracking-wide ${
+                            TAG_STYLES[tag] || TAG_STYLES.default
+                          }`}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </span>
+                  ) : undefined
+                }
+              >
                 {option.label}
                 {option.tag && (
                   <span
