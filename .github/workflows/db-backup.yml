@@ -41,11 +41,29 @@ jobs:
           encrypt /tmp/db.archive.gz /tmp/db.archive.gz.enc
           r2 s3 cp /tmp/db.archive.gz.enc "s3://${R2_BUCKET}/${name}.archive.gz.enc"
           r2 s3 cp /tmp/counts.json "s3://${R2_BUCKET}/${name}.counts.json"
-          echo "Backed up $(du -h /tmp/db.archive.gz.enc | cut -f1) to ${name}" >> "$GITHUB_STEP_SUMMARY"
-          cat /tmp/counts.json >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Backup"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| File | \`${name}.archive.gz.enc\` |"
+            echo "| Size (encrypted) | $(du -h /tmp/db.archive.gz.enc | cut -f1) |"
+            echo "| Database | \`${DB_NAME}\` |"
+            echo "| Collections | $(jq 'length' /tmp/counts.json) |"
+            echo "| Documents | $(jq '[.[]] | add' /tmp/counts.json) |"
+            echo "| Time (IST) | $(TZ=Asia/Kolkata date '+%d %b %Y, %H:%M') |"
+            echo
+            echo "### Documents per collection"
+            echo "| Collection | Documents |"
+            echo "|---|---:|"
+            jq -r 'to_entries | sort_by(-.value)[] | "| \(.key) | \(.value) |"' /tmp/counts.json
+          } >> "$GITHUB_STEP_SUMMARY"
           if [ -z "${{ inputs.label }}" ]; then
             # Sundays also go to weekly/, the 1st of the month to monthly/
-            [ "$(TZ=Asia/Kolkata date +%u)" = 7 ] && for f in archive.gz.enc counts.json; do r2 s3 cp "s3://${R2_BUCKET}/${name}.$f" "s3://${R2_BUCKET}/weekly/${stamp}.$f"; done
-            [ "$(TZ=Asia/Kolkata date +%d)" = 01 ] && for f in archive.gz.enc counts.json; do r2 s3 cp "s3://${R2_BUCKET}/${name}.$f" "s3://${R2_BUCKET}/monthly/${stamp}.$f"; done
+            if [ "$(TZ=Asia/Kolkata date +%u)" = 7 ]; then
+              for f in archive.gz.enc counts.json; do r2 s3 cp "s3://${R2_BUCKET}/${name}.$f" "s3://${R2_BUCKET}/weekly/${stamp}.$f"; done
+            fi
+            if [ "$(TZ=Asia/Kolkata date +%d)" = 01 ]; then
+              for f in archive.gz.enc counts.json; do r2 s3 cp "s3://${R2_BUCKET}/${name}.$f" "s3://${R2_BUCKET}/monthly/${stamp}.$f"; done
+            fi
             prune daily/ 7; prune weekly/ 4; prune monthly/ 12
           fi

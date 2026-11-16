@@ -77,4 +77,12 @@ jobs:
           fi
           # --drop: each restored collection is replaced, not merged
           mongorestore --uri="$TARGET" --gzip --archive=/tmp/db.archive.gz --drop "${ns[@]}"
-          echo "Restored ${{ inputs.backup }} (${{ inputs.mode }}): ${{ inputs.collections || 'all collections' }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Restore"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Backup | \`${{ inputs.backup }}\` |"
+            echo "| Mode | ${{ inputs.mode }} |"
+            echo "| Collections | ${{ inputs.collections || 'all' }} |"
+            echo "| Time (IST) | $(TZ=Asia/Kolkata date '+%d %b %Y, %H:%M') |"
+          } >> "$GITHUB_STEP_SUMMARY"

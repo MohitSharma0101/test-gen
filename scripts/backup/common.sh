@@ -43,7 +43,9 @@ counts() { # $1 = uri, $2 = db name
 
 # Keep only the newest N files under a prefix.
 prune() { # $1 = prefix (e.g. daily/), $2 = keep
-  r2 s3 ls "s3://${R2_BUCKET}/$1" | awk '{print $4}' | grep '\.enc$' | sort -r | tail -n +"$(( $2 + 1 ))" |
+  # `aws s3 ls` exits 1 for an empty or missing prefix, and grep exits 1 on
+  # no match: neither is an error here (weekly/ is empty until the first Sunday).
+  { r2 s3 ls "s3://${R2_BUCKET}/$1" || true; } | awk '{print $4}' | { grep '\.enc$' || true; } | sort -r | tail -n +"$(( $2 + 1 ))" |
     while read -r f; do
       base="${f%.archive.gz.enc}"
       r2 s3 rm "s3://${R2_BUCKET}/$1$f"
