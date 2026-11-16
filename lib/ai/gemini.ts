@@ -14,6 +14,13 @@ export type GenerateJsonInput = {
   model?: string;
 };
 
+// Hard cap on what one call may write, thinking included. A normal generate or
+// recheck writes 1-8K (o4-mini's longest so far: 7.3K); without a cap Gemini
+// 2.5 Flash-Lite once looped to 65.5K tokens over 124 s and was billed for all
+// of it even though the request had already timed out. Hitting the cap ends
+// the call with "reply was cut off" instead.
+export const MAX_OUTPUT_TOKENS = 12000;
+
 export class GeminiError extends Error {
   status: number;
   constructor(message: string, status = 500) {
@@ -42,6 +49,7 @@ const buildRequest = (model: string, input: GenerateJsonInput) => {
     const instructions = `${input.systemInstruction}\n\nReply with ONE JSON object only, no other text, matching this JSON schema:\n${JSON.stringify(input.responseSchema)}`;
     return {
       contents: [{ role: "user", parts: [{ text: instructions }, ...input.parts] }],
+      generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
     };
   }
   return {
@@ -50,6 +58,7 @@ const buildRequest = (model: string, input: GenerateJsonInput) => {
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: input.responseSchema,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
       ...(thinkingConfig ? { thinkingConfig } : {}),
     },
   };

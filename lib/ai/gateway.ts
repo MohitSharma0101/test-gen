@@ -2,7 +2,7 @@
 // Chat Completions API, with the key from AI_GATEWAY_API_KEY. Model ids are
 // "provider/model", e.g. "openai/gpt-5-nano". Takes the same input as the Gemini
 // client, so the prompts and schemas work unchanged.
-import { GeminiError, parseJson, type GenerateJsonInput } from "./gemini";
+import { GeminiError, MAX_OUTPUT_TOKENS, parseJson, type GenerateJsonInput } from "./gemini";
 import { toJsonSchema } from "./schema";
 
 const ENDPOINT = "https://ai-gateway.vercel.sh/v1/chat/completions";
@@ -73,6 +73,8 @@ export const generateGatewayJson = async <T>(input: GenerateJsonInput): Promise<
       { role: "user", content: toContent(input.parts) },
     ],
     stream: false,
+    // Thinking counts toward this, so a runaway reply stops here
+    max_completion_tokens: MAX_OUTPUT_TOKENS,
     response_format: {
       type: "json_schema",
       json_schema: {
@@ -93,8 +95,14 @@ export const generateGatewayJson = async <T>(input: GenerateJsonInput): Promise<
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify(body),
+      // Give up just before the route's 60 s limit, so the teacher gets a
+      // clear message instead of a dropped connection
+      signal: AbortSignal.timeout(55_000),
     });
-  } catch {
+  } catch (err) {
+    if ((err as Error)?.name === "TimeoutError") {
+      throw new GeminiError(`${model} took too long to answer. Try again or pick another model.`, 504);
+    }
     throw new GeminiError("Could not reach Vercel AI Gateway. Try again.", 502);
   }
 

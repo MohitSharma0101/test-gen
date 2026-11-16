@@ -2,7 +2,7 @@
 // Takes the same input as the Gemini client, so the prompts and schemas in
 // generateVariants and recheckQuestion work unchanged.
 import Anthropic from "@anthropic-ai/sdk";
-import { GeminiError, parseJson, type GenerateJsonInput } from "./gemini";
+import { GeminiError, MAX_OUTPUT_TOKENS, parseJson, type GenerateJsonInput } from "./gemini";
 import { toJsonSchema } from "./schema";
 
 type Effort = "low" | "medium" | "high";
@@ -41,7 +41,7 @@ export const generateClaudeJson = async <T>(input: GenerateJsonInput): Promise<T
   try {
     message = await getClient().messages.create({
       model,
-      max_tokens: 16000,
+      max_tokens: MAX_OUTPUT_TOKENS,
       // The system prompt is the same for every question of a kind, so a
       // teacher working through a paper reads it from the cache
       system: [
