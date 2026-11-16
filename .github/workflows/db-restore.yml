@@ -1,0 +1,80 @@
+# Manual restore. See docs/BACKUP.md before running.
+#   mode=copy     restore into a separate cluster (MONGO_COPY_URI). Live data untouched.
+#   mode=replace  replace collections on the live cluster. Takes a fresh
+#                 "pre-restore" backup first, and needs the confirm phrase.
+name: DB restore
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup:
+        description: "Backup to restore, e.g. daily/2026-11-16 or manual/2026-11-16-before-remark"
+        required: true
+      mode:
+        description: "copy (safe) or replace (overwrites live collections)"
+        type: choice
+        options: [copy, replace]
+        default: copy
+      collections:
+        description: "Comma-separated collections (e.g. answersheets). Blank = all."
+        required: false
+      confirm:
+        description: 'For replace: type REPLACE LIVE DATA'
+        required: false
+
+concurrency: db-backup
+
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      DB_NAME: ${{ vars.DB_NAME || 'test' }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check inputs
+        run: |
+          if [ "${{ inputs.mode }}" = replace ] && [ "${{ inputs.confirm }}" != "REPLACE LIVE DATA" ]; then
+            echo "Replace needs the confirm phrase REPLACE LIVE DATA"; exit 1
+          fi
+          if [ "${{ inputs.mode }}" = copy ] && [ -z "${{ secrets.MONGO_COPY_URI }}" ]; then
+            echo "Copy mode needs the MONGO_COPY_URI secret (a second, empty cluster)"; exit 1
+          fi
+      - name: Download and decrypt
+        run: |
+          source scripts/backup/common.sh
+          install_tools
+          b="$(echo '${{ inputs.backup }}' | sed 's/\.archive\.gz\.enc$//')"
+          r2 s3 cp "s3://${R2_BUCKET}/${b}.archive.gz.enc" /tmp/db.enc
+          decrypt /tmp/db.enc /tmp/db.archive.gz
+      - name: Safety backup of the live data first
+        if: inputs.mode == 'replace'
+        env:
+          MONGO_URI: ${{ secrets.MONGO_BACKUP_URI }}
+        run: |
+          source scripts/backup/common.sh
+          stamp=$(TZ=Asia/Kolkata date +%Y-%m-%d-%H%M)
+          mongodump --uri="$MONGO_URI" --db="$DB_NAME" --gzip --archive=/tmp/pre.archive.gz
+          encrypt /tmp/pre.archive.gz /tmp/pre.enc
+          r2 s3 cp /tmp/pre.enc "s3://${R2_BUCKET}/manual/${stamp}-pre-restore.archive.gz.enc"
+          echo "Saved the live data first as manual/${stamp}-pre-restore" >> "$GITHUB_STEP_SUMMARY"
+      - name: Restore
+        env:
+          TARGET: ${{ inputs.mode == 'replace' && secrets.MONGO_RESTORE_URI || secrets.MONGO_COPY_URI }}
+        run: |
+          source scripts/backup/common.sh
+          ns=()
+          if [ -n "${{ inputs.collections }}" ]; then
+            IFS=',' read -ra cols <<< "${{ inputs.collections }}"
+            for c in "${cols[@]}"; do ns+=("--nsInclude=${DB_NAME}.$(echo "$c" | xargs)"); done
+          else
+            ns+=("--nsInclude=${DB_NAME}.*")
+          fi
+          # --drop: each restored collection is replaced, not merged
+          mongorestore --uri="$TARGET" --gzip --archive=/tmp/db.archive.gz --drop "${ns[@]}"
+          echo "Restored ${{ inputs.backup }} (${{ inputs.mode }}): ${{ inputs.collections || 'all collections' }}" >> "$GITHUB_STEP_SUMMARY"

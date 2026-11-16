@@ -3,11 +3,23 @@ import { TAnalysedQuestion, TAnswer, TAnswerSheet } from "@/models/AnswerSheet";
 import { TQuestion } from "@/models/Question";
 
 // sync
+// The option in an MCQ key's first line: "(d) It is SN2", "d) …", "c. …",
+// "Ans: (c)". Keys copied from books often start with the book's question
+// number ("13. (c) CH≡CH + H₂ …"); the first-two-characters rule below read
+// that as "13", matched no option and marked every student wrong.
+const MCQ_OPTION =
+  /^(?:ans(?:wer)?\s*[:.\-]?\s*)?(?:\d+\s*[.)]\s*)?[([]?\s*([a-d1-4])\s*[)\]]?(?![a-z0-9])/i;
+
 export const normalizeAnswer = (ans?: string, isNotMCQ?: boolean): string => {
   if (!ans) return "";
 
   // Take only first line (ignore explanation after newline)
   let firstLine = ans?.split("\n")?.[0]?.trim().toLowerCase();
+
+  if (!isNotMCQ) {
+    const option = firstLine.replace(/^[\s*_]+/, "").match(MCQ_OPTION)?.[1];
+    if (option) return `opt-${"abcd".includes(option) ? "abcd".indexOf(option) + 1 : option}`;
+  }
 
   if (!isNotMCQ) {
     firstLine = firstLine.slice(0, 2);

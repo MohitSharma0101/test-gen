@@ -1,86 +1,39 @@
 import { dbConnect } from "@/lib/dbUtils";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
-import { analyseTest } from "@/lib/test-utils";
-import AnswerSheet, { TAnswerSheet } from "@/models/AnswerSheet";
-import SchedulePaper, { TSchedulePaper } from "@/models/SchedulePaper";
-import { recomputeQuestionStats } from "@/lib/questionStats";
+import { recheckSchedule } from "@/lib/recheck";
 import { NextRequest } from "next/server";
+import { getAccount } from "@/lib/auth";
+import { Role } from "@/data/const";
+import AnswerSheet from "@/models/AnswerSheet";
 
-// Import related models for population
-import '@/models/Question';
-import '@/models/Chapter';
+// Admin: the tests already marked at least once, for "Re-mark all tests".
+// The client re-marks them one PUT at a time, so no single request can run
+// into the function time limit.
+export const GET = async () => {
+  try {
+    const account = await getAccount();
+    if (!account) return nextError("Please log in", 401);
+    if (account.role !== Role.ADMIN) return nextError("Only admins can re-mark all tests", 403);
+    await dbConnect();
+    const scheduleIds = await AnswerSheet.distinct("schedulePaper", { "answers.isCorrect": { $exists: true } });
+    return nextSuccess({ scheduleIds: scheduleIds.map(String) });
+  } catch (err: any) {
+    return nextError(err?.message || "Couldn't list the tests");
+  }
+};
 
 export const PUT = async (req: NextRequest) => {
-    try {
-        const { scheduleId } = await req.json();
+  try {
+    const { scheduleId } = await req.json();
+    if (!scheduleId) return nextError("Schedule ID is required.");
 
-        if (!scheduleId) {
-            return nextError("Schedule ID is required.");
-        }
+    await dbConnect();
+    const marked = await recheckSchedule(scheduleId);
+    if (!marked) return nextSuccess({ message: "No answer sheets found to analyze.", success: true });
 
-        await dbConnect();
-
-        // Fetch the schedule with paper and questions populated
-        const schedule = await SchedulePaper.findById(scheduleId)
-            .populate({
-                path: "paper",
-                select: "title questions",
-                populate: {
-                    path: "questions",
-                },
-            })
-            .lean<TSchedulePaper>();
-
-        if (!schedule) {
-            return nextError("Schedule or associated paper not found.");
-        }
-
-        const questions = schedule.paper?.questions ?? [];
-        const answerSheets = await AnswerSheet.find({ schedulePaper: scheduleId }).lean<TAnswerSheet[]>();
-
-        if (!answerSheets.length) {
-            return nextSuccess({ message: "No answer sheets found to analyze.", success: true });
-        }
-
-        // Prepare bulk update operations
-        const bulkOps = answerSheets.map((sheet) => {
-            const analysis = analyseTest(questions, sheet.answers);
-
-            return {
-                updateOne: {
-                    filter: { schedulePaper: sheet.schedulePaper, user: sheet.user },
-                    update: {
-                        $set: {
-                            answers: analysis?.analysedAns ?? sheet.answers,
-                            correctAns: analysis?.correctAns,
-                            incorrectAns: analysis?.incorrectAns,
-                            skippedAns: analysis?.skippedAns,
-                            totalMarks: analysis?.totalMarks,
-                            obtainedMarks: analysis?.obtainedMarks,
-                        }
-                    }
-                }
-            };
-        });
-
-        // Perform bulk update
-        await AnswerSheet.bulkWrite(bulkOps);
-
-        // Fresh results change these questions' measured difficulty. A
-        // failure here must not fail the recheck itself.
-        try {
-            await recomputeQuestionStats(questions.map((q: any) => String(q?._id ?? q)).filter(Boolean));
-        } catch (err) {
-            console.error("question stats refresh failed", err);
-        }
-
-        return nextSuccess({
-            message: "Answer sheets analyzed and updated successfully.",
-            success: true
-        });
-
-    } catch (err: any) {
-        console.error("Error in PUT /api/analyse:", err);
-        return nextError("Internal server error.");
-    }
+    return nextSuccess({ message: "Answer sheets analyzed and updated successfully.", success: true });
+  } catch (err: any) {
+    console.error("Error in PUT /api/answer-sheets/recheck:", err);
+    return nextError(err?.message || "Internal server error.");
+  }
 };

@@ -1,3 +1,4 @@
+import { recheckSchedulesForQuestion } from "@/lib/recheck";
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbUtils";
 import { jsonRevalidated } from "@/lib/httpCache";
@@ -133,10 +134,28 @@ export const PUT = async (request: NextRequest) => {
     if (mark) questionObj.mark = mark;
     if (tags) questionObj.tags = tags;
 
+    // Returns the question as it was before the update.
     const question = await Question.findByIdAndUpdate(id, questionObj);
 
+    // A corrected answer key (or changed marks / numerical tag) must reach the
+    // tests already marked with the old one: results, ranks and student
+    // insights read the stored verdicts. Reported as a count, never fatal.
+    let retested = 0;
+    const keyChanged =
+      question &&
+      ((ans && ans !== question.ans) ||
+        (mark && mark !== question.mark) ||
+        (tags && JSON.stringify(tags) !== JSON.stringify(question.tags ?? [])));
+    if (keyChanged) {
+      try {
+        retested = await recheckSchedulesForQuestion(String(id));
+      } catch (err) {
+        console.error("re-marking after answer change failed", err);
+      }
+    }
+
     return NextResponse.json(
-      { status: "success", question: question },
+      { status: "success", question: question, retested },
       { status: 201 }
     );
   } catch (err: any) {

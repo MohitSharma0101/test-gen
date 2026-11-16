@@ -67,7 +67,8 @@ const WRITE_EFFECTS: [string, TFamily[]][] = [
   ["chapter", ["chapter", "question"]],
   ["bulk/question", ["question", "papers"]],
   ["questions/used", ["question", "papers"]],
-  ["question", ["question", "papers"]],
+  // Editing a question can re-mark the tests it was in (lib/recheck)
+  ["question", ["question", "papers", "answer-sheets", "schedule-papers", "student", "student-insights", "batch-insights"]],
   ["papers", ["papers"]],
   ["dev-suggestions", ["dev-suggestions"]],
 ];

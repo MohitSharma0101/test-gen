@@ -9,6 +9,7 @@ import {
   ChartColumnIcon,
   EllipsisVerticalIcon,
   FileTextIcon,
+  ListRestartIcon,
   RefreshCwIcon,
   TimerIcon,
   TrashIcon,
@@ -32,6 +33,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ROUTE_GROUPS } from "@/data/routes";
+import { Role } from "@/data/const";
+import { useAuth } from "@/context/auth-context";
 import useBatches from "@/hooks/useBatches";
 import useSchedulePapers from "@/hooks/useSchedulePapers";
 import { api, ENDPOINT } from "@/lib/api";
@@ -134,6 +137,45 @@ const OnlineTestPage = () => {
   const [analyzerId, setAnalyzerId] = useState<string | null>(null);
   const [analyzerTitle, setAnalyzerTitle] = useState("");
   const [insightsOpen, setInsightsOpen] = useState(false);
+  const { account } = useAuth();
+  const isAdmin = account?.role === Role.ADMIN;
+  const [remarking, setRemarking] = useState(false);
+
+  // One-time repair: re-mark every test already marked, against today's
+  // answer keys (e.g. after keys were corrected, or the "13. (c)" parsing
+  // fix). Scores and ranks can change, hence the confirmation.
+  const remarkAll = () =>
+    withConfirmation(
+      async () => {
+        setRemarking(true);
+        const id = toast.loading("Finding marked tests…");
+        try {
+          const ids: string[] = (await api.get(ENDPOINT.recheck))?.data?.data?.scheduleIds ?? [];
+          let failed = 0;
+          for (let i = 0; i < ids.length; i++) {
+            toast.loading(`Re-marking test ${i + 1} of ${ids.length}…`, { id });
+            try {
+              await api.put(ENDPOINT.recheck, { scheduleId: ids[i] });
+            } catch {
+              failed++;
+            }
+          }
+          if (failed) toast.error(`Re-marked ${ids.length - failed} of ${ids.length} tests. ${failed} failed; run it again.`, { id });
+          else toast.success(`Re-marked ${ids.length} test${ids.length === 1 ? "" : "s"}`, { id });
+          refresh();
+        } catch (err) {
+          toast.error(apiErrorMsg(err) || "Couldn't re-mark the tests", { id });
+        } finally {
+          setRemarking(false);
+        }
+      },
+      {
+        title: "Re-mark all tests?",
+        description:
+          "Every test that was already marked is checked again against the current answer keys. Students' scores and ranks can change. Keep this page open until it finishes.",
+        confirmText: "Re-mark all",
+      }
+    );
 
   // Teachers usually check the same batch: remember it on this device
   useEffect(() => {
@@ -254,6 +296,20 @@ const OnlineTestPage = () => {
               <span className="hidden sm:inline">Insights</span>
               <span className="sr-only sm:hidden">Batch insights</span>
             </Button>
+            {isAdmin && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" aria-label="More actions" className="size-10 p-0" disabled={remarking}>
+                    <EllipsisVerticalIcon className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-xl p-1.5">
+                  <DropdownMenuItem className="h-10 cursor-pointer gap-2.5 rounded-lg" onSelect={remarkAll}>
+                    <ListRestartIcon className="size-4" /> Re-mark all tests
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button
               variant="outline"
               onClick={refresh}
