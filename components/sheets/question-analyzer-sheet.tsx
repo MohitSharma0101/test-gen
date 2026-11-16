@@ -180,26 +180,28 @@ const QuestionAnalyzerSheet = ({ title = "Question analysis", open, scheduleId, 
           : "The questions students found hardest"
       }
       toolbar={
-        <div className="flex flex-wrap items-end gap-2">
+        // One row at every width: wrapping put Preview on a line of its own
+        // once the folded header gave the close button the right edge.
+        <div className="flex items-end gap-2">
           <SelectCompact
             label="Hardest by"
             options={QuestionAnalyzeOptions}
             value={analyzeOn}
             onChange={(value) => setAnalyzeOn(value as QuestionAnalyze)}
-            className="w-36"
+            className="min-w-0 flex-1 sm:w-36 sm:flex-none"
           />
           <SelectCompact
             label="Threshold"
             options={ThresholdOptions}
             value={threshold}
             onChange={(value) => setThreshold(value as Threshold)}
-            className="w-28"
+            className="w-[5.5rem] shrink-0 sm:w-28"
           />
           <PreviewButton
             variant="brand"
             questions={list.map((q) => q.question).filter(Boolean)}
             defaultTwoColumn
-            className="ml-auto h-10"
+            className="ml-auto h-10 shrink-0 px-3 sm:px-4"
           />
         </div>
       }

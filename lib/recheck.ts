@@ -12,7 +12,7 @@ import "@/models/Chapter";
  * answer key, and refreshes the questions' measured difficulty. Returns the
  * number of sheets marked. Callers must have run dbConnect().
  */
-export async function recheckSchedule(scheduleId: string) {
+export async function recheckSchedule(scheduleId: string, { stats = true }: { stats?: boolean } = {}) {
   const schedule = await SchedulePaper.findById(scheduleId)
     .populate({ path: "paper", select: "title questions", populate: { path: "questions" } })
     .lean<TSchedulePaper>();
@@ -44,8 +44,9 @@ export async function recheckSchedule(scheduleId: string) {
   );
 
   // Fresh results change these questions' measured difficulty. A failure
-  // here must not fail the recheck itself.
-  try {
+  // here must not fail the recheck itself. Bulk runs skip it and recompute
+  // every question once at the end instead.
+  if (stats) try {
     await recomputeQuestionStats(questions.map((q: any) => String(q?._id ?? q)).filter(Boolean));
   } catch (err) {
     console.error("question stats refresh failed", err);

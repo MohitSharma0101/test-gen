@@ -49,6 +49,8 @@ const WRITE_EFFECTS: [string, TFamily[]][] = [
   ["papers/generate", []],
   ["attendance/capture", []],
   ["uploads/sign", []],
+  // Background jobs: the page refreshes what a job changed when it ends
+  ["jobs", []],
   ["ai/", []],
   ["auth/login", []],
   ["auth/user", []],

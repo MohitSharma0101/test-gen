@@ -36,7 +36,7 @@ jobs:
       R2_BUCKET: ${{ secrets.R2_BUCKET }}
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check inputs
         run: |
           if [ "${{ inputs.mode }}" = replace ] && [ "${{ inputs.confirm }}" != "REPLACE LIVE DATA" ]; then

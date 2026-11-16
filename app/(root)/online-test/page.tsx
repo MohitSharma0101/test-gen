@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -38,6 +38,9 @@ import { useAuth } from "@/context/auth-context";
 import useBatches from "@/hooks/useBatches";
 import useSchedulePapers from "@/hooks/useSchedulePapers";
 import { api, ENDPOINT } from "@/lib/api";
+import { invalidateAfterWrite } from "@/lib/swr";
+import useJob from "@/hooks/useJob";
+import { JobProgress } from "@/components/ui/job-progress";
 import { apiErrorMsg, cn, getScheduleStatus, withConfirmation } from "@/lib/utils";
 import { TSchedulePaper } from "@/models/SchedulePaper";
 
@@ -139,40 +142,31 @@ const OnlineTestPage = () => {
   const [insightsOpen, setInsightsOpen] = useState(false);
   const { account } = useAuth();
   const isAdmin = account?.role === Role.ADMIN;
-  const [remarking, setRemarking] = useState(false);
+  // Re-mark all tests runs as a background job (lib/jobs); this page only
+  // starts it and shows progress. When it ends, refresh what it changed.
+  const onRemarkDone = useCallback(() => {
+    invalidateAfterWrite("answer-sheets/recheck");
+    refresh();
+  }, [refresh]);
+  const remarkJob = useJob("remark-all", onRemarkDone);
+  const [dismissedJob, setDismissedJob] = useState<string | null>(null);
+  const remarking = remarkJob.active;
 
-  // One-time repair: re-mark every test already marked, against today's
-  // answer keys (e.g. after keys were corrected, or the "13. (c)" parsing
-  // fix). Scores and ranks can change, hence the confirmation.
   const remarkAll = () =>
     withConfirmation(
       async () => {
-        setRemarking(true);
-        const id = toast.loading("Finding marked tests…");
         try {
-          const ids: string[] = (await api.get(ENDPOINT.recheck))?.data?.data?.scheduleIds ?? [];
-          let failed = 0;
-          for (let i = 0; i < ids.length; i++) {
-            toast.loading(`Re-marking test ${i + 1} of ${ids.length}…`, { id });
-            try {
-              await api.put(ENDPOINT.recheck, { scheduleId: ids[i] });
-            } catch {
-              failed++;
-            }
-          }
-          if (failed) toast.error(`Re-marked ${ids.length - failed} of ${ids.length} tests. ${failed} failed; run it again.`, { id });
-          else toast.success(`Re-marked ${ids.length} test${ids.length === 1 ? "" : "s"}`, { id });
-          refresh();
+          const job = await remarkJob.start();
+          setDismissedJob(null);
+          if (job?.status === "running" || job?.status === "queued") toast.success("Re-marking started");
         } catch (err) {
-          toast.error(apiErrorMsg(err) || "Couldn't re-mark the tests", { id });
-        } finally {
-          setRemarking(false);
+          toast.error(apiErrorMsg(err, "Couldn't start re-marking"));
         }
       },
       {
         title: "Re-mark all tests?",
         description:
-          "Every test that was already marked is checked again against the current answer keys. Students' scores and ranks can change. Keep this page open until it finishes.",
+          "Every test that was already marked is checked again against the current answer keys. Students' scores and ranks can change. It runs on the server; you can leave this page.",
         confirmText: "Re-mark all",
       }
     );
@@ -322,6 +316,15 @@ const OnlineTestPage = () => {
           </>
         }
       />
+
+      {isAdmin && remarkJob.job && remarkJob.job._id !== dismissedJob && (
+        <JobProgress
+          job={remarkJob.job}
+          label="Re-marking tests"
+          onCancel={() => remarkJob.cancel().catch((err) => toast.error(apiErrorMsg(err, "Couldn't cancel")))}
+          onDismiss={() => setDismissedJob(remarkJob.job?._id ?? null)}
+        />
+      )}
 
       <SelectCompact
         label="Batch"

@@ -202,6 +202,13 @@ Frontend
 - `lucide-react` is already in Next's default `optimizePackageImports` list,
   so named imports are fine. Measure the bundle (`@next/bundle-analyzer`)
   before adding config; `mathpix-markdown-it` is the likely heavyweight.
+- **Background jobs** (`lib/jobs`): anything that can run past a function's
+  time limit (bulk re-mark, imports, bulk sends, exports) is a job type, not a
+  long request. Add a handler (`count` / `next(cursor)` / `run(key)` /
+  optional `finish`) to `lib/jobs/registry.ts`; the engine runs it in ~20 s
+  slices chained server-side, with a lock, stale-heartbeat restart, skip after
+  3 stalls, capped failure list and cancel. UI: `useJob(type)` +
+  `<JobProgress>`. Runs must be safe to repeat (an item may run twice).
 - Use `next/dynamic` for heavy sheets (face capture, variants, markdown
   editor) so they don't ship in the page's first bundle.
 - Prefetch with `<Link>` (already used) and add `loading.tsx` skeletons per
@@ -213,7 +220,8 @@ Frontend
   field on a schema, a new index, or anything that stores more data. Explain
   the size impact first. (Already in place, with the user's knowledge since:
   `Question.stats` from lib/questionStats.ts, and the schema indexes listed
-  under Performance.)
+  under Performance; the `jobs` collection (models/Job.ts), approved without
+  extra indexes.)
 
 - Branch for this effort: **`dev-revamp`** (cut from `main`; the Vercel dev
   domain tracks it). Commit there directly.
