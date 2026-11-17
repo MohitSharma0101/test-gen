@@ -9,14 +9,15 @@ type Props = {
   job: TJob | null;
   label: string;
   onCancel?: () => void;
-  onDismiss?: () => void;
+  /** "Done" on a finished job: clears it for everyone. */
+  onClear?: () => void;
 };
 
 const when = (value?: string) =>
   value ? new Date(value).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
 
 /** Progress card for any background job (lib/jobs). */
-export function JobProgress({ job, label, onCancel, onDismiss }: Props) {
+export function JobProgress({ job, label, onCancel, onClear }: Props) {
   const [showFailed, setShowFailed] = useState(false);
   if (!job) return null;
   const active = job.status === "queued" || job.status === "running";
@@ -46,9 +47,9 @@ export function JobProgress({ job, label, onCancel, onDismiss }: Props) {
             Cancel
           </Button>
         )}
-        {!active && onDismiss && (
-          <Button size="sm" variant="ghost" onClick={onDismiss}>
-            Close
+        {!active && onClear && (
+          <Button size="sm" variant="outline" onClick={onClear} title="Remove this result for every admin">
+            Done
           </Button>
         )}
       </div>

@@ -149,7 +149,6 @@ const OnlineTestPage = () => {
     refresh();
   }, [refresh]);
   const remarkJob = useJob("remark-all", onRemarkDone);
-  const [dismissedJob, setDismissedJob] = useState<string | null>(null);
   const remarking = remarkJob.active;
 
   const remarkAll = () =>
@@ -157,7 +156,6 @@ const OnlineTestPage = () => {
       async () => {
         try {
           const job = await remarkJob.start();
-          setDismissedJob(null);
           if (job?.status === "running" || job?.status === "queued") toast.success("Re-marking started");
         } catch (err) {
           toast.error(apiErrorMsg(err, "Couldn't start re-marking"));
@@ -317,12 +315,12 @@ const OnlineTestPage = () => {
         }
       />
 
-      {isAdmin && remarkJob.job && remarkJob.job._id !== dismissedJob && (
+      {isAdmin && remarkJob.job && (
         <JobProgress
           job={remarkJob.job}
           label="Re-marking tests"
           onCancel={() => remarkJob.cancel().catch((err) => toast.error(apiErrorMsg(err, "Couldn't cancel")))}
-          onDismiss={() => setDismissedJob(remarkJob.job?._id ?? null)}
+          onClear={() => remarkJob.clear().catch((err) => toast.error(apiErrorMsg(err, "Couldn't clear")))}
         />
       )}
 

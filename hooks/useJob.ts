@@ -32,6 +32,14 @@ export default function useJob(type: string, onFinish?: (job: TJob) => void) {
     }
   }, [data, onFinish]);
 
+  // "Done" deletes the finished job on the server, so every admin and device
+  // stops seeing it. Nothing is kept on the device.
+  const clear = async () => {
+    if (!data) return;
+    await api.delete(`jobs/${data._id}`);
+    await mutate(null, { revalidate: false });
+  };
+
   const start = async (options?: Record<string, unknown>) => {
     const job = (await api.post("jobs", { type, options }))?.data?.data?.job as TJob;
     await mutate(job, { revalidate: false });
@@ -43,5 +51,13 @@ export default function useJob(type: string, onFinish?: (job: TJob) => void) {
     await mutate();
   };
 
-  return { job: data ?? null, active: !!data && ACTIVE.includes(data.status), start, cancel, refresh: () => mutate() };
+  const active = !!data && ACTIVE.includes(data.status);
+  return {
+    job: data ?? null,
+    active,
+    clear,
+    start,
+    cancel,
+    refresh: () => mutate(),
+  };
 }

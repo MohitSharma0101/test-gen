@@ -82,6 +82,20 @@ export async function cancelJob(id: string) {
   ).lean<TJob>();
 }
 
+/**
+ * Delete a finished job once an admin has seen its result ("Done" on the
+ * card). Running jobs can't be cleared; cancel them first. Returns false if
+ * it was already gone (another admin cleared it).
+ */
+export async function clearJob(id: string) {
+  await dbConnect();
+  const job = await Job.findById(id).select("status").lean<{ status: string }>();
+  if (!job) return false;
+  if (ACTIVE.includes(job.status)) throw new Error("The job is still running");
+  await Job.deleteOne({ _id: id, status: { $nin: ACTIVE } });
+  return true;
+}
+
 /** One slice. Called by /api/jobs/:id/run only. */
 export async function runJobSlice(id: string, origin: string) {
   const started = Date.now();
