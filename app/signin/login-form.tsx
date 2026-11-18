@@ -57,7 +57,9 @@ export const LoginForm = () => {
     try {
       await AuthService.login({ username: username.trim(), password });
       setStatus("success");
-      // The signin layout sees the new cookie and redirects to "/"
+      // /signin is a static page now (no server redirect on refresh), so go
+      // home directly. replace: Back shouldn't return to the sign-in form.
+      router.replace("/");
       router.refresh();
     } catch (err) {
       setError(messageFor(err));

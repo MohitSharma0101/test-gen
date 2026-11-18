@@ -10,7 +10,8 @@ export const generateToken = async (account: any) => {
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d") // token expiry
+    // Same lifetime as the session cookie (lib/session.ts SESSION_SECONDS)
+    .setExpirationTime("12h")
     .sign(secret);
 };
 

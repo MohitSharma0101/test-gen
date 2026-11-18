@@ -5,7 +5,7 @@ real case · **Low** = latent / needs specific conditions.
 
 | # | Severity | Area | Summary | Status |
 |---|---|---|---|---|
-| 1 | High | `middleware.ts` | Requests with no token pass through instead of being rejected | Open |
+| 1 | High | `middleware.ts` | Requests with no token pass through instead of being rejected | Fixed 2026-11-18 |
 | 2 | Medium | `models/Attendance.ts` | No unique index on `{batch, date}`; duplicate docs possible | Won't fix (decided) |
 | 3 | Low | `models/Attendance.ts` | `date` is a String with unverified format | Open |
 | 4 | Medium | `.env` / `lib/api.ts` | `NEXT_PUBLIC_BASE_PATH` was absolute localhost, broke all API calls off-machine | Fixed 2026-10-25 |
@@ -31,8 +31,10 @@ Returning `null` means *proceed*. Only an **invalid** token gets a 401; a
 - Routes that guard themselves are fine (e.g. `app/api/face/enroll/route.ts`).
 - Unaudited: every other route under `app/api/`.
 
-Fix: `return NextResponse.json({...}, { status: 401 })` in the no-token branch.
-Then audit which routes relied on the gap.
+**Fixed 2026-11-18:** the middleware now rejects any API call without a valid
+token, except `/api/auth/login`, `/api/auth/logout`, `/api/health` and job
+slices (`/api/jobs/:id/run`, own secret header). `/api/auth/register` and
+`/api/auth/accounts` are admin-only; `/api/migration` was removed.
 
 ## 2. No unique index on Attendance {batch, date} — Medium, won't fix
 

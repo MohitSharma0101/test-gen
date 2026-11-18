@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { attachDatabasePool } from "@vercel/functions";
 import "@/models/Batch";
 import "@/models/Paper";
 
@@ -23,8 +24,19 @@ export const dbConnect = async () => {
       .connect(dbURL, {
         // Small pool: each serverless instance handles few requests at once
         maxPoolSize: 10,
-        // Fail a request in 10s instead of hanging when Atlas is unreachable
-        serverSelectionTimeoutMS: 10_000,
+        // Fail fast instead of hanging when Atlas is unreachable; the next
+        // request dials again
+        serverSelectionTimeoutMS: 5_000,
+        // Drop connections idle for a minute: an instance paused by Fluid
+        // compute otherwise wakes up holding sockets the network has dropped
+        maxIdleTimeMS: 60_000,
+      })
+      .then((m) => {
+        // Vercel Fluid compute: release idle pool connections before the
+        // instance is suspended, so a resumed instance never waits on a dead
+        // socket (the "stuck for seconds after a few idle minutes" requests).
+        attachDatabasePool(m.connection.getClient());
+        return m;
       })
       .catch((err) => {
         // Let the next request try again rather than reuse a failed promise

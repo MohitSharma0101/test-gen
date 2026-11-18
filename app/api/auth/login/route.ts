@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
 import { generateToken } from "@/lib/tokenUtils";
+import { setSessionCookie } from "@/lib/session";
 
 export const POST = async (request: NextRequest) => {
   try {
@@ -15,21 +16,19 @@ export const POST = async (request: NextRequest) => {
 
     await dbConnect();
 
+    // One message for an unknown username and a wrong password, so the
+    // reply doesn't reveal which usernames exist.
     const account = (await Account.findOne({ username })) as TAccount | null;
-    if (!account) {
-      return nextError("Account not found.", 404);
-    }
-
-    const isPasswordMatch = await bcrypt.compare(password, account.password);
-    if (!isPasswordMatch) {
-      return nextError("Invalid credentials.", 401);
+    const isPasswordMatch = account ? await bcrypt.compare(password, account.password) : false;
+    if (!account || !isPasswordMatch) {
+      return nextError("Wrong username or password.", 401);
     }
 
     const token = await generateToken(account);
 
-    return nextSuccess(
+    // The token travels only in the httpOnly cookie, never in the response body
+    const res = nextSuccess(
       {
-        token,
         account: {
           id: account._id,
           username: account.username,
@@ -38,6 +37,7 @@ export const POST = async (request: NextRequest) => {
       },
       200
     );
+    return setSessionCookie(res, token);
   } catch (err: any) {
     return nextError(err.message || "Something went wrong.", 500);
   }

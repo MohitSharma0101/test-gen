@@ -32,6 +32,7 @@ export const ENDPOINT = {
 
   //auth
   login: "auth/login",
+  logout: "auth/logout",
   user: "auth/user",
   accounts: "auth/accounts",
 };

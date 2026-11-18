@@ -5,13 +5,23 @@ import bcrypt from "bcryptjs";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
 import { Role } from "@/data/const";
 import { getSafeAccount } from "@/lib/utils";
+import { getAccount } from "@/lib/auth";
+import { MIN_PASSWORD_LENGTH } from "@/lib/session";
 
 export const POST = async (request: NextRequest) => {
   try {
+    // Only an admin can create accounts (it was open to anyone, role included)
+    const admin = await getAccount();
+    if (!admin) return nextError("Please sign in again.", 401);
+    if (admin.role !== Role.ADMIN) return nextError("Only admins can create accounts.", 403);
+
     const { username, password, role, courses, name } = await request.json();
 
     if (!username || !password) {
       return nextError("All fields are required.", 400);
+    }
+    if (String(password).length < MIN_PASSWORD_LENGTH) {
+      return nextError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`, 400);
     }
 
     await dbConnect();

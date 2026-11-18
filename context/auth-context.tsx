@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteUserToken } from "@/lib/api";
+import { AuthService } from "@/service/auth.service";
 import { TAccount } from "@/models/Account";
 import { useRouter } from "next/navigation";
 import { createContext, ReactNode, useContext } from "react";
@@ -30,8 +30,8 @@ type TAuthProviderProps = {
 export const AuthProvider = ({ account, children }: TAuthProviderProps) => {
   const router = useRouter();
 
-  const logout = () => {
-    deleteUserToken();
+  const logout = async () => {
+    await AuthService.logout().catch(() => {});
     router.refresh();
   };
 

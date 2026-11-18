@@ -3,6 +3,7 @@ import Account, { TAccount } from "@/models/Account";
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
+import { MIN_PASSWORD_LENGTH } from "@/lib/session";
 
 export const POST = async (request: NextRequest) => {
   try {
@@ -12,21 +13,17 @@ export const POST = async (request: NextRequest) => {
       return nextError("Username, old password, and new password are required.", 400);
     }
 
-    if (newPassword.length < 6) {
-      return nextError("New password must be at least 6 characters long.", 400);
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      return nextError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters long.`, 400);
     }
 
     await dbConnect();
 
     const account = (await Account.findOne({ username })) as TAccount | null;
-    if (!account) {
-      return nextError("Account not found.", 404);
-    }
-
-    // Verify old password
-    const isPasswordMatch = await bcrypt.compare(oldPassword, account.password);
-    if (!isPasswordMatch) {
-      return nextError("Invalid old password.", 401);
+    // Same reply for an unknown username and a wrong password
+    const isPasswordMatch = account ? await bcrypt.compare(oldPassword, account.password) : false;
+    if (!account || !isPasswordMatch) {
+      return nextError("Wrong username or password.", 401);
     }
 
     // Hash new password

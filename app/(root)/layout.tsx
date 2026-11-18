@@ -12,7 +12,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getAccount();
-  if (!user) redirect("/signin");
+  // `?session=1`: middleware skips its "already signed in" redirect, or a valid
+  // token whose account can't be loaded (deleted, or the database briefly
+  // unreachable) would bounce between / and /signin forever.
+  if (!user) redirect("/signin?session=1");
   
   return (
     <AuthProvider account={user}>

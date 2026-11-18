@@ -4,8 +4,20 @@ import { nextError, nextSuccess } from "@/lib/nextUtils";
 import { getSafeAccount } from "@/lib/utils";
 import Account, { TAccount } from "@/models/Account";
 import { NextRequest } from "next/server";
+import { getAccount } from "@/lib/auth";
+import { Role } from "@/data/const";
+
+// Listing accounts and changing roles is for admins only (both were open)
+const requireAdmin = async () => {
+  const account = await getAccount();
+  if (!account) return nextError("Please sign in again.", 401);
+  if (account.role !== Role.ADMIN) return nextError("Only admins can manage accounts.", 403);
+  return null;
+};
 
 export const GET = async (request: NextRequest) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   try {
     await dbConnect();
     const accounts = await Account.find().lean<TAccount[]>();
@@ -19,6 +31,8 @@ export const GET = async (request: NextRequest) => {
 };
 
 export const POST = async (request: NextRequest) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   try {
     const body = await request.json();
     const { accountId, name, role, courses } = body;

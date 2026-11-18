@@ -54,6 +54,7 @@ const WRITE_EFFECTS: [string, TFamily[]][] = [
   ["ai/", []],
   ["auth/login", []],
   ["auth/user", []],
+  ["auth/logout", []],
   // Writes
   ["auth/accounts", ["accounts"]],
   ["face/", ["users", "student"]],
