@@ -11,12 +11,18 @@ import useBatches from "@/hooks/useBatches";
 import { toast } from "../ui/use-toast";
 import { api, ENDPOINT } from "@/lib/api";
 import { TSchedulePaper } from "@/models/SchedulePaper";
+import { StudentPicker } from "../ui/student-picker";
+import { cn } from "@/lib/utils";
 
 type Props = {
   paperId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // A retest: same batch, chosen students pre-ticked, same duration
+  initial?: { batchId: string; studentIds?: string[]; duration?: number };
 };
+
+type Audience = "batch" | "students";
 
 // End time a picked end date starts with: an hour after the start, so the
 // pair is valid without touching the time
@@ -27,19 +33,27 @@ const hourAfter = (start: string) => {
 };
 
 // Schedule a saved paper as an online test for one batch.
-export const SchedulePaperSheet = ({ paperId, open, onOpenChange }: Props) => {
+export const SchedulePaperSheet = ({ paperId, open, onOpenChange, initial }: Props) => {
   const { batches, loading: batchesLoading } = useBatches();
-  const [selectedBatchId, setSelectedBatchId] = useState<string>();
+  const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>(initial?.batchId);
   const [submitting, setSubmitting] = useState(false);
   const [payload, setPayload] = useState<Partial<TSchedulePaper>>({
-    duration: Number(PAPER_DURATION_OPTIONS[0].value),
+    duration: initial?.duration ?? Number(PAPER_DURATION_OPTIONS[0].value),
   });
+  const [audience, setAudience] = useState<Audience>(initial?.studentIds ? "students" : "batch");
+  const [studentIds, setStudentIds] = useState<string[]>(initial?.studentIds ?? []);
+  const pickBatch = (id: string) => {
+    // Another batch's students can't take it: start the selection over
+    setSelectedBatchId(id);
+    setStudentIds([]);
+  };
 
   const endBeforeStart = Boolean(
     payload.startTime && payload.endTime && String(payload.endTime) <= String(payload.startTime)
   );
+  const noStudents = audience === "students" && studentIds.length === 0;
   const isInvalid =
-    !payload.startTime || !payload.endTime || !payload.duration || !selectedBatchId || endBeforeStart;
+    !payload.startTime || !payload.endTime || !payload.duration || !selectedBatchId || endBeforeStart || noStudents;
 
   const onSubmit = async () => {
     if (isInvalid || submitting) return;
@@ -51,6 +65,7 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange }: Props) => {
         startTime: payload.startTime,
         endTime: payload.endTime,
         batchId: selectedBatchId,
+        ...(audience === "students" ? { studentIds } : {}),
       });
       toast({ title: "Test scheduled", variant: "success" });
       onOpenChange(false);
@@ -73,8 +88,12 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange }: Props) => {
     <ResponsiveDrawer
       open={open}
       onOpenChange={onOpenChange}
-      title="Schedule online test"
-      description="Students in the batch can take it between the start and end time."
+      title={initial ? "Schedule a retest" : "Schedule online test"}
+      description={
+        audience === "students"
+          ? "Only the students you choose can take it, between the start and end time."
+          : "Students in the batch can take it between the start and end time."
+      }
       footer={
         <Button
           variant="brand"
@@ -91,12 +110,40 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange }: Props) => {
         <SelectCompact
           label="Batch"
           options={batches.map((batch) => ({ label: batch.name, value: batch._id }))}
-          onChange={setSelectedBatchId}
+          onChange={pickBatch}
           value={selectedBatchId}
           loading={batchesLoading}
           className="w-full"
           placeholder="Select a batch"
         />
+        {selectedBatchId && (
+          <div className="flex flex-col gap-2">
+            <p className="ml-1 text-xs font-medium">Who takes it</p>
+            <div role="radiogroup" aria-label="Who takes it" className="grid grid-cols-2 rounded-lg border bg-muted p-0.5">
+              {([
+                ["batch", "Whole batch"],
+                ["students", "Choose students"],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={audience === value}
+                  onClick={() => setAudience(value)}
+                  className={cn(
+                    "h-9 rounded-md text-sm font-medium",
+                    audience === value ? "bg-background shadow-sm" : "text-muted-foreground"
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {audience === "students" && (
+              <StudentPicker batchId={selectedBatchId} value={studentIds} onChange={setStudentIds} />
+            )}
+          </div>
+        )}
         <div className="grid gap-4">
           <DateTimePicker
             label="Starts"

@@ -11,6 +11,7 @@ import {
   FileTextIcon,
   ListRestartIcon,
   RefreshCwIcon,
+  RepeatIcon,
   TimerIcon,
   TrashIcon,
   TrophyIcon,
@@ -20,6 +21,10 @@ import QuestionAnalyzerSheet from "@/components/sheets/question-analyzer-sheet";
 import { BatchInsightsWindow } from "@/components/insights/batch-insights-window";
 import { ViewPaperSheet } from "@/components/sheets/view-paper-sheet";
 import { ViewResultSheet } from "@/components/sheets/view-results-sheet";
+import { TestStudentsSheet } from "@/components/sheets/test-students-sheet";
+import { SchedulePaperSheet } from "@/components/sheets/schedule-paper-sheet";
+import type { TAnswerSheet } from "@/models/AnswerSheet";
+import type { TUser } from "@/models/User";
 import SelectCompact from "@/components/ui/select-compact";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,9 +83,12 @@ type CardProps = {
   onAnalyze: () => void;
   onViewPaper: () => void;
   onDelete: () => void;
+  onStudents: () => void;
+  onRetest: () => void;
 };
 
-const TestCard = ({ test, status, onResults, onAnalyze, onViewPaper, onDelete }: CardProps) => {
+const TestCard = ({ test, status, onResults, onAnalyze, onViewPaper, onDelete, onStudents, onRetest }: CardProps) => {
+  const chosen = test.students?.length ?? 0;
   const badge = STATUS_BADGE[status];
   return (
     <li className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm">
@@ -93,6 +101,11 @@ const TestCard = ({ test, status, onResults, onAnalyze, onViewPaper, onDelete }:
               {formatWindow(test.startTime, test.endTime)} · <span className="tabular-nums">{test.duration} min</span>
             </span>
           </p>
+          {chosen > 0 && (
+            <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand">
+              <UsersIcon className="size-3.5" aria-hidden="true" /> {chosen} student{chosen === 1 ? "" : "s"}
+            </p>
+          )}
         </div>
         <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", badge.className)}>
           {status === "active" && <span className="size-1.5 rounded-full bg-emerald-500 motion-safe:animate-pulse" aria-hidden="true" />}
@@ -117,6 +130,14 @@ const TestCard = ({ test, status, onResults, onAnalyze, onViewPaper, onDelete }:
             <DropdownMenuItem className="h-10 cursor-pointer gap-2.5 rounded-lg" onSelect={onViewPaper} disabled={!test.paper?._id}>
               <FileTextIcon className="size-4" aria-hidden="true" /> View paper
             </DropdownMenuItem>
+            <DropdownMenuItem className="h-10 cursor-pointer gap-2.5 rounded-lg" onSelect={onStudents}>
+              <UsersIcon className="size-4" aria-hidden="true" /> Who takes it
+            </DropdownMenuItem>
+            {status === "expired" && (
+              <DropdownMenuItem className="h-10 cursor-pointer gap-2.5 rounded-lg" onSelect={onRetest} disabled={!test.paper?._id}>
+                <RepeatIcon className="size-4" aria-hidden="true" /> Retest who missed it
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="h-10 cursor-pointer gap-2.5 rounded-lg text-red-700 focus:bg-red-50 focus:text-red-700"
@@ -140,6 +161,32 @@ const OnlineTestPage = () => {
   const [analyzerId, setAnalyzerId] = useState<string | null>(null);
   const [analyzerTitle, setAnalyzerTitle] = useState("");
   const [insightsOpen, setInsightsOpen] = useState(false);
+  const [studentsTest, setStudentsTest] = useState<TSchedulePaper | null>(null);
+  const [retest, setRetest] = useState<{ testId: string; paperId: string; batchId: string; studentIds: string[]; duration: number } | null>(null);
+
+  // "Retest who missed it": the students this test was for (its chosen list, or
+  // the batch) minus everyone who started or submitted it.
+  const openRetest = async (test: TSchedulePaper) => {
+    if (!selectedBatchId || !test.paper?._id) return;
+    try {
+      const [sheetsRes, usersRes] = await Promise.all([
+        api.get(ENDPOINT.answerSheets, { params: { scheduleId: test._id } }),
+        test.students?.length ? null : api.get(ENDPOINT.users, { params: { batchId: selectedBatchId } }),
+      ]);
+      const attempted = new Set(((sheetsRes?.data?.data?.results ?? []) as TAnswerSheet[]).map((s) => String(s.user)));
+      const assigned = test.students?.length
+        ? test.students.map(String)
+        : ((usersRes?.data?.users ?? []) as TUser[]).map((u) => String(u._id));
+      const missed = assigned.filter((id) => !attempted.has(id));
+      if (!missed.length) {
+        toast.success("Everyone took this test: nobody to retest");
+        return;
+      }
+      setRetest({ testId: test._id, paperId: test.paper._id, batchId: selectedBatchId, studentIds: missed, duration: test.duration });
+    } catch (err) {
+      toast.error(apiErrorMsg(err, "Couldn't find who missed it"));
+    }
+  };
   const { account } = useAuth();
   const isAdmin = account?.role === Role.ADMIN;
   // Re-mark all tests runs as a background job (lib/jobs); this page only
@@ -262,6 +309,8 @@ const OnlineTestPage = () => {
             }}
             onViewPaper={() => test.paper?._id && setViewPaperId(test.paper._id)}
             onDelete={() => onDelete(test._id)}
+            onStudents={() => setStudentsTest(test)}
+            onRetest={() => openRetest(test)}
           />
         ))}
       </ul>
@@ -345,8 +394,27 @@ const OnlineTestPage = () => {
           }}
         />
       )}
+      {studentsTest && selectedBatchId && (
+        <TestStudentsSheet
+          key={studentsTest._id}
+          test={studentsTest}
+          batchId={selectedBatchId}
+          open={Boolean(studentsTest)}
+          onOpenChange={(open) => !open && setStudentsTest(null)}
+        />
+      )}
+      {retest && (
+        <SchedulePaperSheet
+          key={retest.testId}
+          paperId={retest.paperId}
+          initial={{ batchId: retest.batchId, studentIds: retest.studentIds, duration: retest.duration }}
+          open={Boolean(retest)}
+          onOpenChange={(open) => !open && setRetest(null)}
+        />
+      )}
       {viewScheduleResult && selectedBatchId && (
         <ViewResultSheet
+          studentIds={viewScheduleResult.students?.map(String)}
           title={`Result - ${viewScheduleResult.paper?.title ?? ""}`}
           batchId={selectedBatchId}
           scheduleId={viewScheduleResult._id}

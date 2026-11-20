@@ -221,7 +221,8 @@ Frontend
   the size impact first. (Already in place, with the user's knowledge since:
   `Question.stats` from lib/questionStats.ts, and the schema indexes listed
   under Performance; the `jobs` collection (models/Job.ts), approved without
-  extra indexes.)
+  extra indexes; `SchedulePaper.students`, the optional chosen-students list,
+  no new index.)
 
 - Branch for this effort: **`dev-revamp`** (cut from `main`; the Vercel dev
   domain tracks it). Commit there directly.

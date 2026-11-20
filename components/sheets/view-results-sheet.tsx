@@ -22,6 +22,8 @@ type Props = {
   scheduleId: string;
   title?: string;
   batchId: string;
+  // A test for chosen students lists only them (and "not attempted" counts only them)
+  studentIds?: string[];
 };
 
 type TRow = ReturnType<typeof sortResultsOnRank>[number] & { rank?: number };
@@ -87,8 +89,10 @@ const ScreenLeft = ({ row }: { row: TRow }) =>
 
 // Results of one scheduled test: every student in the batch, ranked by marks;
 // students who didn't submit are listed after the ranked ones.
-export const ViewResultSheet = ({ open, scheduleId, title, batchId, onOpenChange }: Props) => {
-  const { users, loading: userLoading } = useUsers({ batchId });
+export const ViewResultSheet = ({ open, scheduleId, title, batchId, studentIds, onOpenChange }: Props) => {
+  const { users: batchUsers, loading: userLoading } = useUsers({ batchId });
+  const chosen = studentIds?.length ? new Set(studentIds) : null;
+  const users = chosen ? batchUsers.filter((u) => chosen.has(String(u._id))) : batchUsers;
   const { answerSheets, loading: answersLoading, error, refresh } = useAnswerSheets({ scheduleId });
   const [rechecking, setRechecking] = useState(false);
 

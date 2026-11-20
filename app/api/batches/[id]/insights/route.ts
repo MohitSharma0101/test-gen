@@ -30,7 +30,7 @@ export const GET = async (_request: NextRequest, { params }: { params: { id: str
 
     const schedules = await SchedulePaper.find({ batch: id }).select("_id").lean();
     const sheets = (await AnswerSheet.find({ schedulePaper: { $in: schedules.map((s: any) => s._id) } })
-      .select("user answers")
+      .select("user answers submittedOn createdAt")
       .populate({ path: "user", select: "name userId" })
       .populate({
         path: "answers.question",
@@ -44,6 +44,12 @@ export const GET = async (_request: NextRequest, { params }: { params: { id: str
     const questions = new Map<string, { q: any; a: number; c: number }>();
     const students = new Set<string>();
 
+    // Newest sheets first; each student's question counted once, from their
+    // latest answer, so a retest of the same paper doesn't inflate accuracy.
+    const whenOf = (sheet: any) => new Date(sheet.submittedOn ?? sheet.createdAt ?? 0).getTime() || 0;
+    sheets.sort((x, y) => whenOf(y) - whenOf(x));
+    const seen = new Set<string>(); // `${student}:${question}`
+
     for (const sheet of sheets) {
       const user = sheet.user && typeof sheet.user === "object" ? sheet.user : null;
       if (!user?._id) continue;
@@ -52,6 +58,9 @@ export const GET = async (_request: NextRequest, { params }: { params: { id: str
       for (const ans of sheet.answers ?? []) {
         const q = ans?.question;
         if (!q || typeof q !== "object" || typeof ans.isCorrect !== "boolean") continue;
+        const seenKey = `${uid}:${String(q._id)}`;
+        if (seen.has(seenKey)) continue;
+        seen.add(seenKey);
         const ok = ans.isCorrect;
         const qe = questions.get(String(q._id)) ?? { q, a: 0, c: 0 };
         qe.a += 1;

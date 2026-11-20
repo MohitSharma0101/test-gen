@@ -58,8 +58,15 @@ export const GET = async (_request: NextRequest, { params }: { params: { id: str
     const marks = new Map<number, { a: number; c: number }>();
     let tests = 0;
 
+    const whenOf = (sheet: any) => new Date(sheet.schedulePaper?.startTime ?? sheet.submittedOn ?? sheet.createdAt ?? 0).getTime() || 0;
+    // Newest test first, and each question counted once, from its latest
+    // answer: a retest of the same paper (answers already seen in the result)
+    // must not inflate accuracy or hide a weak chapter.
+    sheets.sort((x, y) => whenOf(y) - whenOf(x));
+    const seenQuestions = new Set<string>();
+
     for (const sheet of sheets) {
-      const when = new Date(sheet.schedulePaper?.startTime ?? sheet.submittedOn ?? sheet.createdAt ?? 0).getTime();
+      const when = whenOf(sheet);
       const recent = Number.isFinite(when) && now - when <= RECENT_DAYS * DAY;
       const testId = String(sheet.schedulePaper?._id ?? sheet._id);
       let counted = false;
@@ -68,6 +75,9 @@ export const GET = async (_request: NextRequest, { params }: { params: { id: str
         const q = a?.question;
         if (!q || typeof q !== "object") continue;
         if (typeof a.isCorrect !== "boolean") continue; // not rechecked yet
+        const qid = String(q._id);
+        if (seenQuestions.has(qid)) continue; // an older attempt of the same question
+        seenQuestions.add(qid);
         counted = true;
         const ok = a.isCorrect;
         const ch = q.chapter && typeof q.chapter === "object" ? q.chapter : null;
