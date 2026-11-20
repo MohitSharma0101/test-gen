@@ -11,6 +11,7 @@ import {
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { putUpdateQuestion } from "@/service/core.service";
 import { cn } from "@/lib/utils";
+import { TAG } from "@/data/const";
 import { toast } from "../ui/use-toast";
 
 type Props = {
@@ -23,15 +24,8 @@ type Props = {
   onSaved?: (tags: string[]) => void;
 };
 
-export const TAGS = [
-  "Numerical",
-  "Case Study",
-  "NEET 2020",
-  "NEET 2019",
-  "Long Questions",
-  "Practical",
-  "Short Questions",
-];
+// One list for every tag picker (filters, quotas, add tag), from the shared enum
+export const TAGS: string[] = Object.values(TAG);
 
 const AddTagSheet = ({ questionId, children, tags = [], open: openProp, onOpenChange, onSaved }: Props) => {
   const [innerOpen, setInnerOpen] = useState(false);

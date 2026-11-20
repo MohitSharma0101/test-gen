@@ -228,7 +228,7 @@ Frontend
   the nightly Claude run (`.claude/skills/generate-variants`, scripts in
   `scripts/ai-runner/`). The runner authenticates with `AI_RUNNER_KEY` on
   `/api/ai-runner/*`; only drafts verified by an independent solve are
-  accepted. Caps: 500 drafts and 50 Workers AI images per 24 h.
+  accepted. Caps: 200 drafts and 50 Workers AI images per 24 h.
 
 - Branch for this effort: **`dev-revamp`** (cut from `main`; the Vercel dev
   domain tracks it). Commit there directly.

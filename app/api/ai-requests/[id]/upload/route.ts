@@ -36,7 +36,7 @@ export const POST = async (req: NextRequest, { params }: { params: { id: string 
         ans: d.ans,
         chapter,
         ...(d.mark ? { mark: d.mark } : {}),
-        tags: d.questionType === "NUMERICAL" ? [TAG.NUMERICAL] : [],
+        tags: [...(d.questionType === "NUMERICAL" ? [TAG.NUMERICAL] : []), TAG.AI_GENERATED],
       }))
     );
     const ids = approved.map((d) => new mongoose.Types.ObjectId(String(d._id)));

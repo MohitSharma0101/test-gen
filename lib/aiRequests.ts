@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import AiRequest, { TAiRequest, TVariantInput } from "@/models/AiRequest";
 
 // Limits chosen with the user (Nov 2026)
-export const NIGHT_DRAFT_CAP = 500; // drafts per 24 h, all requests together
+export const NIGHT_DRAFT_CAP = 200; // drafts per 24 h, all requests together
 export const NIGHT_AI_IMAGE_CAP = 50; // Workers AI images per 24 h
 export const UNREVIEWED_DAYS = 30; // drafts nobody reviews are deleted after this
 export const RUNNER_LOCK_MS = 3 * 60 * 60 * 1000; // a claim older than this is re-queued

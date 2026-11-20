@@ -165,6 +165,8 @@ export enum TAG {
   LONG_QUESTIONS = "Long Questions",
   PRACTICAL = "Practical",
   SHORT_QUESTIONS = "Short Questions",
+  // Written by AI (Gemini variants, overnight AI requests); lets papers include or skip them
+  AI_GENERATED = "AI Generated",
 }
 
 export enum Role {

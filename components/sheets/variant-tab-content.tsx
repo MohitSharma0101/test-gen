@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { SaveToDrawer } from "@/components/variants/save-to-drawer";
 import type { TSaveTarget } from "@/stores/saveTargetStore";
 import { toast } from "sonner";
+import { TAG } from "@/data/const";
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -587,7 +588,8 @@ const VariantTabContent = ({ tabId }: Props) => {
           ans: q.ans,
           chapter,
           mark: Number(marks) || 1,
-          tags: tag ? [tag] : [],
+          // A transcribed original isn't AI-written; variants are
+          tags: [...(tag ? [tag] : []), ...(q.kind === "original" || tag === TAG.AI_GENERATED ? [] : [TAG.AI_GENERATED])],
         }))
       );
       toast.success(

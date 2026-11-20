@@ -100,7 +100,7 @@ Follow the house format exactly (from `format-rules.mjs`); it's the same as the 
 
 ### Upload
 
-- `node scripts/ai-runner/upload.mjs <requestId> batch-N.json`. Each item needs `checks: { keyMatch: true, renderOk: true, notes? }`. The server rejects anything else, and enforces the 500-a-night draft cap and the 50-a-night AI image cap.
+- `node scripts/ai-runner/upload.mjs <requestId> batch-N.json`. Each item needs `checks: { keyMatch: true, renderOk: true, notes? }`. The server rejects anything else, and enforces the 200-a-night draft cap and the 50-a-night AI image cap.
 - Never upload a draft whose final key wasn't confirmed by the independent solve.
 
 ## End of run
