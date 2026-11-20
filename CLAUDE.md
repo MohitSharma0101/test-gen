@@ -222,7 +222,13 @@ Frontend
   `Question.stats` from lib/questionStats.ts, and the schema indexes listed
   under Performance; the `jobs` collection (models/Job.ts), approved without
   extra indexes; `SchedulePaper.students`, the optional chosen-students list,
-  no new index.)
+  no new index; the `airequests` collection (models/AiRequest.ts), no extra
+  indexes, deleted once uploaded or after 30 days unreviewed.)
+- **AI requests** (`/ai-requests`, `lib/aiRequests.ts`): staff queue work for
+  the nightly Claude run (`.claude/skills/generate-variants`, scripts in
+  `scripts/ai-runner/`). The runner authenticates with `AI_RUNNER_KEY` on
+  `/api/ai-runner/*`; only drafts verified by an independent solve are
+  accepted. Caps: 500 drafts and 50 Workers AI images per 24 h.
 
 - Branch for this effort: **`dev-revamp`** (cut from `main`; the Vercel dev
   domain tracks it). Commit there directly.

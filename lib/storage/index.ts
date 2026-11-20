@@ -134,3 +134,26 @@ export const getUploadTarget = (contentType: string): UploadTarget => {
   if (provider === "s3") return s3Target({ contentType, extension });
   throw new Error(`Unknown IMAGE_STORAGE "${provider}". Use "cloudinary" or "s3".`);
 };
+
+// Server-side upload (the nightly AI runner sends diagrams through our API, so
+// it never holds storage keys). SVG is allowed here only: it comes from our own
+// runner and is shown through <img>, where scripts inside it never run.
+const SERVER_TYPES: Record<string, string> = { ...ALLOWED_IMAGE_TYPES, "image/svg+xml": "svg" };
+
+export const uploadFromServer = async (data: Buffer, contentType: string): Promise<string> => {
+  const extension = SERVER_TYPES[contentType];
+  if (!extension) throw new Error("Only PNG, JPEG, WebP, GIF and SVG images can be uploaded");
+  if (data.length > MAX_UPLOAD_BYTES) throw new Error("Image is larger than 5 MB");
+  const provider = (process.env.IMAGE_STORAGE || "cloudinary").toLowerCase();
+  const target = provider === "s3" ? s3Target({ contentType, extension }) : cloudinaryTarget();
+  const form = new FormData();
+  Object.entries(target.fields).forEach(([k, v]) => form.append(k, v));
+  form.append(target.fileField, new Blob([new Uint8Array(data)], { type: contentType }), `diagram.${extension}`);
+  const res = await fetch(target.uploadUrl, { method: "POST", body: form });
+  if (!res.ok) throw new Error(`Image upload failed (${res.status})`);
+  if (target.publicUrl) return target.publicUrl;
+  const json = (await res.json()) as Record<string, string>;
+  const url = json[target.responseUrlKey ?? "secure_url"];
+  if (!url) throw new Error("Image upload returned no URL");
+  return url;
+};

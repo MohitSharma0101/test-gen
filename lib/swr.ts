@@ -41,7 +41,8 @@ type TFamily =
   | "student"
   | "batch-insights"
   | "student-insights"
-  | "dev-suggestions";
+  | "dev-suggestions"
+  | "ai-requests";
 
 // Write endpoint (path prefix, longest first) → the lists it can change
 const WRITE_EFFECTS: [string, TFamily[]][] = [
@@ -51,6 +52,7 @@ const WRITE_EFFECTS: [string, TFamily[]][] = [
   ["uploads/sign", []],
   // Background jobs: the page refreshes what a job changed when it ends
   ["jobs", []],
+  ["ai-requests", ["ai-requests"]],
   ["ai/", []],
   ["auth/login", []],
   ["auth/user", []],

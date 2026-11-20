@@ -13,8 +13,10 @@ const PUBLIC_API = [
   // Keep-warm ping: no data
   "/api/health",
 ];
-// Server-to-server job slices authenticate with their own secret header
-const isJobRun = (pathname: string) => /^\/api\/jobs\/[^/]+\/run$/.test(pathname);
+// Server-to-server job slices authenticate with their own secret header, and
+// the nightly AI runner with its key (each route checks it: lib/aiRequests.ts)
+const isJobRun = (pathname: string) =>
+  /^\/api\/jobs\/[^/]+\/run$/.test(pathname) || pathname.startsWith("/api/ai-runner/");
 
 const tokenFrom = (req: NextRequest) =>
   req.cookies.get(AUTH_TOKEN_KEY)?.value || req.headers.get("authorization")?.split(" ")[1];

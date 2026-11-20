@@ -14,6 +14,7 @@ import {
   UserCogIcon,
   Users2Icon,
   WandSparklesIcon,
+  BotIcon,
   SparklesIcon,
 } from "lucide-react";
 
@@ -77,6 +78,14 @@ export const ROUTES: TRoute[] = [
     href: "/variants",
     Icon: SparklesIcon,
     description: "Make new questions from a photo or text with AI",
+    group: "bank",
+    adminOnly: true,
+  }),
+  route({
+    label: "AI requests",
+    href: "/ai-requests",
+    Icon: BotIcon,
+    description: "Queue questions for Claude to write overnight",
     group: "bank",
     adminOnly: true,
   }),
