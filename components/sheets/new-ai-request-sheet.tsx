@@ -22,7 +22,7 @@ import type { TQuestion } from "@/models/Question";
 type Mode = "similar" | "topic";
 
 const PER_QUESTION = ["1", "2", "3", "4"].map((v) => ({ label: `${v} per question`, value: v }));
-const TOTALS = ["5", "10", "20", "30", "50"].map((v) => ({ label: `${v} questions`, value: v }));
+const TOTALS = Array.from({ length: 10 }, (_, i) => String((i + 1) * 5)).map((v) => ({ label: `${v} questions`, value: v }));
 const DIFFICULTY = [
   { label: "Same difficulty", value: "same" },
   { label: "Easier", value: "easier" },
