@@ -169,6 +169,10 @@ export enum TAG {
   AI_GENERATED = "AI Generated",
 }
 
+// An AI request's topic is also its name in the list, so it stays short;
+// details go in the prompt
+export const AI_TOPIC_MAX = 60;
+
 export enum Role {
   TEACHER = "teacher",
   ADMIN = "admin",

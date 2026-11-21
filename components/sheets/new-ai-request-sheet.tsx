@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { ChevronDownIcon, Loader2Icon, MoonStarIcon, SearchIcon } from "lucide-react";
+import { CheckIcon, Loader2Icon, MinusIcon, PlusIcon, MoonStarIcon, SearchIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,20 +18,15 @@ import { fetchQuestions } from "@/service/core.service";
 import { api } from "@/lib/api";
 import { apiErrorMsg, cn } from "@/lib/utils";
 import type { TQuestion } from "@/models/Question";
+import type { TVariantInput } from "@/models/AiRequest";
+import { AI_TOPIC_MAX } from "@/data/const";
+import { ChooseChapterSheet } from "@/components/sheets/choose-chapter-sheet";
 
 type Mode = "similar" | "topic";
 
-const PER_QUESTION = ["1", "2", "3", "4"].map((v) => ({ label: `${v} per question`, value: v }));
-const TOTALS = Array.from({ length: 10 }, (_, i) => String((i + 1) * 5)).map((v) => ({ label: `${v} questions`, value: v }));
-const DIFFICULTY = [
-  { label: "Same difficulty", value: "same" },
-  { label: "Easier", value: "easier" },
-  { label: "Harder", value: "harder" },
-];
-
-function Segmented<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: [T, string][]; label: string }) {
-  return (
-    <div role="radiogroup" aria-label={label} className="grid grid-cols-2 rounded-lg border bg-muted p-0.5">
+function Segmented<T extends string>({ value, onChange, options, label, showLabel }: { value: T; onChange: (v: T) => void; options: [T, string][]; label: string; showLabel?: boolean }) {
+  const group = (
+    <div role="radiogroup" aria-label={label} className="grid rounded-lg border bg-muted p-0.5" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
       {options.map(([v, text]) => (
         <button
           key={v}
@@ -39,11 +34,43 @@ function Segmented<T extends string>({ value, onChange, options, label }: { valu
           role="radio"
           aria-checked={value === v}
           onClick={() => onChange(v)}
-          className={cn("h-10 rounded-md text-sm font-medium", value === v ? "bg-background shadow-sm" : "text-muted-foreground")}
+          className={cn("h-11 rounded-md text-sm font-medium", value === v ? "bg-background shadow-sm" : "text-muted-foreground")}
         >
           {text}
         </button>
       ))}
+    </div>
+  );
+  if (!showLabel) return group;
+  return (
+    <div className="space-y-1">
+      <p className="ml-1 text-xs font-medium" aria-hidden="true">
+        {label}
+      </p>
+      {group}
+    </div>
+  );
+}
+
+/** 5 to 50 in steps of 5: two big buttons instead of a ten-item list. */
+function CountStepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const btn = "flex size-11 items-center justify-center rounded-md disabled:opacity-40 active:bg-background";
+  return (
+    <div className="space-y-1">
+      <p className="ml-1 text-xs font-medium" id="ai-count-label">
+        How many
+      </p>
+      <div className="flex items-center rounded-lg border bg-muted p-0.5" role="group" aria-labelledby="ai-count-label">
+        <button type="button" className={btn} aria-label="5 fewer" disabled={value <= 5} onClick={() => onChange(Math.max(5, value - 5))}>
+          <MinusIcon className="size-4" />
+        </button>
+        <span className="flex-1 text-center text-sm font-medium tabular-nums" aria-live="polite">
+          {value} questions
+        </span>
+        <button type="button" className={btn} aria-label="5 more" disabled={value >= 50} onClick={() => onChange(Math.min(50, value + 5))}>
+          <PlusIcon className="size-4" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -102,25 +129,50 @@ function QuestionChooser({ chapterId, value, onChange }: { chapterId: string; va
   );
 }
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void; onCreated?: (id: string) => void };
+/** A queued request being edited: its chapter stays, everything else can change. */
+export type TAiRequestEdit = { id: string; chapterId: string; chapterLabel: string; input: TVariantInput };
 
-/** Queue a "variants" request for tonight's run. */
-export function NewAiRequestSheet({ open, onOpenChange, onCreated }: Props) {
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated?: (id: string) => void;
+  /** Edit this queued request instead of creating one */
+  editing?: TAiRequestEdit;
+  onSaved?: () => void;
+};
+
+/** Queue a "variants" request for tonight's run, or edit one that is still queued. */
+export function NewAiRequestSheet({ open, onOpenChange, ...rest }: Props) {
+  return (
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      size="lg"
+      title={rest.editing ? "Edit request" : "New AI request"}
+      description={rest.editing ? "Change it any time before Claude starts on it." : "Claude writes the questions overnight. You review them before anything is added."}
+    >
+      {/* Mounted only while open, so an edit always starts from the saved request */}
+      {open && <RequestForm onOpenChange={onOpenChange} {...rest} />}
+    </ResponsiveDrawer>
+  );
+}
+
+function RequestForm({ onOpenChange, onCreated, editing, onSaved }: Omit<Props, "open">) {
+  const init = editing?.input;
   const { courses, subjects, course, subject, setCourse, setSubject } = useCourses();
   const [bookId, setBookId] = useState<string>();
-  const [chapterId, setChapterId] = useState<string>();
+  const [chapterId, setChapterId] = useState<string | undefined>(editing?.chapterId);
   const { books, loading: booksLoading } = useBooks(subject, course);
   const { chapters, loading: chaptersLoading } = useChapters(subject, course, bookId);
 
-  const [mode, setMode] = useState<Mode>("similar");
-  const [questionIds, setQuestionIds] = useState<string[]>([]);
-  const [topic, setTopic] = useState("");
-  const [perQuestion, setPerQuestion] = useState("2");
-  const [total, setTotal] = useState("10");
-  const [difficulty, setDifficulty] = useState("same");
-  const [questionType, setQuestionType] = useState("same");
-  const [instructions, setInstructions] = useState("");
-  const [more, setMore] = useState(false);
+  const [mode, setMode] = useState<Mode>(init?.mode ?? "topic");
+  const [questionIds, setQuestionIds] = useState<string[]>(init?.questionIds ?? []);
+  const [topic, setTopic] = useState(init?.topic ?? "");
+  const [perQuestion, setPerQuestion] = useState(init?.mode === "similar" ? String(init.count) : "2");
+  const [total, setTotal] = useState(init?.mode === "topic" ? String(init.count) : "10");
+  const [difficulty, setDifficulty] = useState<string>(init?.difficulty ?? "same");
+  const [questionType, setQuestionType] = useState<string>(init?.questionType ?? "same");
+  const [instructions, setInstructions] = useState(init?.instructions ?? "");
   const [saving, setSaving] = useState(false);
 
   const pickChapter = (id: string) => {
@@ -128,23 +180,31 @@ export function NewAiRequestSheet({ open, onOpenChange, onCreated }: Props) {
     setQuestionIds([]);
   };
   const expected = mode === "similar" ? questionIds.length * Number(perQuestion) : Number(total);
-  const ready = !!chapterId && (mode === "similar" ? questionIds.length > 0 : topic.trim().length > 2);
+  // Topic requests pick their chapter last, in a drawer opened by the Queue button
+  const chapterLast = mode === "topic" && !editing;
+  const [choosingChapter, setChoosingChapter] = useState(false);
+  const ready = (chapterLast || !!chapterId) && (mode === "similar" ? questionIds.length > 0 : topic.trim().length > 2 && topic.trim().length <= AI_TOPIC_MAX);
 
-  const submit = async () => {
-    if (!ready || saving) return;
+  const submit = async (pickedChapter?: string) => {
+    const target = pickedChapter ?? chapterId;
+    if (!ready || saving || !target) return;
     setSaving(true);
     try {
-      const res = await api.post("ai-requests", {
-        type: "variants",
-        chapterId,
-        input: {
-          mode,
-          ...(mode === "similar" ? { questionIds, count: Number(perQuestion) } : { topic: topic.trim(), count: Number(total) }),
-          difficulty,
-          questionType: mode === "topic" && questionType === "same" ? "MCQ" : questionType,
-          instructions: instructions.trim(),
-        },
-      });
+      const input = {
+        mode,
+        ...(mode === "similar" ? { questionIds, count: Number(perQuestion) } : { topic: topic.trim(), count: Number(total) }),
+        difficulty,
+        questionType: mode === "topic" && questionType === "same" ? "MCQ" : questionType,
+        instructions: instructions.trim(),
+      };
+      if (editing) {
+        await api.patch(`ai-requests/${editing.id}`, { input });
+        toast.success("Request updated");
+        onOpenChange(false);
+        onSaved?.();
+        return;
+      }
+      const res = await api.post("ai-requests", { type: "variants", chapterId: target, input });
       toast.success("Queued. Claude will work on it tonight.");
       onOpenChange(false);
       onCreated?.(res?.data?.data?.request?._id);
@@ -155,34 +215,49 @@ export function NewAiRequestSheet({ open, onOpenChange, onCreated }: Props) {
     }
   };
 
+  const label = editing
+    ? `Save: ${expected} question${expected === 1 ? "" : "s"}`
+    : ready
+      ? `Queue ${expected} question${expected === 1 ? "" : "s"} for tonight`
+      : "Queue for tonight";
+
   return (
-    <ResponsiveDrawer
-      open={open}
-      onOpenChange={onOpenChange}
-      size="lg"
-      title="New AI request"
-      description="Claude writes the questions overnight. You review them before anything is added."
-      footer={
-        <Button variant="brand" className="h-11 w-full gap-2" disabled={!ready || saving} onClick={submit}>
-          {saving ? <Loader2Icon className="size-4 animate-spin" /> : <MoonStarIcon className="size-4" />}
-          {ready ? `Queue ${expected} question${expected === 1 ? "" : "s"} for tonight` : "Queue for tonight"}
-        </Button>
-      }
-    >
+    <>
       <div className="flex flex-col gap-5 p-4">
         <Segmented<Mode>
           label="What to make"
           value={mode}
           onChange={setMode}
           options={[
-            ["similar", "Similar to questions"],
             ["topic", "From a topic"],
+            ["similar", "Similar to questions"],
           ]}
         />
 
+        {/* What staff actually want goes here; it leads the form so it isn't missed */}
+        <section className="space-y-1">
+          <label htmlFor="ai-prompt" className="text-sm font-semibold">
+            Prompt <span className="font-normal text-muted-foreground">(optional)</span>
+          </label>
+          <Textarea
+            id="ai-prompt"
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            rows={3}
+            maxLength={1000}
+            placeholder="Tell Claude what you want. For example: JEE Main level, real-life contexts, mix easy and hard questions"
+          />
+        </section>
+
+        {editing ? (
+          <section className="space-y-1">
+            <h3 className="text-sm font-semibold">Chapter</h3>
+            <p className="text-sm text-muted-foreground">{editing.chapterLabel}</p>
+          </section>
+        ) : chapterLast ? null : (
         <section className="space-y-2">
-          <h3 className="text-sm font-semibold">{mode === "similar" ? "Questions to copy from" : "Chapter"}</h3>
-          <p className="-mt-1 text-xs text-muted-foreground">Approved questions are added to this chapter.</p>
+          <h3 className="text-sm font-semibold">Questions to copy from</h3>
+          <p className="-mt-1 text-xs text-muted-foreground">Pick the chapter, then the questions to copy from.</p>
           <div className="grid grid-cols-2 gap-2">
             <SelectCompact label="Course" options={courses.map((c) => ({ label: c, value: c }))} value={course} onChange={(v) => { setCourse(v); setBookId(undefined); setChapterId(undefined); }} />
             <SelectCompact label="Subject" options={(subjects ?? []).map((s) => ({ label: s, value: s }))} value={subject} onChange={(v) => { setSubject(v); setBookId(undefined); setChapterId(undefined); }} />
@@ -190,69 +265,80 @@ export function NewAiRequestSheet({ open, onOpenChange, onCreated }: Props) {
             <SelectCompact label="Chapter" placeholder="Choose" loading={chaptersLoading} disabled={!bookId} options={(chapters ?? []).map((c) => ({ label: c.title, value: c._id }))} value={chapterId} onChange={pickChapter} />
           </div>
         </section>
+        )}
 
         {chapterId && mode === "similar" && <QuestionChooser chapterId={chapterId} value={questionIds} onChange={setQuestionIds} />}
 
         {mode === "topic" && (
           <section className="space-y-2">
-            <label htmlFor="ai-topic" className="text-sm font-semibold">
-              Topic
-            </label>
-            <Textarea
+            <div className="flex items-baseline justify-between gap-2">
+              <label htmlFor="ai-topic" className="text-sm font-semibold">
+                Topic
+              </label>
+              <span className={cn("text-xs tabular-nums", topic.length > AI_TOPIC_MAX ? "text-red-700" : "text-muted-foreground")} aria-live="polite">
+                {topic.length}/{AI_TOPIC_MAX}
+              </span>
+            </div>
+            <p className="-mt-1 text-xs text-muted-foreground">A short name for the request. Details go in the prompt.</p>
+            <input
               id="ai-topic"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              rows={2}
-              maxLength={300}
-              placeholder="For example: electric field lines and their properties"
+              maxLength={AI_TOPIC_MAX}
+              placeholder="For example: Electric flux"
+              className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand"
             />
           </section>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-4">
           {mode === "similar" ? (
-            <SelectCompact label="How many" options={PER_QUESTION} value={perQuestion} onChange={setPerQuestion} />
+            <Segmented label="How many per question" showLabel value={perQuestion} onChange={setPerQuestion} options={["1", "2", "3", "4"].map((v) => [v, v] as [string, string])} />
           ) : (
-            <SelectCompact label="How many" options={TOTALS} value={total} onChange={setTotal} />
+            <CountStepper value={Number(total)} onChange={(v) => setTotal(String(v))} />
           )}
-          <SelectCompact label="Difficulty" options={DIFFICULTY} value={difficulty} onChange={setDifficulty} />
+          <Segmented
+            label="Difficulty"
+            showLabel
+            value={difficulty}
+            onChange={setDifficulty}
+            options={[
+              ["same", mode === "similar" ? "Same" : "Usual"],
+              ["easier", "Easier"],
+              ["harder", "Harder"],
+            ]}
+          />
+          <Segmented
+            label="Question type"
+            showLabel
+            value={mode === "topic" && questionType === "same" ? "MCQ" : questionType}
+            onChange={setQuestionType}
+            options={[...(mode === "similar" ? [["same", "Same as source"] as [string, string]] : []), ["MCQ", "MCQ"], ["NUMERICAL", "Numerical"]]}
+          />
         </div>
-
-        {/* Rarely needed: kept out of the way */}
-        <section>
-          <button type="button" onClick={() => setMore((v) => !v)} aria-expanded={more} className="flex h-10 items-center gap-1.5 text-sm font-medium text-brand">
-            <ChevronDownIcon className={cn("size-4 transition-transform", more && "rotate-180")} aria-hidden="true" />
-            More options
-          </button>
-          {more && (
-            <div className="mt-2 space-y-3">
-              <SelectCompact
-                label="Question type"
-                options={[
-                  ...(mode === "similar" ? [{ label: "Same as source", value: "same" }] : []),
-                  { label: "MCQ", value: "MCQ" },
-                  { label: "Numerical", value: "NUMERICAL" },
-                ]}
-                value={mode === "topic" && questionType === "same" ? "MCQ" : questionType}
-                onChange={setQuestionType}
-              />
-              <div className="space-y-1">
-                <label htmlFor="ai-notes" className="ml-1 text-xs font-medium">
-                  Notes for Claude
-                </label>
-                <Textarea
-                  id="ai-notes"
-                  value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  rows={3}
-                  maxLength={1000}
-                  placeholder="For example: use real-life contexts, keep numbers small"
-                />
-              </div>
-            </div>
-          )}
-        </section>
       </div>
-    </ResponsiveDrawer>
+      {/* Stays in reach while the form scrolls */}
+      <div className="sticky bottom-0 border-t bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+        <Button variant="brand" className="h-11 w-full gap-2" disabled={!ready || saving} onClick={() => (chapterLast ? setChoosingChapter(true) : submit())}>
+          {saving ? <Loader2Icon className="size-4 animate-spin" /> : editing ? <CheckIcon className="size-4" /> : <MoonStarIcon className="size-4" />}
+          {label}
+        </Button>
+      </div>
+      {chapterLast && (
+        <ChooseChapterSheet
+          open={choosingChapter}
+          onOpenChange={setChoosingChapter}
+          title="Which chapter?"
+          description="Claude checks this chapter so it doesn’t repeat questions already there. You choose where to add them when you upload."
+          initial={{ course, subject, bookId, chapterId }}
+          confirmLabel={`Queue ${expected} question${expected === 1 ? "" : "s"} for tonight`}
+          confirmIcon={<MoonStarIcon className="size-4" />}
+          onConfirm={async (id) => {
+            setChapterId(id);
+            await submit(id);
+          }}
+        />
+      )}
+    </>
   );
 }

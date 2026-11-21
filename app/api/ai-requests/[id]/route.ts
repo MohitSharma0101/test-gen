@@ -4,7 +4,7 @@ import { dbConnect } from "@/lib/dbUtils";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
 import { getAccount } from "@/lib/auth";
 import AiRequest from "@/models/AiRequest";
-import { validateVariantInput } from "@/lib/aiRequests";
+import { requestTitle, validateVariantInput } from "@/lib/aiRequests";
 import "@/models/Chapter";
 import "@/models/Book";
 
@@ -43,7 +43,7 @@ export const PATCH = async (req: NextRequest, { params }: Ctx) => {
     }
     const { input, expected, error } = validateVariantInput(body?.input);
     if (error) return nextError(error, 400);
-    const done = await AiRequest.findOneAndUpdate({ _id: params.id, status: "queued" }, { $set: { input, expected } });
+    const done = await AiRequest.findOneAndUpdate({ _id: params.id, status: "queued" }, { $set: { input, expected, title: requestTitle(input!, expected!) } });
     return done ? nextSuccess(null) : nextError("It has already started, so it can't be edited.", 409);
   } catch (err) {
     return nextError(err);

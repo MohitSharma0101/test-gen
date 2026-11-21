@@ -5,7 +5,7 @@ import { nextError, nextSuccess } from "@/lib/nextUtils";
 import { getAccount } from "@/lib/auth";
 import AiRequest from "@/models/AiRequest";
 import Chapter from "@/models/Chapter";
-import { cleanupAiRequests, summaryProjection, validateVariantInput } from "@/lib/aiRequests";
+import { cleanupAiRequests, requestTitle, summaryProjection, validateVariantInput } from "@/lib/aiRequests";
 
 // The list: newest first, with draft counts (never the drafts themselves).
 export const GET = async () => {
@@ -44,13 +44,10 @@ export const POST = async (req: NextRequest) => {
     const chapter = await Chapter.findById(chapterId).select("title book").lean<{ title: string; book: unknown }>();
     if (!chapter) return nextError("Chapter not found", 404);
 
-    const title =
-      input!.mode === "topic"
-        ? `${input!.count} questions · ${input!.topic}`
-        : `${expected} variants of ${input!.questionIds!.length} question${input!.questionIds!.length === 1 ? "" : "s"}`;
+    const title = requestTitle(input!, expected!);
     const doc = await AiRequest.create({
       type: "variants",
-      title: title.slice(0, 140),
+      title,
       input,
       expected,
       target: { book: chapter.book, chapter: chapterId },

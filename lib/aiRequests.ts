@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import mongoose from "mongoose";
+import { AI_TOPIC_MAX } from "@/data/const";
 import AiRequest, { TAiRequest, TVariantInput } from "@/models/AiRequest";
 
 // Limits chosen with the user (Nov 2026)
@@ -15,6 +16,15 @@ export const isRunner = (req: NextRequest) => {
   const key = process.env.AI_RUNNER_KEY;
   return !!key && req.headers.get("x-ai-runner-key") === key;
 };
+
+/**
+ * The request's name in lists, from its settings (kept in step when a queued
+ * request is edited). The topic is short (AI_TOPIC_MAX), so it is used as is.
+ */
+export const requestTitle = (input: TVariantInput, expected: number) =>
+  input.mode === "topic"
+    ? `${input.count} questions · ${input.topic}`
+    : `${expected} variants of ${input.questionIds!.length} question${input.questionIds!.length === 1 ? "" : "s"}`;
 
 /** Validate a "variants" request from the form. Returns cleaned input or an error. */
 export function validateVariantInput(raw: any): { input?: TVariantInput; expected?: number; error?: string } {
@@ -36,8 +46,9 @@ export function validateVariantInput(raw: any): { input?: TVariantInput; expecte
       expected: ids.length * count,
     };
   }
-  const topic = typeof raw?.topic === "string" ? raw.topic.trim().slice(0, 300) : "";
+  const topic = typeof raw?.topic === "string" ? raw.topic.trim() : "";
   if (!topic) return { error: "Describe the topic" };
+  if (topic.length > AI_TOPIC_MAX) return { error: `Keep the topic under ${AI_TOPIC_MAX} characters. Put the details in the prompt.` };
   if (!(count >= 1 && count <= MAX_TOPIC_QUESTIONS)) return { error: `Choose 1 to ${MAX_TOPIC_QUESTIONS} questions` };
   return {
     input: { mode, topic, count, difficulty, questionType: questionType === "same" ? "MCQ" : questionType, instructions },

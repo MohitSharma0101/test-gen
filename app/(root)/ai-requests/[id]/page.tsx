@@ -25,11 +25,51 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import Markdown from "@/components/ui/markdown";
 import EditMarkdownSheet from "@/components/sheets/edit-markdown-sheet";
 import { ChooseChapterSheet } from "@/components/sheets/choose-chapter-sheet";
+import { NewAiRequestSheet } from "@/components/sheets/new-ai-request-sheet";
 import { AiStatusBadge } from "@/components/ai-requests/status-badge";
 import { useAiRequest } from "@/hooks/useAiRequests";
 import { api } from "@/lib/api";
 import { apiErrorMsg, cn, withConfirmation } from "@/lib/utils";
-import type { TAiDraft, TDraftStatus } from "@/models/AiRequest";
+import type { TAiDraft, TDraftStatus, TVariantInput } from "@/models/AiRequest";
+
+const DIFFICULTY_LABEL = { same: "Same as source", easier: "Easier", harder: "Harder" } as const;
+const TYPE_LABEL = { same: "Same as source", MCQ: "MCQ", NUMERICAL: "Numerical" } as const;
+
+/** What was asked for, in plain words: the request's settings, read-only. */
+function RequestDetails({ input, expected, open, onEdit }: { input: TVariantInput; expected: number; open: boolean; onEdit?: () => void }) {
+  const similar = input.mode === "similar";
+  const n = input.questionIds?.length ?? 0;
+  const rows: [string, string][] = [
+    similar ? ["Made from", `${n} question${n === 1 ? "" : "s"} you chose`] : ["Topic", input.topic ?? ""],
+    ["How many", similar ? `${input.count} per question, ${expected} in total` : `${input.count} questions`],
+    ["Difficulty", similar ? DIFFICULTY_LABEL[input.difficulty] : input.difficulty === "same" ? "Usual level" : DIFFICULTY_LABEL[input.difficulty]],
+    ["Question type", TYPE_LABEL[input.questionType]],
+    ...(input.instructions ? ([["Prompt", input.instructions]] as [string, string][]) : []),
+  ];
+  return (
+    <details open={open} className="group rounded-2xl border bg-card">
+      <summary className="flex h-12 cursor-pointer list-none items-center gap-2 rounded-2xl px-4 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand [&::-webkit-details-marker]:hidden">
+        <ChevronDownIcon className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+        Request details
+      </summary>
+      <div className="border-t px-4 pb-4 pt-3">
+        <dl className="grid gap-x-4 gap-y-2.5 text-sm sm:grid-cols-[10rem_1fr]">
+          {rows.map(([k, v]) => (
+            <div key={k} className="contents">
+              <dt className="text-muted-foreground">{k}</dt>
+              <dd className="-mt-2 whitespace-pre-wrap break-words sm:mt-0">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        {onEdit && (
+          <Button variant="outline" className="mt-4 h-10 gap-2" onClick={onEdit}>
+            <PencilIcon className="size-4" /> Edit request
+          </Button>
+        )}
+      </div>
+    </details>
+  );
+}
 
 type Tab = "pending" | "approved" | "rejected";
 const TABS: [Tab, string][] = [
@@ -129,6 +169,7 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
   const approved = count("approved");
   // Upload opens a chapter picker (pre-set to the request's chapter); the upload happens there
   const [picking, setPicking] = useState(false);
+  const [editingRequest, setEditingRequest] = useState(false);
   const chapter = request?.target.chapter?.title ?? "the chapter";
 
   const setStatus = async (ids: string[], status: TDraftStatus) => {
@@ -223,7 +264,7 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
         <>
           <header className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-bold leading-tight tracking-tight sm:text-2xl">{request.title}</h1>
+              <h1 className="break-words text-xl font-bold leading-tight tracking-tight sm:text-2xl">{request.title}</h1>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                 <AiStatusBadge status={request.status} />
                 <span className="truncate">
@@ -243,6 +284,13 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
               </DropdownMenuContent>
             </DropdownMenu>
           </header>
+
+          <RequestDetails
+            input={request.input}
+            expected={request.expected}
+            open={request.status === "queued"}
+            onEdit={request.status === "queued" ? () => setEditingRequest(true) : undefined}
+          />
 
           {request.status === "queued" && (
             <section className="flex items-start gap-3 rounded-2xl border bg-card p-4">
@@ -338,6 +386,20 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
             </Button>
           </div>
         </div>
+      )}
+
+      {request && request.status === "queued" && (
+        <NewAiRequestSheet
+          open={editingRequest}
+          onOpenChange={setEditingRequest}
+          editing={{
+            id: params.id,
+            chapterId: request.target.chapter?._id ?? "",
+            chapterLabel: `${request.target.book?.title ?? ""} › ${chapter}`,
+            input: request.input,
+          }}
+          onSaved={refresh}
+        />
       )}
 
       <ChooseChapterSheet

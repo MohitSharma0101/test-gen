@@ -53,7 +53,7 @@ export default function AiRequestsPage() {
       header: "Request",
       cell: (r) => (
         <Link href={`/ai-requests/${r._id}`} className="block min-w-0">
-          <span className="block truncate font-semibold text-brand hover:underline">{r.title}</span>
+          <span className="line-clamp-3 break-words font-semibold text-brand hover:underline" title={r.title}>{r.title}</span>
           <span className="block truncate text-xs text-muted-foreground">
             {r.bookTitle} › {r.chapterTitle}
           </span>
@@ -69,7 +69,7 @@ export default function AiRequestsPage() {
   const card = (r: TAiRequestSummary) => (
     <Link href={`/ai-requests/${r._id}`} className="flex items-center gap-3 rounded-2xl border bg-card p-4 shadow-sm active:bg-muted">
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 font-semibold leading-snug">{r.title}</p>
+        <p className="line-clamp-4 break-words font-semibold leading-snug">{r.title}</p>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">
           {r.chapterTitle} · {day(r.createdAt)}
         </p>

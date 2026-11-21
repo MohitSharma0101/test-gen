@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { Loader2Icon, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResponsiveDrawer } from "@/components/ui/responsive-drawer";
@@ -19,6 +19,8 @@ type Props = {
   title: string;
   description?: string;
   confirmLabel: string;
+  /** Icon on the confirm button (default: upload) */
+  confirmIcon?: ReactNode;
   onConfirm: (chapterId: string) => Promise<void>;
 };
 
@@ -32,7 +34,7 @@ export function ChooseChapterSheet({ open, onOpenChange, ...rest }: Props) {
   );
 }
 
-function Body({ initial, confirmLabel, onConfirm }: Omit<Props, "open" | "onOpenChange" | "title" | "description">) {
+function Body({ initial, confirmLabel, confirmIcon, onConfirm }: Omit<Props, "open" | "onOpenChange" | "title" | "description">) {
   const { courses, subjects, course, subject, setCourse, setSubject } = useCourses({ defaultCourse: initial?.course, defaultSubject: initial?.subject });
   const [bookId, setBookId] = useState(initial?.bookId);
   const [chapterId, setChapterId] = useState(initial?.chapterId);
@@ -59,7 +61,7 @@ function Body({ initial, confirmLabel, onConfirm }: Omit<Props, "open" | "onOpen
         <SelectCompact label="Chapter" placeholder="Choose" loading={chaptersLoading} disabled={!bookId} options={(chapters ?? []).map((c) => ({ label: c.title, value: c._id }))} value={chapterId} onChange={setChapterId} />
       </div>
       <Button variant="brand" className="h-11 w-full gap-2" disabled={!chapterId || busy} onClick={confirm}>
-        {busy ? <Loader2Icon className="size-4 animate-spin" /> : <UploadIcon className="size-4" />}
+        {busy ? <Loader2Icon className="size-4 animate-spin" /> : (confirmIcon ?? <UploadIcon className="size-4" />)}
         {confirmLabel}
       </Button>
     </div>
