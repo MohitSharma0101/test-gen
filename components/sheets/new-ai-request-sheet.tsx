@@ -19,7 +19,8 @@ import { api } from "@/lib/api";
 import { apiErrorMsg, cn } from "@/lib/utils";
 import type { TQuestion } from "@/models/Question";
 import type { TVariantInput } from "@/models/AiRequest";
-import { AI_TOPIC_MAX } from "@/data/const";
+import { AI_TOPIC_MAX, SUBJECT_MAP } from "@/data/const";
+import { useRouter } from "next/navigation";
 import { ChooseChapterSheet } from "@/components/sheets/choose-chapter-sheet";
 
 type Mode = "similar" | "topic";
@@ -129,19 +130,49 @@ function QuestionChooser({ chapterId, value, onChange }: { chapterId: string; va
   );
 }
 
-/** A queued request being edited: its chapter stays, everything else can change. */
-export type TAiRequestEdit = { id: string; chapterId: string; chapterLabel: string; input: TVariantInput };
+type TFormType = "variants" | "paper";
+
+/** A queued request being edited (any type; it can be switched to another). */
+export type TAiRequestEdit = {
+  id: string;
+  type: "variants" | "paper" | "check";
+  input: Record<string, any>;
+  // variants: the chapter it is tied to
+  chapterId?: string;
+  chapterLabel?: string;
+  course?: string;
+  subject?: string;
+};
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: (id: string) => void;
+  /** Type to start on for a new request */
+  initialType?: TFormType;
   /** Edit this queued request instead of creating one */
   editing?: TAiRequestEdit;
   onSaved?: () => void;
 };
 
-/** Queue a "variants" request for tonight's run, or edit one that is still queued. */
+/**
+ * Fields every type understands, carried across when the type is switched:
+ * the name (variants: topic; paper: name; check: test name), the prompt
+ * (variants: prompt; paper: prompt; check: marking notes), course, subject.
+ */
+type TShared = { name: string; prompt: string; course?: string; subject?: string };
+
+const sharedFrom = (e?: TAiRequestEdit): TShared => {
+  const i = e?.input ?? {};
+  return {
+    name: i.topic ?? i.name ?? "",
+    prompt: i.instructions ?? i.prompt ?? "",
+    course: i.course ?? e?.course,
+    subject: i.subjects?.[0] ?? i.subject ?? e?.subject,
+  };
+};
+
+/** Queue a request for tonight's run, or edit / re-type one that is still queued. */
 export function NewAiRequestSheet({ open, onOpenChange, ...rest }: Props) {
   return (
     <ResponsiveDrawer
@@ -149,30 +180,189 @@ export function NewAiRequestSheet({ open, onOpenChange, ...rest }: Props) {
       onOpenChange={onOpenChange}
       size="lg"
       title={rest.editing ? "Edit request" : "New AI request"}
-      description={rest.editing ? "Change it any time before Claude starts on it." : "Claude writes the questions overnight. You review them before anything is added."}
+      description={rest.editing ? "Change it, or switch its type, any time before Claude starts on it." : "Claude works on it overnight. You review the result before anything is used."}
     >
       {/* Mounted only while open, so an edit always starts from the saved request */}
-      {open && <RequestForm onOpenChange={onOpenChange} {...rest} />}
+      {open && <TypedForm onOpenChange={onOpenChange} {...rest} />}
     </ResponsiveDrawer>
   );
 }
 
-function RequestForm({ onOpenChange, onCreated, editing, onSaved }: Omit<Props, "open">) {
-  const init = editing?.input;
-  const { courses, subjects, course, subject, setCourse, setSubject } = useCourses();
+const TYPE_OPTIONS: [TFormType | "check", string][] = [
+  ["variants", "Questions"],
+  ["paper", "Paper"],
+  ["check", "Check sheets"],
+];
+
+function TypedForm(props: Omit<Props, "open">) {
+  const router = useRouter();
+  const { editing, initialType } = props;
+  const [type, setType] = useState<TFormType>(editing && editing.type !== "check" ? editing.type : initialType ?? "variants");
+  // Lifted so whatever was typed survives a switch between types
+  const [shared, setShared] = useState<TShared>(() => sharedFrom(editing));
+  const patch = (p: Partial<TShared>) => setShared((s) => ({ ...s, ...p }));
+
+  const pick = (t: TFormType | "check") => {
+    if (t !== "check") return setType(t);
+    // Answer sheets need uploads: the check page, pre-filled; it replaces this request on queueing
+    const q = new URLSearchParams({ ...(shared.name ? { name: shared.name } : {}), ...(shared.prompt ? { notes: shared.prompt } : {}), ...(editing ? { replace: editing.id } : {}) });
+    // Close the drawer first: navigating with it open left the page behind it
+    // unresponsive (the drawer's body lock outlived it). Then go once it has animated out.
+    props.onOpenChange(false);
+    setTimeout(() => router.push(`/ai-requests/check?${q}`), 250);
+  };
+
+  return (
+    <>
+      <div className="px-4 pt-4">
+        <Segmented<TFormType | "check"> label="Request type" value={type} onChange={pick} options={TYPE_OPTIONS} />
+      </div>
+      {type === "variants" ? (
+        <RequestForm key="variants" {...props} shared={shared} setShared={patch} switched={!!editing && editing.type !== "variants"} />
+      ) : (
+        <PaperForm key="paper" {...props} shared={shared} setShared={patch} />
+      )}
+    </>
+  );
+}
+
+type FormProps = Omit<Props, "open" | "initialType"> & { shared: TShared; setShared: (p: Partial<TShared>) => void };
+
+/** "paper": a prompt, a name, the course and its subjects. Claude picks the questions. */
+function PaperForm({ onOpenChange, onCreated, editing, onSaved, shared, setShared }: FormProps) {
+  const init = editing?.type === "paper" ? editing.input : undefined;
+  const { courses, course, setCourse } = useCourses({ defaultCourse: shared.course });
+  const allSubjects: string[] = SUBJECT_MAP[course] ?? [];
+  const [picked, setPicked] = useState<string[]>(() => (init?.subjects as string[] | undefined) ?? (shared.subject ? [shared.subject] : []));
+  const subjects = picked.filter((x) => allSubjects.includes(x));
+  const [saving, setSaving] = useState(false);
+  const name = shared.name;
+  const prompt = shared.prompt;
+  const ready = name.trim().length >= 3 && name.trim().length <= AI_TOPIC_MAX && prompt.trim().length >= 10 && subjects.length > 0;
+
+  const submit = async () => {
+    if (!ready || saving) return;
+    setSaving(true);
+    try {
+      const input = { name: name.trim(), prompt: prompt.trim(), course, subjects };
+      if (editing) {
+        await api.patch(`ai-requests/${editing.id}`, { type: "paper", input });
+        toast.success(editing.type === "paper" ? "Request updated" : "Changed to Make a paper");
+        onOpenChange(false);
+        onSaved?.();
+        return;
+      }
+      const res = await api.post("ai-requests", { type: "paper", input });
+      toast.success("Queued. Claude will make the paper tonight.");
+      onOpenChange(false);
+      onCreated?.(res?.data?.data?.request?._id);
+    } catch (err) {
+      toast.error(apiErrorMsg(err, "Couldn't queue the request"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="flex flex-col gap-5 p-4">
+        <section className="space-y-1">
+          <label htmlFor="ai-paper-prompt" className="text-sm font-semibold">
+            Prompt
+          </label>
+          <Textarea
+            id="ai-paper-prompt"
+            value={prompt}
+            onChange={(e) => setShared({ prompt: e.target.value })}
+            rows={6}
+            maxLength={2000}
+            placeholder={"Describe the paper. For example:\nJEE Main pattern, 25 questions per subject\nPhysics: rotation and electrostatics only\nMaths: no integration"}
+          />
+          <p className="text-xs text-muted-foreground">Name the exam (JEE Main, NEET, CBSE, RBSE) to follow its pattern, or give your own counts and marks.</p>
+        </section>
+
+        <section className="space-y-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <label htmlFor="ai-paper-name" className="text-sm font-semibold">
+              Paper name
+            </label>
+            <span className={cn("text-xs tabular-nums", name.length > AI_TOPIC_MAX ? "text-red-700" : "text-muted-foreground")} aria-live="polite">
+              {name.length}/{AI_TOPIC_MAX}
+            </span>
+          </div>
+          <input
+            id="ai-paper-name"
+            value={name}
+            onChange={(e) => setShared({ name: e.target.value })}
+            maxLength={AI_TOPIC_MAX}
+            placeholder="For example: JEE Main mock 4"
+            className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          />
+        </section>
+
+        <section className="space-y-2">
+          <SelectCompact
+            label="Course"
+            options={courses.map((c) => ({ label: c, value: c }))}
+            value={course}
+            onChange={(v) => {
+              setCourse(v);
+              setShared({ course: v });
+            }}
+          />
+          <div className="space-y-1">
+            <p className="ml-1 text-xs font-medium" id="ai-paper-subjects">
+              Subjects
+            </p>
+            <div role="group" aria-labelledby="ai-paper-subjects" className="flex flex-wrap gap-2">
+              {allSubjects.map((sub) => {
+                const on = subjects.includes(sub);
+                return (
+                  <button
+                    key={sub}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setPicked((p) => (on ? p.filter((x) => x !== sub) : [...p, sub]))}
+                    className={cn("h-11 rounded-full border px-4 text-sm font-medium", on ? "border-brand bg-brand-soft text-brand" : "bg-background text-muted-foreground")}
+                  >
+                    {sub}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </div>
+      <div className="sticky bottom-0 border-t bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+        <Button variant="brand" className="h-11 w-full gap-2" disabled={!ready || saving} onClick={submit}>
+          {saving ? <Loader2Icon className="size-4 animate-spin" /> : editing ? <CheckIcon className="size-4" /> : <MoonStarIcon className="size-4" />}
+          {editing ? "Save" : "Queue the paper for tonight"}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function RequestForm({ onOpenChange, onCreated, editing, onSaved, shared, setShared, switched }: FormProps & { switched: boolean }) {
+  const init = editing?.type === "variants" ? (editing.input as TVariantInput) : undefined;
+  const topic = shared.name;
+  const setTopic = (v: string) => setShared({ name: v });
+  const instructions = shared.prompt;
+  const setInstructions = (v: string) => setShared({ prompt: v });
+  const { courses, subjects, course, subject, setCourse, setSubject } = useCourses({ defaultCourse: shared.course, defaultSubject: shared.subject });
   const [bookId, setBookId] = useState<string>();
-  const [chapterId, setChapterId] = useState<string | undefined>(editing?.chapterId);
+  // A request switched from another type has no chapter yet
+  const fixedChapter = !switched && !!editing?.chapterId;
+  const [chapterId, setChapterId] = useState<string | undefined>(fixedChapter ? editing?.chapterId : undefined);
   const { books, loading: booksLoading } = useBooks(subject, course);
   const { chapters, loading: chaptersLoading } = useChapters(subject, course, bookId);
 
   const [mode, setMode] = useState<Mode>(init?.mode ?? "topic");
   const [questionIds, setQuestionIds] = useState<string[]>(init?.questionIds ?? []);
-  const [topic, setTopic] = useState(init?.topic ?? "");
   const [perQuestion, setPerQuestion] = useState(init?.mode === "similar" ? String(init.count) : "2");
   const [total, setTotal] = useState(init?.mode === "topic" ? String(init.count) : "10");
   const [difficulty, setDifficulty] = useState<string>(init?.difficulty ?? "same");
   const [questionType, setQuestionType] = useState<string>(init?.questionType ?? "same");
-  const [instructions, setInstructions] = useState(init?.instructions ?? "");
   const [saving, setSaving] = useState(false);
 
   const pickChapter = (id: string) => {
@@ -181,7 +371,7 @@ function RequestForm({ onOpenChange, onCreated, editing, onSaved }: Omit<Props, 
   };
   const expected = mode === "similar" ? questionIds.length * Number(perQuestion) : Number(total);
   // Topic requests pick their chapter last, in a drawer opened by the Queue button
-  const chapterLast = mode === "topic" && !editing;
+  const chapterLast = mode === "topic" && !fixedChapter;
   const [choosingChapter, setChoosingChapter] = useState(false);
   const ready = (chapterLast || !!chapterId) && (mode === "similar" ? questionIds.length > 0 : topic.trim().length > 2 && topic.trim().length <= AI_TOPIC_MAX);
 
@@ -198,8 +388,8 @@ function RequestForm({ onOpenChange, onCreated, editing, onSaved }: Omit<Props, 
         instructions: instructions.trim(),
       };
       if (editing) {
-        await api.patch(`ai-requests/${editing.id}`, { input });
-        toast.success("Request updated");
+        await api.patch(`ai-requests/${editing.id}`, { type: "variants", input, chapterId: target });
+        toast.success(switched ? "Changed to Write questions" : "Request updated");
         onOpenChange(false);
         onSaved?.();
         return;
@@ -249,10 +439,10 @@ function RequestForm({ onOpenChange, onCreated, editing, onSaved }: Omit<Props, 
           />
         </section>
 
-        {editing ? (
+        {fixedChapter ? (
           <section className="space-y-1">
             <h3 className="text-sm font-semibold">Chapter</h3>
-            <p className="text-sm text-muted-foreground">{editing.chapterLabel}</p>
+            <p className="text-sm text-muted-foreground">{editing?.chapterLabel}</p>
           </section>
         ) : chapterLast ? null : (
         <section className="space-y-2">
@@ -331,7 +521,7 @@ function RequestForm({ onOpenChange, onCreated, editing, onSaved }: Omit<Props, 
           title="Which chapter?"
           description="Claude checks this chapter so it doesn’t repeat questions already there. You choose where to add them when you upload."
           initial={{ course, subject, bookId, chapterId }}
-          confirmLabel={`Queue ${expected} question${expected === 1 ? "" : "s"} for tonight`}
+          confirmLabel={editing ? "Save" : `Queue ${expected} question${expected === 1 ? "" : "s"} for tonight`}
           confirmIcon={<MoonStarIcon className="size-4" />}
           onConfirm={async (id) => {
             setChapterId(id);

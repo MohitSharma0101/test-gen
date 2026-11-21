@@ -28,6 +28,8 @@ import { ChooseChapterSheet } from "@/components/sheets/choose-chapter-sheet";
 import { NewAiRequestSheet } from "@/components/sheets/new-ai-request-sheet";
 import { AiStatusBadge } from "@/components/ai-requests/status-badge";
 import { useAiRequest } from "@/hooks/useAiRequests";
+import { CheckReview } from "@/components/ai-requests/check-review";
+import { PaperRequest } from "@/components/ai-requests/paper-request";
 import { api } from "@/lib/api";
 import { apiErrorMsg, cn, withConfirmation } from "@/lib/utils";
 import type { TAiDraft, TDraftStatus, TVariantInput } from "@/models/AiRequest";
@@ -157,7 +159,7 @@ const DraftCard = memo(function DraftCard({ draft, n, busy, onStatus, onEdit }: 
 // primary action: add the approved questions to the chapter.
 export default function AiRequestPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { request, loading, gone, error, refresh } = useAiRequest(params.id);
+  const { request, check, madePaper, loading, gone, error, refresh } = useAiRequest(params.id);
   const [tab, setTab] = useState<Tab>("pending");
   const [busyIds, setBusyIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -170,7 +172,7 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
   // Upload opens a chapter picker (pre-set to the request's chapter); the upload happens there
   const [picking, setPicking] = useState(false);
   const [editingRequest, setEditingRequest] = useState(false);
-  const chapter = request?.target.chapter?.title ?? "the chapter";
+  const chapter = request?.target?.chapter?.title ?? "the chapter";
 
   const setStatus = async (ids: string[], status: TDraftStatus) => {
     setBusyIds((b) => [...b, ...ids]);
@@ -242,11 +244,14 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
     </Link>
   );
 
+  if (request?.type === "check" && check) return <CheckReview id={params.id} request={request} check={check} refresh={refresh} />;
+  if (request?.type === "paper") return <PaperRequest id={params.id} request={request} madePaper={madePaper} refresh={refresh} />;
+
   if (gone)
     return (
       <main className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-12 pt-4 sm:px-6">
         {back}
-        <EmptyState className="rounded-2xl border bg-card py-12" icon={<CheckIcon />} title="All done" description="This request was finished and removed. Its approved questions are in the bank." />
+        <EmptyState className="rounded-2xl border bg-card py-12" icon={<CheckIcon />} title="All done" description="This request was finished and removed. Its results are in the question bank or Exam Results." />
       </main>
     );
 
@@ -268,7 +273,7 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
               <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                 <AiStatusBadge status={request.status} />
                 <span className="truncate">
-                  {request.target.book?.title} › {chapter}
+                  {request.target?.book?.title} › {chapter}
                 </span>
                 <span>· {day(request.createdAt)}</span>
               </div>
@@ -394,8 +399,11 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
           onOpenChange={setEditingRequest}
           editing={{
             id: params.id,
-            chapterId: request.target.chapter?._id ?? "",
-            chapterLabel: `${request.target.book?.title ?? ""} › ${chapter}`,
+            type: request.type,
+            chapterId: request.target?.chapter?._id,
+            chapterLabel: `${request.target?.book?.title ?? ""} › ${chapter}`,
+            course: request.target?.chapter?.course,
+            subject: request.target?.chapter?.subject,
             input: request.input,
           }}
           onSaved={refresh}
@@ -408,10 +416,10 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
         title="Upload questions"
         description="Choose where the approved questions go."
         initial={{
-          course: request?.target.chapter?.course,
-          subject: request?.target.chapter?.subject,
-          bookId: request?.target.book?._id,
-          chapterId: request?.target.chapter?._id,
+          course: request?.target?.chapter?.course,
+          subject: request?.target?.chapter?.subject,
+          bookId: request?.target?.book?._id,
+          chapterId: request?.target?.chapter?._id,
         }}
         confirmLabel={`Upload ${approved} question${approved === 1 ? "" : "s"}`}
         onConfirm={upload}

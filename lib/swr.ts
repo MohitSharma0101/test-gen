@@ -52,7 +52,8 @@ const WRITE_EFFECTS: [string, TFamily[]][] = [
   ["uploads/sign", []],
   // Background jobs: the page refreshes what a job changed when it ends
   ["jobs", []],
-  ["ai-requests", ["ai-requests"]],
+  // Publishing a checked test adds an exam result (shown on student pages)
+  ["ai-requests", ["ai-requests", "student"]],
   ["ai/", []],
   ["auth/login", []],
   ["auth/user", []],

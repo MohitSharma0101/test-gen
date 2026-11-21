@@ -23,6 +23,9 @@ export const GET = async (request: NextRequest) => {
     if (author) query.author = author;
     if (course) query.course = course;
     if (status) query.status = status;
+    // Title search (paper pickers); escaped so a typed "(" can't break the regex
+    const q = searchParams.get("q")?.trim().slice(0, 80);
+    if (q) query.title = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
 
     await dbConnect();
 

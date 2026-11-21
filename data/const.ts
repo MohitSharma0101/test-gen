@@ -173,6 +173,10 @@ export enum TAG {
 // details go in the prompt
 export const AI_TOPIC_MAX = 60;
 
+// How a mark was lost on a checked answer sheet (ExamResult answers, AI
+// "check" requests); weak-area reports group by it
+export const MISTAKE_TYPES = ["concept", "method", "calculation", "incomplete", "misread", "not_attempted"] as const;
+
 export enum Role {
   TEACHER = "teacher",
   ADMIN = "admin",

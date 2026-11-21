@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BotIcon, ChevronRightIcon, PlusIcon, SearchIcon, SearchXIcon } from "lucide-react";
+import { BotIcon, ChevronRightIcon, ClipboardCheckIcon, FileTextIcon, PlusIcon, SearchIcon, SearchXIcon, SparklesIcon } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/ui/page-header";
@@ -28,6 +31,18 @@ const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "n
 
 // What the row says next to the status: the one number that matters now
 const progressText = (r: TAiRequestSummary) => {
+  if (r.type === "paper") {
+    if (r.status === "review") return "Paper ready";
+    if (r.status === "running") return "Making the paper";
+    if (r.status === "queued") return (r.input as unknown as { subjects?: string[] }).subjects?.join(", ") ?? "";
+    return r.error ? "See details" : "";
+  }
+  if (r.type === "check") {
+    if (r.status === "review") return `${r.checkedCount} checked, ready to publish`;
+    if (r.status === "running") return `${r.checkedCount} of ${r.sheetCount} checked`;
+    if (r.status === "queued") return `${r.sheetCount} answer sheet${r.sheetCount === 1 ? "" : "s"}`;
+    return r.error ? "See details" : "";
+  }
   if (r.status === "review") return r.counts.pending ? `${r.counts.pending} to review` : `${r.counts.approved} approved, ready to add`;
   if (r.status === "running") return `${r.counts.total} of ${r.expected} made`;
   if (r.status === "queued") return `${r.expected} question${r.expected === 1 ? "" : "s"}`;
@@ -36,16 +51,62 @@ const progressText = (r: TAiRequestSummary) => {
 
 // Pattern 1 - List / Index: the AI requests, newest first. Create opens a
 // slide-over; a row opens the request (Detail) to review its drafts.
+// Second line of a row: where the work belongs
+const placeText = (r: TAiRequestSummary & { batchName?: string }) =>
+  r.type === "check"
+    ? `Answer sheets · ${r.batchName ?? "Batch"}`
+    : r.type === "paper"
+      ? `Paper · ${(r.input as unknown as { course?: string }).course ?? ""}`
+      : `${r.bookTitle ?? ""} › ${r.chapterTitle ?? ""}`;
+
+/** "New request": write questions (drawer) or check answer sheets (its own page). */
+function NewRequestMenu({ onQuestions, onPaper, compact }: { onQuestions: () => void; onPaper: () => void; compact?: boolean }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className={cn(buttonVariants({ variant: "brand" }), compact ? "h-10 gap-2" : "h-11 gap-2")}>
+        <PlusIcon className="size-4" />
+        <span className={compact ? "hidden sm:inline" : undefined}>New request</span>
+        {compact && <span className="sr-only sm:hidden">New request</span>}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64 rounded-xl p-1.5">
+        <DropdownMenuItem className="cursor-pointer gap-3 rounded-lg p-2.5" onSelect={onQuestions}>
+          <SparklesIcon className="size-4 shrink-0" />
+          <span>
+            <span className="block text-sm font-medium">Write questions</span>
+            <span className="block text-xs text-muted-foreground">From a topic or similar to questions</span>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer gap-3 rounded-lg p-2.5" onSelect={onPaper}>
+          <FileTextIcon className="size-4 shrink-0" />
+          <span>
+            <span className="block text-sm font-medium">Make a paper</span>
+            <span className="block text-xs text-muted-foreground">Claude picks questions from the bank</span>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="cursor-pointer gap-3 rounded-lg p-2.5">
+          <Link href="/ai-requests/check">
+            <ClipboardCheckIcon className="size-4 shrink-0" />
+            <span>
+              <span className="block text-sm font-medium">Check answer sheets</span>
+              <span className="block text-xs text-muted-foreground">Mark a test&apos;s answer sheets</span>
+            </span>
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function AiRequestsPage() {
   const router = useRouter();
   const { requests, loading, firstLoad, error, refresh } = useAiRequests();
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<"variants" | "paper" | null>(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
 
   const q = query.trim().toLowerCase();
   const rows = requests.filter(
-    (r) => (status === "all" || r.status === status) && (!q || `${r.title} ${r.chapterTitle ?? ""}`.toLowerCase().includes(q))
+    (r) => (status === "all" || r.status === status) && (!q || `${r.title} ${r.chapterTitle ?? ""} ${(r as { batchName?: string }).batchName ?? ""}`.toLowerCase().includes(q))
   );
 
   const columns: ListColumn<TAiRequestSummary>[] = [
@@ -54,9 +115,7 @@ export default function AiRequestsPage() {
       cell: (r) => (
         <Link href={`/ai-requests/${r._id}`} className="block min-w-0">
           <span className="line-clamp-3 break-words font-semibold text-brand hover:underline" title={r.title}>{r.title}</span>
-          <span className="block truncate text-xs text-muted-foreground">
-            {r.bookTitle} › {r.chapterTitle}
-          </span>
+          <span className="block truncate text-xs text-muted-foreground">{placeText(r)}</span>
         </Link>
       ),
     },
@@ -71,7 +130,7 @@ export default function AiRequestsPage() {
       <div className="min-w-0 flex-1">
         <p className="line-clamp-4 break-words font-semibold leading-snug">{r.title}</p>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">
-          {r.chapterTitle} · {day(r.createdAt)}
+          {r.type === "check" ? placeText(r) : r.chapterTitle} · {day(r.createdAt)}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <AiStatusBadge status={r.status} />
@@ -98,12 +157,8 @@ export default function AiRequestsPage() {
           className="rounded-2xl border bg-card py-12"
           icon={<BotIcon strokeWidth={1.5} />}
           title="No requests yet"
-          description="Ask for variants of a few questions, or questions on a topic. Claude writes them tonight."
-          action={
-            <Button variant="brand" className="h-11 gap-2" onClick={() => setCreating(true)}>
-              <PlusIcon className="size-4" /> New request
-            </Button>
-          }
+          description="Ask for new questions, a paper from the bank, or a test's answer sheets to be checked. Claude does it tonight."
+          action={<NewRequestMenu onQuestions={() => setCreating("variants")} onPaper={() => setCreating("paper")} />}
         />
       );
     if (!rows.length)
@@ -117,14 +172,8 @@ export default function AiRequestsPage() {
         icon={<BotIcon />}
         tone={ROUTE_GROUPS.bank.tile}
         title="AI requests"
-        description="Questions Claude writes overnight, for you to review"
-        actions={
-          <Button variant="brand" className="h-10 gap-2" onClick={() => setCreating(true)}>
-            <PlusIcon className="size-4" />
-            <span className="hidden sm:inline">New request</span>
-            <span className="sr-only sm:hidden">New request</span>
-          </Button>
-        }
+        description="Questions, papers and answer-sheet checks Claude does overnight, for you to review"
+        actions={<NewRequestMenu compact onQuestions={() => setCreating("variants")} onPaper={() => setCreating("paper")} />}
       />
 
       {requests.length > 0 && (
@@ -150,7 +199,13 @@ export default function AiRequestsPage() {
 
       {body()}
 
-      <NewAiRequestSheet open={creating} onOpenChange={setCreating} onCreated={(id) => id && router.push(`/ai-requests/${id}`)} />
+      <NewAiRequestSheet
+        key={creating ?? "closed"}
+        open={!!creating}
+        initialType={creating ?? undefined}
+        onOpenChange={(o) => !o && setCreating(null)}
+        onCreated={(id) => id && router.push(`/ai-requests/${id}`)}
+      />
     </main>
   );
 }

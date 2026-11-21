@@ -22,11 +22,17 @@ export type UploadTarget = {
 type TargetInput = {
   contentType: string;
   extension: string;
+  folder: string;
 };
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 const FOLDER = process.env.IMAGE_STORAGE_FOLDER || "question-images";
+// Answer-sheet pages (AI "check" requests) live apart from question images:
+// they are temporary and deleted once results are published (deleteImages)
+export const ANSWER_SHEET_FOLDER = `${FOLDER}-answer-sheets`;
+export type UploadPurpose = "question" | "answer-sheet";
+const folderFor = (purpose?: UploadPurpose) => (purpose === "answer-sheet" ? ANSWER_SHEET_FOLDER : FOLDER);
 
 const requireEnv = (name: string) => {
   const value = process.env[name];
@@ -34,14 +40,14 @@ const requireEnv = (name: string) => {
   return value;
 };
 
-const cloudinaryTarget = (): UploadTarget => {
+const cloudinaryTarget = (folder: string): UploadTarget => {
   const cloudName = requireEnv("CLOUDINARY_CLOUD_NAME");
   const apiKey = requireEnv("CLOUDINARY_API_KEY");
   const apiSecret = requireEnv("CLOUDINARY_API_SECRET");
   const timestamp = Math.floor(Date.now() / 1000).toString();
 
   // Cloudinary signs the alphabetically sorted params plus the secret
-  const signed: Record<string, string> = { folder: FOLDER, timestamp };
+  const signed: Record<string, string> = { folder, timestamp };
   const toSign = Object.keys(signed)
     .sort()
     .map((key) => `${key}=${signed[key]}`)
@@ -64,7 +70,7 @@ const hmac = (key: Buffer | string, data: string) =>
   crypto.createHmac("sha256", key).update(data).digest();
 
 // S3 browser upload via a signed POST policy (AWS Signature V4).
-const s3Target = ({ contentType, extension }: TargetInput): UploadTarget => {
+const s3Target = ({ contentType, extension, folder }: TargetInput): UploadTarget => {
   const bucket = requireEnv("S3_BUCKET");
   const region = requireEnv("S3_REGION");
   const accessKeyId = requireEnv("S3_ACCESS_KEY_ID");
@@ -76,7 +82,7 @@ const s3Target = ({ contentType, extension }: TargetInput): UploadTarget => {
   const amzDate = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); // 20261018T120000Z
   const dateStamp = amzDate.slice(0, 8);
   const credential = `${accessKeyId}/${dateStamp}/${region}/s3/aws4_request`;
-  const key = `${FOLDER}/${dateStamp}/${crypto.randomUUID()}.${extension}`;
+  const key = `${folder}/${dateStamp}/${crypto.randomUUID()}.${extension}`;
 
   const policy = {
     expiration: new Date(now.getTime() + 10 * 60 * 1000).toISOString(),
@@ -125,13 +131,14 @@ export const ALLOWED_IMAGE_TYPES: Record<string, string> = {
   "image/gif": "gif",
 };
 
-export const getUploadTarget = (contentType: string): UploadTarget => {
+export const getUploadTarget = (contentType: string, purpose?: UploadPurpose): UploadTarget => {
   const extension = ALLOWED_IMAGE_TYPES[contentType];
   if (!extension) throw new Error("Only PNG, JPEG, WebP and GIF images can be uploaded");
 
+  const folder = folderFor(purpose);
   const provider = (process.env.IMAGE_STORAGE || "cloudinary").toLowerCase();
-  if (provider === "cloudinary") return cloudinaryTarget();
-  if (provider === "s3") return s3Target({ contentType, extension });
+  if (provider === "cloudinary") return cloudinaryTarget(folder);
+  if (provider === "s3") return s3Target({ contentType, extension, folder });
   throw new Error(`Unknown IMAGE_STORAGE "${provider}". Use "cloudinary" or "s3".`);
 };
 
@@ -145,7 +152,7 @@ export const uploadFromServer = async (data: Buffer, contentType: string): Promi
   if (!extension) throw new Error("Only PNG, JPEG, WebP, GIF and SVG images can be uploaded");
   if (data.length > MAX_UPLOAD_BYTES) throw new Error("Image is larger than 5 MB");
   const provider = (process.env.IMAGE_STORAGE || "cloudinary").toLowerCase();
-  const target = provider === "s3" ? s3Target({ contentType, extension }) : cloudinaryTarget();
+  const target = provider === "s3" ? s3Target({ contentType, extension, folder: FOLDER }) : cloudinaryTarget(FOLDER);
   const form = new FormData();
   Object.entries(target.fields).forEach(([k, v]) => form.append(k, v));
   form.append(target.fileField, new Blob([new Uint8Array(data)], { type: contentType }), `diagram.${extension}`);
@@ -156,4 +163,44 @@ export const uploadFromServer = async (data: Buffer, contentType: string): Promi
   const url = json[target.responseUrlKey ?? "secure_url"];
   if (!url) throw new Error("Image upload returned no URL");
   return url;
+};
+
+/**
+ * Delete answer-sheet page images (only ever those: anything outside
+ * ANSWER_SHEET_FOLDER is skipped, so a stray URL can't remove a question
+ * figure). Cloudinary: Admin API, 100 per call. S3: not wired yet - the pages
+ * stay in the bucket (log only); add a lifecycle rule on the folder there.
+ * Never throws: a failed clean-up must not block publishing results.
+ */
+export const deleteAnswerSheetImages = async (urls: string[]) => {
+  const provider = (process.env.IMAGE_STORAGE || "cloudinary").toLowerCase();
+  const ours = urls.filter((u) => typeof u === "string" && u.includes(`/${ANSWER_SHEET_FOLDER}/`));
+  if (!ours.length) return 0;
+  if (provider !== "cloudinary") {
+    console.warn(`deleteAnswerSheetImages: ${ours.length} images left in ${provider} (no delete for this provider)`);
+    return 0;
+  }
+  try {
+    const cloudName = requireEnv("CLOUDINARY_CLOUD_NAME");
+    const auth = Buffer.from(`${requireEnv("CLOUDINARY_API_KEY")}:${requireEnv("CLOUDINARY_API_SECRET")}`).toString("base64");
+    // .../image/upload/v1712345678/<folder>/<name>.jpg -> <folder>/<name>
+    const ids = ours
+      .map((u) => u.split("/image/upload/")[1]?.replace(/^v\d+\//, "").replace(/\.[a-z0-9]+$/i, ""))
+      .filter(Boolean) as string[];
+    let deleted = 0;
+    for (let i = 0; i < ids.length; i += 100) {
+      const q = new URLSearchParams();
+      ids.slice(i, i + 100).forEach((id) => q.append("public_ids[]", id));
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/resources/image/upload?${q}`, {
+        method: "DELETE",
+        headers: { Authorization: `Basic ${auth}` },
+      });
+      if (res.ok) deleted += ids.slice(i, i + 100).length;
+      else console.warn("deleteAnswerSheetImages: Cloudinary", res.status);
+    }
+    return deleted;
+  } catch (err) {
+    console.warn("deleteAnswerSheetImages failed", err);
+    return 0;
+  }
 };

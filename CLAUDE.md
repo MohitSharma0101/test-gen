@@ -223,12 +223,25 @@ Frontend
   under Performance; the `jobs` collection (models/Job.ts), approved without
   extra indexes; `SchedulePaper.students`, the optional chosen-students list,
   no new index; the `airequests` collection (models/AiRequest.ts), no extra
-  indexes, deleted once uploaded or after 30 days unreviewed.)
+  indexes, deleted once uploaded or after 30 days unreviewed; `ExamResult.paper`
+  and `ExamResult.results[].answers` (per-question marks, mistakeType, note of
+  answer sheets checked by AI, ~150-300 bytes an answer), no new index.)
 - **AI requests** (`/ai-requests`, `lib/aiRequests.ts`): staff queue work for
   the nightly Claude run (`.claude/skills/generate-variants`, scripts in
   `scripts/ai-runner/`). The runner authenticates with `AI_RUNNER_KEY` on
   `/api/ai-runner/*`; only drafts verified by an independent solve are
   accepted. Caps: 200 drafts and 50 Workers AI images per 24 h.
+  Type `check` (`/ai-requests/check`, skill `.claude/skills/check-answer-sheets`):
+  one PDF/photos per student → page images (pdf.js in the browser, folder
+  `<IMAGE_STORAGE_FOLDER>-answer-sheets`) → marked overnight against one
+  marking scheme → teacher review → published as an Exam Result; the request
+  and its page images are then deleted. Cap: 80 sheets per 24 h.
+  Type `paper` (skill `.claude/skills/make-paper`, exam patterns live there):
+  a prompt + course + subjects → questions picked from the bank (least used
+  first, no new questions) → saved as a normal Draft paper; the request shows
+  it with Claude's note (shortfalls). Cap: 10 papers per 24 h. A queued
+  request can switch type in Edit (shared fields carry over; to "check" via
+  the check page, which replaces it).
 
 - Branch for this effort: **`dev-revamp`** (cut from `main`; the Vercel dev
   domain tracks it). Commit there directly.

@@ -17,6 +17,11 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const TARGET_BYTES = 600 * 1024;
 const MAX_DIMENSION = 1600;
 
+type UploadOptions = {
+  // "answer-sheet" pages go to their own folder and are deleted after publishing
+  purpose?: "question" | "answer-sheet";
+};
+
 const loadImage = (file: Blob) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -63,18 +68,20 @@ const shrinkIfNeeded = async (file: File): Promise<Blob> => {
 };
 
 // Uploads an image straight to the configured storage and returns its public URL.
-export const uploadImage = async (file: File): Promise<string> => {
-  const blob = await shrinkIfNeeded(file);
-  const contentType = blob.type || file.type;
+export const uploadImage = async (file: File | Blob, { purpose }: UploadOptions = {}): Promise<string> => {
+  const named = file instanceof File ? file : new File([file], "page.jpg", { type: file.type || "image/jpeg" });
+  const blob = await shrinkIfNeeded(named);
+  const contentType = blob.type || named.type;
 
   const { data: target } = await api.post<UploadTarget>(ENDPOINT.uploadSign, {
     contentType,
     size: blob.size,
+    purpose,
   });
 
   const form = new FormData();
   Object.entries(target.fields).forEach(([key, value]) => form.append(key, value));
-  form.append(target.fileField, blob, file.name || "image");
+  form.append(target.fileField, blob, named.name || "image");
 
   const res = await fetch(target.uploadUrl, { method: "POST", body: form });
   if (!res.ok) {

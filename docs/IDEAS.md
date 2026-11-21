@@ -63,3 +63,40 @@ code puts offline tests into results, ranks and Insights like online ones.
 
 Sheet generator 2–3 days · scanner + review 4–6 days · testing with real
 printed sheets and phone photos 2–3 days.
+
+## MCP connector: the question bank inside Claude chat
+
+Parked Nov 2026. Expose the app's question-bank tools to Claude as a remote
+MCP server (a route in this app on Vercel), so staff can make papers by
+chatting in the Claude app instead of waiting for the overnight run.
+
+### Tools
+
+`list_chapters`, `search_questions` (cheap facts only: chapter, marks, tags,
+times used, how students scored, first ~100 chars, has image),
+`get_questions` (full text for a shortlist), `batch_history` (questions a
+batch has seen), `create_draft_paper` (the only write). Later: variants and
+answer-sheet tools.
+
+### Why
+
+- Conversation instead of overnight: Claude shows the blueprint, takes
+  changes ("fewer numericals"), saves a Draft paper in minutes.
+- The nightly skills could call the same tools instead of runner scripts.
+
+### Limits found (Claude help pages, Nov 2026)
+
+- Works on every plan, Free included, but Free allows only one custom
+  connector and has low usage limits (a paper is tens of thousands of tokens,
+  so 1-2 papers a day); free accounts may get a weaker model.
+- Phone: the Claude mobile app can use custom connectors; adding one is
+  easiest from claude.ai on a computer (adding on mobile is beta).
+- Teachers chat in their own Claude accounts: never expose student-level
+  data (marks, histories) to them, only the question bank. Sign in with the
+  staff login (OAuth) so roles apply.
+
+### Effort
+
+About 30-40% on top of the plain "Make a paper" request type, mostly the
+OAuth login and the MCP wrapper. Keep the AI requests form as the no-setup
+path for teachers.

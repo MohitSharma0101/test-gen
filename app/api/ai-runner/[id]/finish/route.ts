@@ -16,9 +16,9 @@ export const POST = async (req: NextRequest, { params }: { params: { id: string 
   try {
     const { requeue, error } = (await req.json().catch(() => ({}))) as { requeue?: boolean; error?: string };
     await dbConnect();
-    const request = await AiRequest.findOne({ _id: params.id, status: "running" }).select("drafts._id").lean<{ drafts: unknown[] }>();
+    const request = await AiRequest.findOne({ _id: params.id, status: "running" }).select("drafts._id checked._id result.paper").lean<{ drafts: unknown[]; checked?: unknown[]; result?: { paper?: unknown } }>();
     if (!request) return nextError("This request isn't claimed by the runner", 409);
-    const status = requeue ? "queued" : request.drafts.length ? "review" : "failed";
+    const status = requeue ? "queued" : request.drafts.length || request.checked?.length || request.result?.paper ? "review" : "failed";
     await AiRequest.updateOne(
       { _id: params.id },
       {

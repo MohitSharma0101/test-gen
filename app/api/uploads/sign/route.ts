@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAccount } from "@/lib/auth";
-import { ALLOWED_IMAGE_TYPES, getUploadTarget, MAX_UPLOAD_BYTES } from "@/lib/storage";
+import { ALLOWED_IMAGE_TYPES, getUploadTarget, MAX_UPLOAD_BYTES, type UploadPurpose } from "@/lib/storage";
 
 // Returns signed fields so the browser can upload an image straight to storage.
 export const POST = async (request: NextRequest) => {
@@ -10,9 +10,10 @@ export const POST = async (request: NextRequest) => {
   }
 
   try {
-    const { contentType, size } = (await request.json()) as {
+    const { contentType, size, purpose } = (await request.json()) as {
       contentType?: string;
       size?: number;
+      purpose?: UploadPurpose;
     };
     if (!contentType || !ALLOWED_IMAGE_TYPES[contentType]) {
       return NextResponse.json(
@@ -24,7 +25,7 @@ export const POST = async (request: NextRequest) => {
       return NextResponse.json({ error: "Image is larger than 5 MB" }, { status: 400 });
     }
 
-    const target = getUploadTarget(contentType);
+    const target = getUploadTarget(contentType, purpose === "answer-sheet" ? "answer-sheet" : "question");
     return NextResponse.json({ ...target, maxBytes: MAX_UPLOAD_BYTES }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json(
