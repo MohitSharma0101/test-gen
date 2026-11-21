@@ -237,7 +237,7 @@ const PreviewButtonV2 = ({
 
   return (
     <>
-      <Button disabled={questions.length === 0} variant={variant} className={className} onClick={() => setOpen(true)}>
+      <Button disabled={!paperId && questions.length === 0} variant={variant} className={className} onClick={() => setOpen(true)}>
         Preview
       </Button>
       <DocumentWindow

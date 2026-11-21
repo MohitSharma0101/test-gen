@@ -58,7 +58,22 @@ Turn the prompt into a plan, per subject: how many questions of which type and m
 
 `paper.json`: `{ "questions": ["<id>", ... in paper order], "note": "..." }` → `node scripts/ai-runner/paper-save.mjs <requestId> paper.json`.
 
-The **note** (plain text, short, for the teacher): the pattern used and why; counts per subject and type; chapters covered; any assumption you made about the prompt; **every shortfall** ("asked 5 numericals from Rotation, bank has 2; took 3 from Work-Energy"). Report gaps only; never write new questions or queue other requests.
+The **note** is for a teacher on a phone: short, plain words, no ids in prose. Write it as labelled lines; the app turns each label into its own section (lines without a label go under "More details"):
+
+```
+Summary: 40 questions · 32 MCQ + 8 numerical · JEE Main pattern, +4/-1
+Covered: Work by constant and variable force; Work-energy theorem; Springs; Vertical circle
+Left out: Power; collisions and explosions (as asked)
+Short: Asked 5 numericals from Rotation, the bank has 2; took 3 from Work-Energy
+Fix: <24-char question id> | Key says (b); the correct answer is (d)
+Details: Mostly JEE Main 2022-2025 papers; none used before.
+```
+
+- `Summary`: one line: count, type split, pattern and marking.
+- `Covered`: topics separated by `;` (shown as chips). `Left out`: only what the prompt excluded.
+- `Short`: one line per gap (omit when there is none). Report gaps only; never write new questions or queue other requests.
+- `Fix`: one line per broken bank question you skipped (wrong key, incomplete or wrong stem, missing figure): the full question id, `|`, the problem in one short sentence. The teacher fixes it from the card.
+- `Details`: anything else worth knowing (assumptions, sources), briefly.
 
 ## End of run
 

@@ -10,6 +10,9 @@ import { ErrorState } from "@/components/ui/state-message";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AiStatusBadge } from "@/components/ai-requests/status-badge";
 import { NewAiRequestSheet } from "@/components/sheets/new-ai-request-sheet";
+import PreviewButton from "@/components/ui/preview-button-v2";
+import { PaperNote } from "@/components/ai-requests/paper-note";
+import { fetchPapers, postUpdateUsage } from "@/service/core.service";
 import type { TAiRequestDetail, TMadePaper } from "@/hooks/useAiRequests";
 import type { TPaperInput } from "@/models/AiRequest";
 import { api } from "@/lib/api";
@@ -34,6 +37,19 @@ export function PaperRequest({ id, request, madePaper, refresh }: Props) {
       router.replace("/ai-requests");
     } catch (err) {
       toast.error(apiErrorMsg(err, "Couldn't do that"));
+      setBusy(false);
+    }
+  };
+
+  // Draft → saved paper (Public, so it shows in Papers), then the request closes
+  const save = async () => {
+    setBusy(true);
+    try {
+      await api.post(`ai-requests/${id}/save-paper`);
+      toast.success("Paper saved. It's in Papers now.");
+      router.replace("/papers");
+    } catch (err) {
+      toast.error(apiErrorMsg(err, "Couldn't save the paper"));
       setBusy(false);
     }
   };
@@ -108,28 +124,42 @@ export function PaperRequest({ id, request, madePaper, refresh }: Props) {
             <div className="min-w-0 flex-1">
               <p className="font-semibold">{madePaper?.title ?? input.name}</p>
               <p className="text-sm text-muted-foreground">
-                {result.questions ?? madePaper?.questions ?? 0} questions · {result.marks ?? "?"} marks · saved as a draft paper
+                {result.questions ?? madePaper?.questions ?? 0} questions · {result.marks ?? "?"} marks · draft until you save it
               </p>
             </div>
           </div>
-          {result.note && (
-            <div className="rounded-xl bg-muted/50 p-3">
-              <p className="mb-1 text-xs font-semibold text-muted-foreground">Claude&apos;s note</p>
-              <p className="whitespace-pre-wrap break-words text-sm">{result.note}</p>
-            </div>
-          )}
+          {result.note && <PaperNote note={result.note} />}
           {!madePaper && <p className="text-sm text-red-700">The paper was deleted from Papers.</p>}
+          {/* Happy with it: save. Want to look or change first: view / edit. */}
           <div className="flex flex-wrap gap-2">
             {madePaper && (
-              <Link href={`/papers/edit/${madePaper._id}`} className={cn(buttonVariants({ variant: "brand" }), "h-11 gap-2")}>
-                <PencilIcon className="size-4" /> Open in Create Paper
+              <Button variant="brand" className="h-11 gap-2" disabled={busy} onClick={save}>
+                {busy ? <Loader2Icon className="size-4 animate-spin" /> : <CheckIcon className="size-4" />} Save paper
+              </Button>
+            )}
+            {madePaper && (
+              <PreviewButton
+                paperId={madePaper._id}
+                questions={[]}
+                defaultTwoColumn
+                variant="outline"
+                className="h-11"
+                // Printing counts as using the questions, as on the Papers page
+                // (make-paper prefers the least-used ones)
+                onPrint={() =>
+                  fetchPapers(madePaper._id)
+                    .then((d) => d.papers[0]?.questions && postUpdateUsage(d.papers[0].questions))
+                    .catch(() => undefined)
+                }
+              />
+            )}
+            {madePaper && (
+              <Link href={`/papers/edit/${madePaper._id}`} className={cn(buttonVariants({ variant: "outline" }), "h-11 gap-2")}>
+                <PencilIcon className="size-4" /> Edit
               </Link>
             )}
-            <Button variant="outline" className="h-11 gap-2" disabled={busy} onClick={() => close(false)}>
-              {busy ? <Loader2Icon className="size-4 animate-spin" /> : <CheckIcon className="size-4" />} Done
-            </Button>
             <Button variant="ghost" className="h-11 text-red-700" disabled={busy || !madePaper} onClick={discard}>
-              Discard paper
+              Discard
             </Button>
           </div>
         </section>

@@ -53,6 +53,8 @@ const WRITE_EFFECTS: [string, TFamily[]][] = [
   // Background jobs: the page refreshes what a job changed when it ends
   ["jobs", []],
   // Publishing a checked test adds an exam result (shown on student pages)
+  // Saving an AI-made paper changes the papers list
+  ["ai-requests/", ["ai-requests", "student", "papers"]],
   ["ai-requests", ["ai-requests", "student"]],
   ["ai/", []],
   ["auth/login", []],
