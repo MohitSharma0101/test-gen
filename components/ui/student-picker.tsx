@@ -14,10 +14,13 @@ type Props = {
   // Ticked and can't be unticked, e.g. students who already attempted the test
   lockedIds?: string[];
   className?: string;
+  // Fill the drawer: the whole list scrolls with the drawer (search stays on top)
+  // instead of a small box with its own scroll bar
+  fill?: boolean;
 };
 
 /** Searchable checklist of a batch's students, for choosing who takes a test. */
-export function StudentPicker({ batchId, value, onChange, lockedIds = [], className }: Props) {
+export function StudentPicker({ batchId, value, onChange, lockedIds = [], className, fill }: Props) {
   const { users, loading } = useUsers({ batchId });
   const [query, setQuery] = useState("");
   const selected = useMemo(() => new Set(value), [value]);
@@ -41,8 +44,8 @@ export function StudentPicker({ batchId, value, onChange, lockedIds = [], classN
   };
 
   return (
-    <div className={cn("rounded-xl border", className)}>
-      <div className="flex items-center gap-2 border-b p-2">
+    <div className={cn(fill ? "" : "rounded-xl border", className)}>
+      <div className={cn("flex items-center gap-2 border-b p-2", fill && "sticky top-0 z-10 -mx-4 bg-card px-4")}>
         <div className="relative min-w-0 flex-1">
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input
@@ -50,14 +53,14 @@ export function StudentPicker({ batchId, value, onChange, lockedIds = [], classN
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name or ID"
             aria-label="Search students"
-            className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className={cn("w-full rounded-md border bg-background pl-8 pr-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand", fill ? "h-11" : "h-9")}
           />
         </div>
         <button
           type="button"
           onClick={toggleAll}
           disabled={!shown.length}
-          className="h-9 shrink-0 rounded-md px-2 text-sm font-medium text-brand hover:bg-muted disabled:opacity-50"
+          className={cn("shrink-0 rounded-md px-2 text-sm font-medium text-brand hover:bg-muted disabled:opacity-50", fill ? "h-11" : "h-9")}
         >
           {allShownSelected ? "Clear" : "Select all"}
         </button>
@@ -65,7 +68,7 @@ export function StudentPicker({ batchId, value, onChange, lockedIds = [], classN
       <p className="px-3 pt-2 text-xs text-muted-foreground">
         {value.length} of {users.length} selected
       </p>
-      <ul className="max-h-72 overflow-y-auto overscroll-contain p-1">
+      <ul className={fill ? "divide-y" : "max-h-72 overflow-y-auto overscroll-contain p-1"}>
         {loading && !users.length
           ? [0, 1, 2, 3].map((i) => (
               <li key={i} className="p-2">

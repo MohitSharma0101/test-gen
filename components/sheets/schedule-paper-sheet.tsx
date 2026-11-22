@@ -32,9 +32,13 @@ const hourAfter = (start: string) => {
   return `${String(Math.min(h + 1, 23)).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
 
-// Schedule a saved paper as an online test for one batch.
+// Schedule a saved paper as an online test for one batch, in two steps: who
+// takes it (batch, or chosen students listed full height), then a second drawer
+// for when. The long student list used to sit in a small box with its own
+// scroll bar, above the time pickers.
 export const SchedulePaperSheet = ({ paperId, open, onOpenChange, initial }: Props) => {
   const { batches, loading: batchesLoading } = useBatches();
+  const [timing, setTiming] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>(initial?.batchId);
   const [submitting, setSubmitting] = useState(false);
   const [payload, setPayload] = useState<Partial<TSchedulePaper>>({
@@ -52,8 +56,11 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange, initial }: Pro
     payload.startTime && payload.endTime && String(payload.endTime) <= String(payload.startTime)
   );
   const noStudents = audience === "students" && studentIds.length === 0;
+  const whoReady = !!selectedBatchId && !noStudents;
   const isInvalid =
     !payload.startTime || !payload.endTime || !payload.duration || !selectedBatchId || endBeforeStart || noStudents;
+  const batchName = batches.find((b) => b._id === selectedBatchId)?.name ?? "the batch";
+  const who = audience === "students" ? `${studentIds.length} student${studentIds.length === 1 ? "" : "s"} of ${batchName}` : `everyone in ${batchName}`;
 
   const onSubmit = async () => {
     if (isInvalid || submitting) return;
@@ -68,6 +75,7 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange, initial }: Pro
         ...(audience === "students" ? { studentIds } : {}),
       });
       toast({ title: "Test scheduled", variant: "success" });
+      setTiming(false);
       onOpenChange(false);
     } catch (err) {
       // The api client rejects with a plain Error carrying the server message
@@ -89,20 +97,11 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange, initial }: Pro
       open={open}
       onOpenChange={onOpenChange}
       title={initial ? "Schedule a retest" : "Schedule online test"}
-      description={
-        audience === "students"
-          ? "Only the students you choose can take it, between the start and end time."
-          : "Students in the batch can take it between the start and end time."
-      }
+      description="Step 1 of 2 · Who takes it"
       footer={
-        <Button
-          variant="brand"
-          disabled={isInvalid || submitting}
-          onClick={onSubmit}
-          className="h-11 w-full gap-2"
-        >
-          {submitting ? <Loader2Icon className="size-4 animate-spin" /> : <CalendarClockIcon className="size-4" />}
-          Schedule test
+        <Button variant="brand" disabled={!whoReady} onClick={() => setTiming(true)} className="h-11 w-full gap-2">
+          <CalendarClockIcon className="size-4" />
+          Pick Time
         </Button>
       }
     >
@@ -130,27 +129,31 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange, initial }: Pro
                   role="radio"
                   aria-checked={audience === value}
                   onClick={() => setAudience(value)}
-                  className={cn(
-                    "h-9 rounded-md text-sm font-medium",
-                    audience === value ? "bg-background shadow-sm" : "text-muted-foreground"
-                  )}
+                  className={cn("h-11 rounded-md text-sm font-medium", audience === value ? "bg-background shadow-sm" : "text-muted-foreground")}
                 >
                   {label}
                 </button>
               ))}
             </div>
-            {audience === "students" && (
-              <StudentPicker batchId={selectedBatchId} value={studentIds} onChange={setStudentIds} />
-            )}
+            {audience === "students" && <StudentPicker fill batchId={selectedBatchId} value={studentIds} onChange={setStudentIds} />}
           </div>
         )}
-        <div className="grid gap-4">
-          <DateTimePicker
-            label="Starts"
-            value={payload.startTime ?? ""}
-            onChange={(v) => onPayloadChange("startTime", v)}
-            min={new Date().toISOString()}
-          />
+      </div>
+
+      <ResponsiveDrawer
+        open={open && timing}
+        onOpenChange={setTiming}
+        title="When"
+        description={`Step 2 of 2 · For ${who}`}
+        footer={
+          <Button variant="brand" disabled={isInvalid || submitting} onClick={onSubmit} className="h-11 w-full gap-2">
+            {submitting ? <Loader2Icon className="size-4 animate-spin" /> : <CalendarClockIcon className="size-4" />}
+            Schedule test
+          </Button>
+        }
+      >
+        <div className="flex flex-col gap-4 p-4">
+          <DateTimePicker label="Starts" value={payload.startTime ?? ""} onChange={(v) => onPayloadChange("startTime", v)} min={new Date().toISOString()} />
           <DateTimePicker
             label="Ends"
             disabled={!payload.startTime}
@@ -159,17 +162,20 @@ export const SchedulePaperSheet = ({ paperId, open, onOpenChange, initial }: Pro
             value={payload.endTime ?? ""}
             onChange={(v) => onPayloadChange("endTime", v)}
           />
+          {endBeforeStart && <p className="-mt-2 text-xs font-medium text-red-700">End time must be after the start time.</p>}
+          <SelectCompact
+            label="Time to finish"
+            options={PAPER_DURATION_OPTIONS}
+            className="w-full sm:w-56"
+            placeholder="Select duration"
+            value={String(payload.duration)}
+            onChange={(value) => onPayloadChange("duration", value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            {audience === "students" ? "Only the chosen students can take it" : "Students in the batch can take it"}, between the start and end time.
+          </p>
         </div>
-        {endBeforeStart && <p className="-mt-2 text-xs font-medium text-red-700">End time must be after the start time.</p>}
-        <SelectCompact
-          label="Time to finish"
-          options={PAPER_DURATION_OPTIONS}
-          className="w-full sm:w-56"
-          placeholder="Select duration"
-          value={String(payload.duration)}
-          onChange={(value) => onPayloadChange("duration", value)}
-        />
-      </div>
+      </ResponsiveDrawer>
     </ResponsiveDrawer>
   );
 };

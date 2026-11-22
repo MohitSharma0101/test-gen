@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Columns2Icon, EyeIcon, FileCheckIcon, FileQuestionIcon, FileStackIcon, FileUpIcon, Loader2Icon, RectangleVerticalIcon, SparklesIcon } from "lucide-react";
+import { Columns2Icon, EyeIcon, FileCheckIcon, FileQuestionIcon, FileStackIcon, FileUpIcon, Loader2Icon, RectangleVerticalIcon, SparklesIcon, FileJsonIcon } from "lucide-react";
 import { TAGS } from "@/components/sheets/add-tag-sheet";
 import { Button, buttonVariants } from "@/components/ui/button";
 import Markdown from "@/components/ui/markdown";
@@ -111,10 +111,16 @@ const UploadPage = () => {
         title="Upload questions"
         description="Add questions to the bank from a Mathpix .md file"
         actions={
-          <Link href={variantsHref} className={cn(buttonVariants({ variant: "outline" }), "gap-2")} aria-label="Generate variants">
-            <SparklesIcon className="size-4" />
-            <span className="hidden sm:inline">Generate variants</span>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/upload/import" className={cn(buttonVariants({ variant: "outline" }), "gap-2")} aria-label="Import JSON">
+              <FileJsonIcon className="size-4" />
+              <span className="hidden sm:inline">Import JSON</span>
+            </Link>
+            <Link href={variantsHref} className={cn(buttonVariants({ variant: "outline" }), "gap-2")} aria-label="Generate variants">
+              <SparklesIcon className="size-4" />
+              <span className="hidden sm:inline">Generate variants</span>
+            </Link>
+          </div>
         }
       />
 

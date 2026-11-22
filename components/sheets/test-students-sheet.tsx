@@ -88,7 +88,7 @@ export function TestStudentsSheet({ test, batchId, open, onOpenChange }: Props) 
             {attempted.length} student{attempted.length === 1 ? " has" : "s have"} already attempted it and can&apos;t be removed.
           </p>
         )}
-        <StudentPicker batchId={batchId} value={studentIds} onChange={setStudentIds} lockedIds={attempted} />
+        <StudentPicker fill batchId={batchId} value={studentIds} onChange={setStudentIds} lockedIds={attempted} />
       </div>
     </ResponsiveDrawer>
   );
