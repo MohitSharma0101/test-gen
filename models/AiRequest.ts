@@ -80,10 +80,14 @@ export type TPaperInput = {
   prompt: string;
   course: string;
   subjects: string[];
+  // "write": Claude writes new questions (verified like variants) and they
+  // wait in the request as drafts until the paper is saved; "bank": picks
+  // existing questions. Older requests have none = "bank".
+  source?: "write" | "bank";
 };
 
 /** What a finished "paper" request made. */
-export type TPaperResult = { paper: string; note?: string; questions?: number; marks?: number };
+export type TPaperResult = { paper?: string; note?: string; questions?: number; marks?: number };
 
 /** How each question is marked, written once and used for every student. */
 export type TRubricItem = { question: string; points: string };
@@ -98,6 +102,11 @@ export type TAiDraft = {
   mark?: number;
   sourceQuestion?: string;
   diagram?: { kind: "svg" | "ai-image"; url: string };
+  // "paper" (write): the chapter Claude chose for it, its place in the paper,
+  // and whether that chapter was a confident fit
+  chapter?: string;
+  order?: number;
+  chapterUnsure?: boolean;
   checks: {
     // An independent solve, without seeing the key, gave the same answer
     keyMatch: boolean;
@@ -141,6 +150,9 @@ const draftSchema = new Schema(
     mark: Number,
     sourceQuestion: { type: Schema.Types.ObjectId, ref: "Question" },
     diagram: { type: { _id: false, kind: String, url: String }, default: undefined },
+    chapter: { type: Schema.Types.ObjectId, ref: "Chapter" },
+    order: Number,
+    chapterUnsure: Boolean,
     checks: {
       type: { _id: false, keyMatch: Boolean, renderOk: Boolean, notes: String },
       default: { keyMatch: false, renderOk: false },

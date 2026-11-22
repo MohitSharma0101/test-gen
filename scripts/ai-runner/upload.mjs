@@ -1,7 +1,8 @@
 // Upload checked drafts to a claimed request. Local diagram files referenced
 // in the text as ![](something.svg|png) are uploaded first and replaced by
 // their public URL. Usage: node scripts/ai-runner/upload.mjs <requestId> <drafts.json>
-// drafts.json: [{ id, text, ans, questionType, mark?, sourceQuestion?, diagramKind?, checks }]
+// drafts.json: [{ id, text, ans, questionType, mark?, sourceQuestion?, diagramKind?, checks,
+//   chapter?, order?, chapterUnsure? }]  (chapter/order/chapterUnsure: "Make a paper", write new)
 import fs from "node:fs";
 import path from "node:path";
 import { call } from "./lib.mjs";
@@ -31,6 +32,7 @@ for (const d of drafts) {
   const ans = await localImages(d.ans, diagram);
   ready.push({
     text, ans, questionType: d.questionType, mark: d.mark, sourceQuestion: d.sourceQuestion,
+    ...(d.chapter ? { chapter: d.chapter, order: d.order, chapterUnsure: d.chapterUnsure === true } : {}),
     ...(diagram.url ? { diagram: { kind: d.diagramKind === "ai-image" ? "ai-image" : "svg", url: diagram.url } } : {}),
     checks: d.checks,
   });

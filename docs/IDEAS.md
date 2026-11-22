@@ -100,3 +100,40 @@ answer-sheet tools.
 About 30-40% on top of the plain "Make a paper" request type, mostly the
 OAuth login and the MCP wrapper. Keep the AI requests form as the no-setup
 path for teachers.
+
+## Question fixes: Claude proposes, a teacher approves
+
+Parked Nov 2026. Claude finds broken bank questions (the make-paper run
+already lists them as "Fix:" lines in its note). Teachers shouldn't have to
+work out fixes, and Claude must not change the bank on its own, so: Claude
+proposes, a teacher approves with one tap (same review pattern as variant
+drafts).
+
+### Flow
+
+1. Claude records the question, the kind of problem and a proposed fix:
+   - wrong answer key: new key + corrected solution, proven by an independent
+     solve (a solver that never sees either key must reach the new answer);
+   - broken text (typo, garbled maths, missing option, mismatched symbol):
+     corrected text that passes the render check (check.mjs);
+   - can't fix (missing data or figure only the book has): explain what's
+     missing, no proposal.
+2. All fixes collect in one "Question fixes" AI request. Each card: before /
+   after with the change highlighted, one line of why; Apply, Edit then
+   apply, Dismiss. Applying a key fix re-marks past tests (lib/recheck, as
+   editing does today).
+3. Until fixed, the question is kept out of AI-made papers (runner search
+   excludes questions with an open fix).
+
+### Storage
+
+Proposals in the airequests collection (approved, temporary): ~2-3 KB per fix,
+deleted when applied or dismissed. Open question: also hide flagged questions
+from manual Generate / Create Paper? That needs a small optional flag on
+Question (a database change; ask first).
+
+### To decide
+
+- Fixes from the paper run only, or also a nightly audit chapter by chapter
+  (start with questions students get wrong unusually often).
+- The Question flag for the manual paper tools.

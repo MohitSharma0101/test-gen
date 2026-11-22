@@ -237,9 +237,12 @@ Frontend
   marking scheme → teacher review → published as an Exam Result; the request
   and its page images are then deleted. Cap: 80 sheets per 24 h.
   Type `paper` (skill `.claude/skills/make-paper`, exam patterns live there):
-  a prompt + course + subjects → questions picked from the bank (least used
-  first, no new questions) → saved as a normal Draft paper; the request shows
-  it with Claude's note (shortfalls). Cap: 10 papers per 24 h. A queued
+  a prompt + course + subjects, and where questions come from. "Write new"
+  (default): Claude writes and verifies every question, picks each one's
+  chapter (drafts carry `chapter`/`order`), and they wait in the request; the
+  teacher previews, can move a group to another chapter, and Save paper adds
+  them to the bank (tagged AI Generated) and creates the paper. "Question
+  bank": picks existing questions (least used first) into a Draft paper. Cap: 10 papers per 24 h. A queued
   request can switch type in Edit (shared fields carry over; to "check" via
   the check page, which replaces it).
 

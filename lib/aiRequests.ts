@@ -109,7 +109,8 @@ export function validatePaperInput(raw: any): { input?: TPaperInput; error?: str
   const allowed: string[] = SUBJECT_MAP[course] ?? [];
   const subjects = Array.from(new Set<string>((Array.isArray(raw?.subjects) ? raw.subjects : []).filter((x: unknown) => typeof x === "string" && allowed.includes(x))));
   if (!subjects.length) return { error: "Choose at least one subject" };
-  return { input: { name, prompt, course, subjects } };
+  const source = raw?.source === "bank" ? "bank" : "write";
+  return { input: { name, prompt, course, subjects, source } };
 }
 
 /**

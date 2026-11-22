@@ -17,5 +17,5 @@ fs.writeFileSync(path.join(dir, "request.json"), JSON.stringify(data, null, 1));
 // The map, one line per chapter: id | subject | book | chapter | total | numerical | marks spread
 const lines = data.chapters.map((c) => `${c._id} | ${c.subject} | ${c.book ?? ""} | ${c.title} | ${c.total} | num ${c.numerical} | ${Object.entries(c.marks).map(([m, n]) => `${m}m:${n}`).join(" ")}`);
 fs.writeFileSync(path.join(dir, "chapters.txt"), lines.join("\n"));
-console.log(JSON.stringify({ id: data.request._id, input: data.request.input, chapters: data.chapters.length, questions: data.chapters.reduce((t, c) => t + c.total, 0), earlierPaper: data.request.result?.paper ?? null, caps: data.caps }, null, 1));
+console.log(JSON.stringify({ id: data.request._id, input: data.request.input, chapters: data.chapters.length, questions: data.chapters.reduce((t, c) => t + c.total, 0), source: data.request.input.source ?? "bank", alreadyWritten: data.alreadyWritten, writtenOrders: data.writtenOrders, earlierPaper: data.request.result?.paper ?? null, caps: data.caps }, null, 1));
 console.log(`chapter map: ${path.join(dir, "chapters.txt")}`);

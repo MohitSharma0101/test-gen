@@ -34,7 +34,12 @@ export const GET = async (_req: NextRequest, { params }: Ctx) => {
       const made = request.result?.paper
         ? await Paper.findById(request.result.paper).select("title status questions").lean<{ title: string; status: string; questions: unknown[] }>()
         : null;
-      return nextSuccess({ request, madePaper: made && { _id: String(request.result!.paper), title: made.title, status: made.status, questions: made.questions.length } });
+      // Written questions waiting to be saved: where each would go
+      const chapterIds = Array.from(new Set((request.drafts ?? []).map((d) => String(d.chapter ?? "")).filter(Boolean)));
+      const chapters = chapterIds.length
+        ? await Chapter.find({ _id: { $in: chapterIds } }).select("title subject book").populate({ path: "book", select: "title" }).lean()
+        : [];
+      return nextSuccess({ request, chapters, madePaper: made && { _id: String(request.result!.paper), title: made.title, status: made.status, questions: made.questions.length } });
     }
     if (request.type !== "check") return nextSuccess({ request });
 

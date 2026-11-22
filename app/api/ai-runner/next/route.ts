@@ -164,7 +164,7 @@ async function claimPaper() {
     { $set: { status: "running", claimedAt: now, lockedUntil: new Date(Date.now() + RUNNER_LOCK_MS) } },
     { sort: { createdAt: 1 }, new: true }
   )
-    .select("type title status input result createdBy createdAt")
+    .select("type title status input result createdBy createdAt drafts.order drafts.chapter")
     .lean<TAiRequest>();
   if (!request) return nextSuccess({ request: null, caps, reason: "Nothing queued" });
 
@@ -188,6 +188,9 @@ async function claimPaper() {
   const bookName = new Map(books.map((b) => [String(b._id), b.title]));
   return nextSuccess({
     request: { _id: request._id, type: request.type, title: request.title, input, createdBy: request.createdBy, result: request.result ?? null },
+    // Write new: questions an interrupted run already uploaded (their paper positions)
+    alreadyWritten: request.drafts?.length ?? 0,
+    writtenOrders: (request.drafts ?? []).map((d) => d.order).filter((n) => typeof n === "number"),
     chapters: chapters
       .map((c) => {
         const n = byChapter.get(String(c._id));

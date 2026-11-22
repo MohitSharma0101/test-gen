@@ -35,7 +35,12 @@ export const ResponsiveDrawer = ({
 }: Props) => {
   const narrow = useIsNarrowViewport();
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction={narrow ? "bottom" : "right"}>
+    // repositionInputs off: vaul resizes the drawer to the visual viewport when
+    // the keyboard opens, and on the first focus it got the height wrong (the
+    // header vanished and the form was cut off until the field was tapped
+    // again). The browser already scrolls the focused field into view inside
+    // the drawer's scrolling body.
+    <Drawer open={open} onOpenChange={onOpenChange} direction={narrow ? "bottom" : "right"} repositionInputs={false}>
       <DrawerContent
         className={cn(
           "outline-none",

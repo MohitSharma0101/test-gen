@@ -60,7 +60,7 @@ const placeText = (r: TAiRequestSummary & { batchName?: string }) =>
       : `${r.bookTitle ?? ""} › ${r.chapterTitle ?? ""}`;
 
 /** "New request": write questions (drawer) or check answer sheets (its own page). */
-function NewRequestMenu({ onQuestions, onPaper, compact }: { onQuestions: () => void; onPaper: () => void; compact?: boolean }) {
+function NewRequestMenu({ onQuestions, onPaper, onCheck, compact }: { onQuestions: () => void; onPaper: () => void; onCheck: () => void; compact?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={cn(buttonVariants({ variant: "brand" }), compact ? "h-10 gap-2" : "h-11 gap-2")}>
@@ -83,14 +83,12 @@ function NewRequestMenu({ onQuestions, onPaper, compact }: { onQuestions: () => 
             <span className="block text-xs text-muted-foreground">Claude picks questions from the bank</span>
           </span>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer gap-3 rounded-lg p-2.5">
-          <Link href="/ai-requests/check">
-            <ClipboardCheckIcon className="size-4 shrink-0" />
-            <span>
-              <span className="block text-sm font-medium">Check answer sheets</span>
-              <span className="block text-xs text-muted-foreground">Mark a test&apos;s answer sheets</span>
-            </span>
-          </Link>
+        <DropdownMenuItem className="cursor-pointer gap-3 rounded-lg p-2.5" onSelect={onCheck}>
+          <ClipboardCheckIcon className="size-4 shrink-0" />
+          <span>
+            <span className="block text-sm font-medium">Check answer sheets</span>
+            <span className="block text-xs text-muted-foreground">Mark a test&apos;s answer sheets</span>
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -100,7 +98,7 @@ function NewRequestMenu({ onQuestions, onPaper, compact }: { onQuestions: () => 
 export default function AiRequestsPage() {
   const router = useRouter();
   const { requests, loading, firstLoad, error, refresh } = useAiRequests();
-  const [creating, setCreating] = useState<"variants" | "paper" | null>(null);
+  const [creating, setCreating] = useState<"variants" | "paper" | "check" | null>(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
 
@@ -158,7 +156,7 @@ export default function AiRequestsPage() {
           icon={<BotIcon strokeWidth={1.5} />}
           title="No requests yet"
           description="Ask for new questions, a paper from the bank, or a test's answer sheets to be checked. Claude does it tonight."
-          action={<NewRequestMenu onQuestions={() => setCreating("variants")} onPaper={() => setCreating("paper")} />}
+          action={<NewRequestMenu onQuestions={() => setCreating("variants")} onPaper={() => setCreating("paper")} onCheck={() => setCreating("check")} />}
         />
       );
     if (!rows.length)
@@ -173,7 +171,7 @@ export default function AiRequestsPage() {
         tone={ROUTE_GROUPS.bank.tile}
         title="AI requests"
         description="Questions, papers and answer-sheet checks Claude does overnight, for you to review"
-        actions={<NewRequestMenu compact onQuestions={() => setCreating("variants")} onPaper={() => setCreating("paper")} />}
+        actions={<NewRequestMenu compact onQuestions={() => setCreating("variants")} onPaper={() => setCreating("paper")} onCheck={() => setCreating("check")} />}
       />
 
       {requests.length > 0 && (

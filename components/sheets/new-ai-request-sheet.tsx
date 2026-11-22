@@ -20,7 +20,7 @@ import { apiErrorMsg, cn } from "@/lib/utils";
 import type { TQuestion } from "@/models/Question";
 import type { TVariantInput } from "@/models/AiRequest";
 import { AI_TOPIC_MAX, SUBJECT_MAP } from "@/data/const";
-import { useRouter } from "next/navigation";
+import { CheckForm } from "@/components/ai-requests/check-form";
 import { ChooseChapterSheet } from "@/components/sheets/choose-chapter-sheet";
 
 type Mode = "similar" | "topic";
@@ -130,7 +130,7 @@ function QuestionChooser({ chapterId, value, onChange }: { chapterId: string; va
   );
 }
 
-type TFormType = "variants" | "paper";
+type TFormType = "variants" | "paper" | "check";
 
 /** A queued request being edited (any type; it can be switched to another). */
 export type TAiRequestEdit = {
@@ -188,39 +188,40 @@ export function NewAiRequestSheet({ open, onOpenChange, ...rest }: Props) {
   );
 }
 
-const TYPE_OPTIONS: [TFormType | "check", string][] = [
+const TYPE_OPTIONS: [TFormType, string][] = [
   ["variants", "Questions"],
   ["paper", "Paper"],
   ["check", "Check sheets"],
 ];
 
 function TypedForm(props: Omit<Props, "open">) {
-  const router = useRouter();
   const { editing, initialType } = props;
+  // A queued check opens on another tab: re-choosing "Check sheets" starts a fresh upload
   const [type, setType] = useState<TFormType>(editing && editing.type !== "check" ? editing.type : initialType ?? "variants");
   // Lifted so whatever was typed survives a switch between types
   const [shared, setShared] = useState<TShared>(() => sharedFrom(editing));
   const patch = (p: Partial<TShared>) => setShared((s) => ({ ...s, ...p }));
 
-  const pick = (t: TFormType | "check") => {
-    if (t !== "check") return setType(t);
-    // Answer sheets need uploads: the check page, pre-filled; it replaces this request on queueing
-    const q = new URLSearchParams({ ...(shared.name ? { name: shared.name } : {}), ...(shared.prompt ? { notes: shared.prompt } : {}), ...(editing ? { replace: editing.id } : {}) });
-    // Close the drawer first: navigating with it open left the page behind it
-    // unresponsive (the drawer's body lock outlived it). Then go once it has animated out.
-    props.onOpenChange(false);
-    setTimeout(() => router.push(`/ai-requests/check?${q}`), 250);
-  };
 
   return (
     <>
       <div className="px-4 pt-4">
-        <Segmented<TFormType | "check"> label="Request type" value={type} onChange={pick} options={TYPE_OPTIONS} />
+        <Segmented<TFormType> label="Request type" value={type} onChange={setType} options={TYPE_OPTIONS} />
       </div>
       {type === "variants" ? (
         <RequestForm key="variants" {...props} shared={shared} setShared={patch} switched={!!editing && editing.type !== "variants"} />
-      ) : (
+      ) : type === "paper" ? (
         <PaperForm key="paper" {...props} shared={shared} setShared={patch} />
+      ) : (
+        <CheckForm
+          key="check"
+          inDrawer
+          initialName={shared.name}
+          initialNotes={shared.prompt}
+          replaceId={editing?.id}
+          onShared={(name, prompt) => patch({ name, prompt })}
+          onQueued={() => props.onOpenChange(false)}
+        />
       )}
     </>
   );
@@ -234,6 +235,8 @@ function PaperForm({ onOpenChange, onCreated, editing, onSaved, shared, setShare
   const { courses, course, setCourse } = useCourses({ defaultCourse: shared.course });
   const allSubjects: string[] = SUBJECT_MAP[course] ?? [];
   const [picked, setPicked] = useState<string[]>(() => (init?.subjects as string[] | undefined) ?? (shared.subject ? [shared.subject] : []));
+  // New questions by default; older requests without a source picked from the bank
+  const [source, setSource] = useState<"write" | "bank">(init ? (init.source === "write" ? "write" : "bank") : "write");
   const subjects = picked.filter((x) => allSubjects.includes(x));
   const [saving, setSaving] = useState(false);
   const name = shared.name;
@@ -244,7 +247,7 @@ function PaperForm({ onOpenChange, onCreated, editing, onSaved, shared, setShare
     if (!ready || saving) return;
     setSaving(true);
     try {
-      const input = { name: name.trim(), prompt: prompt.trim(), course, subjects };
+      const input = { name: name.trim(), prompt: prompt.trim(), course, subjects, source };
       if (editing) {
         await api.patch(`ai-requests/${editing.id}`, { type: "paper", input });
         toast.success(editing.type === "paper" ? "Request updated" : "Changed to Make a paper");
@@ -266,6 +269,22 @@ function PaperForm({ onOpenChange, onCreated, editing, onSaved, shared, setShare
   return (
     <>
       <div className="flex flex-col gap-5 p-4">
+        <Segmented<"write" | "bank">
+          label="Questions from"
+          showLabel
+          value={source}
+          onChange={setSource}
+          options={[
+            ["write", "Write new"],
+            ["bank", "Question bank"],
+          ]}
+        />
+        <p className="-mt-3 text-xs text-muted-foreground">
+          {source === "write"
+            ? "Claude writes every question and checks each answer. They join the bank only when you save the paper."
+            : "Claude picks existing questions, least used first."}
+        </p>
+
         <section className="space-y-1">
           <label htmlFor="ai-paper-prompt" className="text-sm font-semibold">
             Prompt

@@ -29,6 +29,8 @@ export type TCheckContext = {
 };
 
 export type TMadePaper = { _id: string; title: string; status: string; questions: number };
+/** Chapters the written questions of a paper request would be saved into. */
+export type TDraftChapter = { _id: string; title: string; subject: string; book?: { _id: string; title: string } };
 
 /** One request with its drafts. `gone` = finished and removed. */
 export function useAiRequest(id: string) {
@@ -45,6 +47,7 @@ export function useAiRequest(id: string) {
     request: swr.data?.request ?? null,
     // "paper": the Draft paper it made (when finished)
     madePaper: ((swr.data as { madePaper?: TMadePaper } | null)?.madePaper ?? null) as TMadePaper | null,
+    draftChapters: ((swr.data as { chapters?: TDraftChapter[] } | null)?.chapters ?? []) as TDraftChapter[],
     check: swr.data?.request?.type === "check" ? ({ paper: swr.data.paper ?? null, students: swr.data.students ?? [], batch: swr.data.batch ?? null } as TCheckContext) : null,
     loading: swr.isLoading,
     gone: status === 404,

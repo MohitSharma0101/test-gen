@@ -15,7 +15,7 @@ export const POST = async (req: NextRequest, { params }: { params: { id: string 
     if (!note) return nextError("Give the note", 400);
     await dbConnect();
     const res = await AiRequest.updateOne(
-      { _id: params.id, type: "paper", status: { $in: ["running", "review"] }, "result.paper": { $exists: true } },
+      { _id: params.id, type: "paper", status: { $in: ["running", "review"] }, $or: [{ "result.paper": { $exists: true } }, { "drafts.0": { $exists: true } }] },
       { $set: { "result.note": note } }
     );
     return res.matchedCount ? nextSuccess(null) : nextError("No paper request with a paper here", 404);

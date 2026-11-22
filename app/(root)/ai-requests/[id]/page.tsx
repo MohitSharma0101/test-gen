@@ -159,7 +159,7 @@ const DraftCard = memo(function DraftCard({ draft, n, busy, onStatus, onEdit }: 
 // primary action: add the approved questions to the chapter.
 export default function AiRequestPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { request, check, madePaper, loading, gone, error, refresh } = useAiRequest(params.id);
+  const { request, check, madePaper, draftChapters, loading, gone, error, refresh } = useAiRequest(params.id);
   const [tab, setTab] = useState<Tab>("pending");
   const [busyIds, setBusyIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -245,7 +245,7 @@ export default function AiRequestPage({ params }: { params: { id: string } }) {
   );
 
   if (request?.type === "check" && check) return <CheckReview id={params.id} request={request} check={check} refresh={refresh} />;
-  if (request?.type === "paper") return <PaperRequest id={params.id} request={request} madePaper={madePaper} refresh={refresh} />;
+  if (request?.type === "paper") return <PaperRequest id={params.id} request={request} madePaper={madePaper} chapters={draftChapters} refresh={refresh} />;
 
   if (gone)
     return (
