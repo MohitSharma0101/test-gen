@@ -41,6 +41,8 @@ export type TRoute = {
   description: string;
   group: TRouteGroup;
   adminOnly?: boolean;
+  // Everyday words people search with ("marks" for Results); top-bar search only
+  keywords?: string;
 };
 
 const route = (r: Omit<TRoute, "icon">): TRoute => ({
@@ -54,6 +56,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Create Paper",
     href: "/create-paper",
+    keywords: "make paper new paper build manual pick questions",
     Icon: FilePenLineIcon,
     description: "Pick questions and build a paper",
     group: "papers",
@@ -61,6 +64,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Generate Paper",
     href: "/generate-paper",
+    keywords: "auto automatic random paper quota chapter wise",
     Icon: WandSparklesIcon,
     description: "Make a paper automatically from chapters",
     group: "papers",
@@ -68,6 +72,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Upload Paper",
     href: "/upload",
+    keywords: "upload questions mathpix md file add questions",
     Icon: FileUpIcon,
     description: "Add questions from a Mathpix file",
     group: "bank",
@@ -76,6 +81,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Question Variants",
     href: "/variants",
+    keywords: "variants similar questions ai gemini photo",
     Icon: SparklesIcon,
     description: "Make new questions from a photo or text with AI",
     group: "bank",
@@ -84,6 +90,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "AI requests",
     href: "/ai-requests",
+    keywords: "claude ai overnight write questions make paper check answer sheets",
     Icon: BotIcon,
     description: "Queue questions for Claude to write overnight",
     group: "bank",
@@ -92,6 +99,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Chapters",
     href: "/chapters",
+    keywords: "chapter syllabus topics",
     Icon: BookOpenTextIcon,
     description: "Organise chapters in each book",
     group: "bank",
@@ -100,6 +108,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Books",
     href: "/books",
+    keywords: "book",
     Icon: LibraryIcon,
     description: "Manage books by course and subject",
     group: "bank",
@@ -108,6 +117,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Papers",
     href: "/papers",
+    keywords: "saved papers print preview merge answer key teacher copy",
     Icon: FilesIcon,
     description: "Find, print and share saved papers",
     group: "papers",
@@ -115,6 +125,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Questions",
     href: "/questions",
+    keywords: "question bank edit question answer key solution",
     Icon: FileQuestionIcon,
     description: "Browse and edit the question bank",
     group: "bank",
@@ -123,6 +134,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Users",
     href: "/users",
+    keywords: "students student list admission parents phone",
     Icon: Users2Icon,
     description: "Students and their details",
     group: "institute",
@@ -131,6 +143,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Batches",
     href: "/batch",
+    keywords: "batches class section archive",
     Icon: GraduationCapIcon,
     description: "Create batches and assign students",
     group: "institute",
@@ -139,6 +152,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Attendance",
     href: "/attendance",
+    keywords: "present absent face camera roll call",
     Icon: CalendarCheck2Icon,
     description: "Mark today's attendance for a batch",
     group: "daily",
@@ -146,6 +160,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Send Message",
     href: "/send-message",
+    keywords: "whatsapp sms message notify parents",
     Icon: MessageCircleIcon,
     description: "WhatsApp updates to parents",
     group: "daily",
@@ -153,6 +168,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Results",
     href: "/exam-results",
+    keywords: "marks results scores report offline exam",
     Icon: TrophyIcon,
     description: "Enter and view exam results",
     group: "daily",
@@ -160,6 +176,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Fees",
     href: "/fees",
+    keywords: "fee payment dues receipt installment",
     Icon: IndianRupeeIcon,
     description: "Track fee payments by batch",
     group: "institute",
@@ -168,6 +185,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Online Test",
     href: "/online-test",
+    keywords: "schedule test retest exam answer sheets live",
     Icon: TimerIcon,
     description: "Schedule tests and check answer sheets",
     group: "daily",
@@ -175,6 +193,7 @@ export const ROUTES: TRoute[] = [
   route({
     label: "Accounts",
     href: "/accounts",
+    keywords: "staff teachers login password role admin",
     Icon: UserCogIcon,
     description: "Staff logins and permissions",
     group: "institute",
@@ -195,3 +214,12 @@ export const routeForPath = (pathname: string) =>
   ROUTES.filter((r) => pathname === r.href || pathname.startsWith(r.href + "/")).sort(
     (a, b) => b.href.length - a.href.length
   )[0];
+
+/**
+ * Pages that aren't in the menu but people look for (top-bar search only). Each
+ * belongs to a menu page (`parent`) and is shown only if that page is.
+ */
+export const SEARCH_EXTRAS: { label: string; href: string; parent: string; keywords: string }[] = [
+  { label: "Import questions (JSON)", href: "/upload/import", parent: "/upload", keywords: "import json pyq competishun bookmarklet" },
+  { label: "Check answer sheets", href: "/ai-requests/check", parent: "/ai-requests", keywords: "check copies answer sheets marking pdf offline test" },
+];

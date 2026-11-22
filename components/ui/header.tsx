@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { HomeIcon, MenuIcon, XIcon } from "lucide-react";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import AccountMenu from "./account-menu";
+import { PageSearch } from "./page-search";
 import { useRoutes } from "@/hooks/useRoutes";
 import { ROUTE_GROUPS, routeForPath, type TRoute, type TRouteGroup } from "@/data/routes";
 import { cn } from "@/lib/utils";
@@ -43,7 +44,7 @@ const MenuLink = ({ route, active }: { route: Pick<TRoute, "href" | "label" | "I
 );
 
 // Top bar for every signed-in page, same on phone and desktop:
-// account · centred logo · menu button (menu on the right, in thumb reach). The menu opens a side sheet with every page,
+// account · centred logo · page search · menu button (menu on the right, in thumb reach). The menu opens a side sheet with every page,
 // grouped. Nothing is pinned to the side, so heavy pages keep the full width.
 const Header = () => {
   const routes = useRoutes(); // also redirects unknown paths to "/"
@@ -71,7 +72,8 @@ const Header = () => {
           <Logo />
         </Link>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1 md:gap-2">
+        <PageSearch routes={routes} />
         <Drawer direction="right" open={open} onOpenChange={setOpen}>
             <DrawerTrigger
               aria-label="Open menu"
