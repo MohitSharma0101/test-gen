@@ -242,7 +242,13 @@ Frontend
   chapter (drafts carry `chapter`/`order`), and they wait in the request; the
   teacher previews, can move a group to another chapter, and Save paper adds
   them to the bank (tagged AI Generated) and creates the paper. "Question
-  bank": picks existing questions (least used first) into a Draft paper. Cap: 10 papers per 24 h. A queued
+  bank": picks existing questions (least used first) into a Draft paper.
+  Figures: the question decides (or the prompt asks). Schematic ones are SVGs
+  Claude draws; anatomy comes from openly licensed Wikimedia Commons images
+  (`scripts/ai-runner/wiki-image.mjs`, markers via `label-image.mjs`, credit in
+  the solution); never AI-generated images for science. The runner environment
+  allows commons/upload/thumb.wikimedia.org; ask the user before needing any
+  other host. Cap: 10 papers per 24 h. A queued
   request can switch type in Edit (shared fields carry over; to "check" via
   the check page, which replaces it).
 

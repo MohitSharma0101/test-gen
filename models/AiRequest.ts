@@ -101,7 +101,7 @@ export type TAiDraft = {
   questionType: "MCQ" | "NUMERICAL";
   mark?: number;
   sourceQuestion?: string;
-  diagram?: { kind: "svg" | "ai-image"; url: string };
+  diagram?: { kind: "svg" | "ai-image" | "web-image"; url: string };
   // "paper" (write): the chapter Claude chose for it, its place in the paper,
   // and whether that chapter was a confident fit
   chapter?: string;

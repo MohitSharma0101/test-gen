@@ -30,7 +30,7 @@ export const POST = async (req: NextRequest, { params }: { params: { id: string 
       questionType: d?.questionType === "NUMERICAL" ? "NUMERICAL" : "MCQ",
       ...(Number(d?.mark) > 0 ? { mark: Number(d.mark) } : {}),
       ...(d?.sourceQuestion && mongoose.isValidObjectId(d.sourceQuestion) ? { sourceQuestion: d.sourceQuestion } : {}),
-      ...(d?.diagram?.url && ["svg", "ai-image"].includes(d.diagram.kind) ? { diagram: { kind: d.diagram.kind, url: String(d.diagram.url) } } : {}),
+      ...(d?.diagram?.url && ["svg", "ai-image", "web-image"].includes(d.diagram.kind) ? { diagram: { kind: d.diagram.kind, url: String(d.diagram.url) } } : {}),
       checks: { keyMatch: d?.checks?.keyMatch === true, renderOk: d?.checks?.renderOk === true, notes: String(d?.checks?.notes ?? "").slice(0, 300) },
       status: "pending",
       // "paper" (write) only, checked below

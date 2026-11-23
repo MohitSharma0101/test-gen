@@ -84,14 +84,27 @@ Follow the house format exactly (from `format-rules.mjs`); it's the same as the 
 
 ### Diagrams
 
-- Decide per question. Add a figure when a student would otherwise have to sketch it to understand the setup: several bodies or surfaces placed relative to each other, circuits, geometry with angles or positions, graphs, ray paths. Skip it when one short clause says it all ("a charge at the centre of a cube"). Never add one just for decoration.
-- Don't overdo it: every figure is an image on the app's Cloudinary free plan. Aim for roughly 1 question in 4 at most, and keep SVGs small (no embedded fonts or bitmaps unless it's an AI image).
-- **Draw it yourself as SVG** (default): `/tmp/ai-runner/<id>/d-<qid>.svg`.
-  - `viewBox` around 520×260, black strokes 2–3 px, white background, no colours (papers print in black and white).
-  - Labels in serif italic (`font-family="Times New Roman, serif" font-style="italic"`), 20–26 px. Plain symbols and Unicode sub/superscripts (v₀, θ, R₁), no LaTeX.
-  - Arrowheads via `<marker>`. Keep it uncluttered. **Never label the quantity being asked for.**
-  - Put `![](d-<qid>.svg)` in `text` after the stem and before the options. `upload.mjs` uploads it and swaps in the URL.
-- **Demanding drawings** (biology structures, anatomy, detailed apparatus) that SVG can't do well: `node scripts/ai-runner/ai-image.mjs "<what to draw>" d-<qid>.png`. It's unlabelled by design. Then write an SVG that embeds the PNG (`<image href="data:image/png;base64,…">`) and adds the labels and leader lines on top. Set `"diagramKind": "ai-image"`. Stay within `caps.aiImagesLeft`; when it's 0, reword the question to need no figure, or drop it.
+- **The question decides, nothing else.** A question gets a figure when it can't be asked or answered without one: identify a labelled part, read a structure, graph or circuit, a setup with several parts placed relative to each other that no short clause can describe. Or when the request's prompt asks for diagrams. Otherwise it gets none: never add one for decoration, never leave one out to save effort or storage, never reshape a question just to avoid needing one.
+- Put `![](d-<qid>.svg)` in `text` after the stem and before the options. `upload.mjs` uploads it and swaps in the URL.
+- **Never label the quantity or the part being asked for** with its name (use a letter or number marker instead).
+- Papers print in black and white: no colour that carries meaning.
+
+Pick the source by **what kind of figure** it is:
+
+1. **Schematic, line drawing** (physics/chemistry setups, circuits, graphs, geometry; in biology: cell-division stages, Punnett squares, pedigree charts, food chains/webs, cycles such as the nitrogen cycle, DNA strands, flow charts): **draw it yourself as SVG**, `/tmp/ai-runner/<id>/d-<qid>.svg`.
+   - `viewBox` around 520×260, black strokes 2–3 px, white background.
+   - Labels in serif italic (`font-family="Times New Roman, serif" font-style="italic"`), 20–26 px. Plain symbols and Unicode sub/superscripts (v₀, θ, R₁), no LaTeX.
+   - Arrowheads via `<marker>`. Keep it uncluttered.
+2. **Anatomy and realistic structures** an SVG can't draw accurately (heart, nephron, neuron, eye, ear, brain, flower or seed in section, digestive or respiratory system, plant tissues): an **openly licensed diagram from Wikimedia Commons**, with your markers on top.
+   - `node scripts/ai-runner/wiki-image.mjs search "<structure> diagram" 8` lists only public-domain / CC0 / CC BY / CC BY-SA images. Try words like `unlabeled`, `blank`, `numbered`, `line art`, `scheme` if the first results are poor.
+   - Prefer, in order: an **unlabelled** version; a **numbered** one whose numbers you can use as the markers (the question then asks about "the part numbered 4"); a word-labelled one only if `cover` boxes can hide the words without leaving stray lines.
+   - `node scripts/ai-runner/wiki-image.mjs get "File:…" /tmp/ai-runner/<id>/w-<qid>.png 1000` downloads it and prints a `CREDIT:` line.
+   - Look at the picture, then write `labels.json` (letters `A`, `B`, …: `x,y` = the point on the structure, `lx,ly` = where the letter sits, in empty space; `cover` = white boxes over printed labels) and run `node scripts/ai-runner/label-image.mjs w-<qid>.png labels.json d-<qid>.svg`. It embeds the picture in greyscale.
+   - **Look at the rendered result** and check every marker line ends exactly on the structure it names. Wrong placement is a wrong question.
+   - End the solution with the credit line, e.g. `Diagram: Wapcaplet, CC BY-SA 3.0, via Wikimedia Commons` (the licence requires it). Set `"diagramKind": "web-image"`.
+   - Never use images from NCERT, coaching books or a general web search: they are copyrighted.
+3. **No AI-generated images for biology or any scientific structure.** Image models draw convincing but wrong anatomy. (`ai-image.mjs` is only for non-scientific scene pictures, and is off for now.) If neither 1 nor 2 can give an accurate figure for a question that needs one, write a different question.
+
 - **Look at every diagram:**
   1. `node scripts/ai-runner/render.mjs batch-N.json out/`.
   2. A `haiku` subagent reviews all PNGs for layout problems only (overlapping or cut-off labels, unreadable text) and lists them.

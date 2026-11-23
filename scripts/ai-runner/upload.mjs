@@ -33,7 +33,7 @@ for (const d of drafts) {
   ready.push({
     text, ans, questionType: d.questionType, mark: d.mark, sourceQuestion: d.sourceQuestion,
     ...(d.chapter ? { chapter: d.chapter, order: d.order, chapterUnsure: d.chapterUnsure === true } : {}),
-    ...(diagram.url ? { diagram: { kind: d.diagramKind === "ai-image" ? "ai-image" : "svg", url: diagram.url } } : {}),
+    ...(diagram.url ? { diagram: { kind: ["ai-image", "web-image"].includes(d.diagramKind) ? d.diagramKind : "svg", url: diagram.url } } : {}),
     checks: d.checks,
   });
 }
