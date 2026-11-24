@@ -216,6 +216,10 @@ Frontend
 
 ## Working rules
 
+- **Never start coding a fix until the user says so.** For a bug report,
+  find and explain the cause, propose the fix, then wait for a go-ahead.
+- **Push to `dev-revamp`** (both this repo and eplus-crack-it) for QA, never
+  to a session/feature branch.
 - **Ask the user before any database change**: a new model/collection, a new
   field on a schema, a new index, or anything that stores more data. Explain
   the size impact first. (Already in place, with the user's knowledge since:
