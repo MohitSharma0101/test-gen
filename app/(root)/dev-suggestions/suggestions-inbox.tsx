@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import {
   BugIcon,
@@ -22,6 +22,7 @@ import { LIST_SWR, swrError } from "@/lib/swr";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import ImageViewer from "@/components/ui/image-viewer";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState, ErrorState } from "@/components/ui/state-message";
 import {
@@ -57,6 +58,21 @@ const dayLabel = (iso: string) => {
 const shortWhen = (iso: string) => (dayLabel(iso) === "Today" ? timeLabel(iso) : dayLabel(iso));
 
 type TThreads = { threads: TThread[]; unread: number };
+
+/**
+ * "Android 10 · Chrome 157 · 360×800" from a bug report's raw browser string,
+ * which is unreadable at a glance (the full string stays in the tooltip).
+ */
+const deviceLabel = ({ ua = "", screen }: { ua?: string; screen?: string }) => {
+  const os =
+    ua.match(/Android [\d.]+/)?.[0] ??
+    (/iPhone|iPad/.test(ua) ? `iOS ${ua.match(/OS (\d+)/)?.[1] ?? ""}`.trim() : undefined) ??
+    (/Windows/.test(ua) ? "Windows" : /Mac OS/.test(ua) ? "Mac" : undefined);
+  const browser =
+    (ua.match(/(?:Edg|SamsungBrowser|Firefox|CriOS|Chrome)\/(\d+)/) ?? [])[0]?.replace(/\/(\d+)/, " $1").replace("CriOS", "Chrome").replace("Edg", "Edge") ??
+    (/Safari/.test(ua) ? "Safari" : undefined);
+  return [os, browser, screen?.replace("x", "×")].filter(Boolean).join(" · ") || "unknown device";
+};
 type TChat = { name: string; device: { ua?: string; screen?: string } | null; messages: TChatMessage[] };
 
 function ThreadRow({ t, active, onOpen }: { t: TThread; active: boolean; onOpen: () => void }) {
@@ -105,6 +121,7 @@ const Bubble = memo(function Bubble({
   pending,
   animate,
   onRetry,
+  onOpenImage,
 }: {
   m: TChatMessage;
   first: boolean;
@@ -112,6 +129,7 @@ const Bubble = memo(function Bubble({
   pending?: "sending" | "failed";
   animate: boolean;
   onRetry: (id: string) => void;
+  onOpenImage: (images: TChatMessage["images"], index: number) => void;
 }) {
   // Here the staff side is "mine", on the right.
   const mine = m.from === "staff";
@@ -144,11 +162,17 @@ const Bubble = memo(function Bubble({
           )}
           {m.images.length > 0 && (
             <div className="-mx-1 mb-1.5 mt-0.5 flex flex-wrap gap-1.5">
-              {m.images.map((img) => (
-                <a key={img.publicId} href={img.url} target="_blank" rel="noreferrer">
+              {m.images.map((img, i) => (
+                <button
+                  key={img.publicId}
+                  type="button"
+                  aria-label="Open screenshot"
+                  onClick={() => onOpenImage(m.images, i)}
+                  className="overflow-hidden rounded-xl transition-transform active:scale-95"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.url} alt="Screenshot from the student" className="size-24 rounded-xl object-cover" loading="lazy" />
-                </a>
+                  <img src={img.url} alt="Screenshot from the student" className="size-24 object-cover" loading="lazy" />
+                </button>
               ))}
             </div>
           )}
@@ -190,6 +214,8 @@ function ChatPane({ userId, onBack }: { userId: string; onBack: () => void }) {
     { ...LIST_SWR, refreshInterval: POLL_MS }
   );
   const [text, setText] = useState("");
+  const [viewer, setViewer] = useState<{ images: TChatMessage["images"]; index: number | null }>({ images: [], index: null });
+  const openImage = useCallback((images: TChatMessage["images"], index: number) => setViewer({ images, index }), []);
   const [pending, setPending] = useState<Record<string, "sending" | "failed">>({});
   const bodies = useRef<Record<string, string>>({});
   const listRef = useRef<HTMLDivElement>(null);
@@ -260,7 +286,7 @@ function ChatPane({ userId, onBack }: { userId: string; onBack: () => void }) {
   }, [messages]);
 
   return (
-    <section className="flex h-full min-h-0 flex-col">
+    <section className="flex h-full min-h-0 min-w-0 flex-col">
       <header className="flex shrink-0 items-center gap-2 border-b px-2 py-2">
         <Button variant="ghost" size="icon" onClick={onBack} aria-label="Back to chats" className="size-11 shrink-0 md:hidden">
           <ChevronLeftIcon className="size-5" />
@@ -272,7 +298,7 @@ function ChatPane({ userId, onBack }: { userId: string; onBack: () => void }) {
           <h2 className="truncate text-[15px] font-bold">{data?.name ?? " "}</h2>
           {data?.device && (
             <p className="truncate text-xs text-muted-foreground" title={data.device.ua}>
-              Last bug from {data.device.screen} · {data.device.ua}
+              Last bug: {deviceLabel(data.device)}
             </p>
           )}
         </div>
@@ -308,6 +334,7 @@ function ChatPane({ userId, onBack }: { userId: string; onBack: () => void }) {
                       pending={pending[m._id]}
                       animate={!!seenIds.current && !seenIds.current.has(m._id)}
                       onRetry={(id) => bodies.current[id] && deliver(id, bodies.current[id])}
+                      onOpenImage={openImage}
                     />
                   );
                 })}
@@ -351,6 +378,11 @@ function ChatPane({ userId, onBack }: { userId: string; onBack: () => void }) {
           <SendIcon className="size-5" />
         </Button>
       </div>
+      <ImageViewer
+        images={viewer.images}
+        index={viewer.index}
+        onIndexChange={(index) => setViewer((v) => ({ ...v, index }))}
+      />
     </section>
   );
 }
@@ -432,7 +464,10 @@ export default function SuggestionsInbox() {
             )}
           </div>
         </aside>
-        <div className={cn("min-h-0 flex-1", active ? "block" : "hidden md:block")}>
+        {/* min-w-0: a flex item will not shrink below its content by default,
+            so a long line (a browser string, a long reply) pushed the whole
+            chat past a phone's edge. */}
+        <div className={cn("min-h-0 min-w-0 flex-1", active ? "block" : "hidden md:block")}>
           {active ? (
             <ChatPane key={active} userId={active} onBack={() => setActive(null)} />
           ) : (
