@@ -206,3 +206,28 @@ tfoot.report-footer {
     contain-intrinsic-size: auto 180px;
   }
 }
+
+/* Suggestions chat (/dev-suggestions), matching the student app's: a new
+   bubble grows out of its own side. Short, and off under reduced motion. */
+@keyframes bubble-in-right {
+  from { opacity: 0; transform: translate(10px, 8px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bubble-in-left {
+  from { opacity: 0; transform: translate(-10px, 8px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+.animate-bubble-in-right {
+  animation: bubble-in-right 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: bottom right;
+}
+.animate-bubble-in-left {
+  animation: bubble-in-left 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: bottom left;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-bubble-in-right,
+  .animate-bubble-in-left {
+    animation: none;
+  }
+}

@@ -4,9 +4,10 @@ import { dbConnect } from "@/lib/dbUtils";
 import { nextError, nextSuccess } from "@/lib/nextUtils";
 import { getAccount } from "@/lib/auth";
 import { Role } from "@/data/const";
-import Suggestion, { SUGGESTION_TYPES, TSuggestionType } from "@/models/Suggestion";
+import Suggestion, { TSuggestionType } from "@/models/Suggestion";
 
-const PAGE_SIZE = 30;
+/** Chats shown in the list: far more students than ever write in. */
+const THREAD_LIMIT = 200;
 
 const requireAdmin = async () => {
   const account = await getAccount();
@@ -15,37 +16,68 @@ const requireAdmin = async () => {
   return null;
 };
 
-// The inbox: newest first, filtered by type and status, plus the new count.
-export const GET = async (request: NextRequest) => {
+export type TThread = {
+  userId: string;
+  name: string;
+  lastMessage: string;
+  lastFrom: "student" | "staff";
+  lastType?: TSuggestionType;
+  lastAt: string;
+  /** The student's messages not yet read here. */
+  unread: number;
+};
+
+// One row per student who has written in, latest conversation first, with
+// how many of their messages are unread. Grouped in the database, newest
+// message first, so each row carries its chat's latest message.
+export const GET = async () => {
   const denied = await requireAdmin();
   if (denied) return denied;
   try {
-    const params = request.nextUrl.searchParams;
-    const type = params.get("type") as TSuggestionType | null;
-    const status = params.get("status");
-    const page = Math.max(1, Number(params.get("page")) || 1);
-
-    const filter: Record<string, unknown> = {};
-    if (type && SUGGESTION_TYPES.includes(type)) filter.type = type;
-    if (status === "new" || status === "done") filter.status = status;
-
     await dbConnect();
-    const [items, total, newCount] = await Promise.all([
-      Suggestion.find(filter)
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * PAGE_SIZE)
-        .limit(PAGE_SIZE)
-        .lean(),
-      Suggestion.countDocuments(filter),
-      Suggestion.countDocuments({ status: "new" }),
+    const rows = await Suggestion.aggregate([
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$userId",
+          // Staff messages carry no student name; take it from theirs.
+          name: { $max: "$name" },
+          lastMessage: { $first: "$message" },
+          lastFrom: { $first: { $ifNull: ["$from", "student"] } },
+          lastType: { $first: "$type" },
+          lastAt: { $first: "$createdAt" },
+          unread: {
+            $sum: {
+              $cond: [
+                { $and: [{ $ne: ["$from", "staff"] }, { $eq: ["$status", "new"] }] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      { $sort: { lastAt: -1 } },
+      { $limit: THREAD_LIMIT },
     ]);
-    return nextSuccess({ items, total, newCount, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) });
+    const threads: TThread[] = rows.map((r) => ({
+      userId: String(r._id),
+      name: r.name || "Student",
+      lastMessage: r.lastMessage,
+      lastFrom: r.lastFrom,
+      lastType: r.lastType ?? undefined,
+      lastAt: new Date(r.lastAt).toISOString(),
+      unread: r.unread,
+    }));
+    const unread = threads.reduce((n, t) => n + t.unread, 0);
+    return nextSuccess({ threads, unread });
   } catch (err) {
     return nextError(err);
   }
 };
 
-// Reply and/or mark done. A new reply shows as unread in the student app.
+// Older inbox: reply and/or mark one suggestion done. The chat replies
+// through dev-suggestions/[userId]; this stays for anything still calling it.
 export const PATCH = async (request: NextRequest) => {
   const denied = await requireAdmin();
   if (denied) return denied;
